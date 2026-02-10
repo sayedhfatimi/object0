@@ -1,0 +1,287 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - v*
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+      release_id: ${{ steps.upsert_release.outputs.release_id }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve tag
+        id: tag
+        shell: bash
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Tag must look like v1.2.3 or v1.2.3-rc.1 (got: $TAG)" >&2
+            exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve previous version tag
+        id: previous_tag
+        shell: bash
+        run: |
+          CURRENT="${{ steps.tag.outputs.tag }}"
+          PREVIOUS="$(git tag --sort=-v:refname | grep '^v' | grep -Fxv "$CURRENT" | head -n 1 || true)"
+          echo "tag=$PREVIOUS" >> "$GITHUB_OUTPUT"
+
+      - name: Generate changelog from Conventional Commits
+        shell: bash
+        run: |
+          if [ -n "${{ steps.previous_tag.outputs.tag }}" ]; then
+            node ./scripts/release/generate-conventional-notes.mjs \
+              --current-tag "${{ steps.tag.outputs.tag }}" \
+              --previous-tag "${{ steps.previous_tag.outputs.tag }}" \
+              --output RELEASE_NOTES.md
+          else
+            node ./scripts/release/generate-conventional-notes.mjs \
+              --current-tag "${{ steps.tag.outputs.tag }}" \
+              --output RELEASE_NOTES.md
+          fi
+
+      - name: Create or update GitHub release
+        id: upsert_release
+        uses: actions/github-script@v7
+        env:
+          RELEASE_TAG: ${{ steps.tag.outputs.tag }}
+        with:
+          github-token: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const tag = process.env.RELEASE_TAG;
+            const body = fs.readFileSync('RELEASE_NOTES.md', 'utf8').trim() || `Release ${tag}`;
+            const prerelease = /-/.test(tag);
+
+            let release;
+            try {
+              const existing = await github.rest.repos.getReleaseByTag({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag,
+              });
+
+              release = await github.rest.repos.updateRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: existing.data.id,
+                tag_name: tag,
+                name: tag,
+                body,
+                draft: false,
+                prerelease,
+              });
+            } catch (error) {
+              if (error.status !== 404) {
+                throw error;
+              }
+
+              release = await github.rest.repos.createRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag_name: tag,
+                name: tag,
+                body,
+                draft: false,
+                prerelease,
+              });
+            }
+
+            core.setOutput('release_id', String(release.data.id));
+
+  publish-tauri:
+    needs: release
+    runs-on: ${{ matrix.platform }}
+
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include:
+          - platform: macos-latest
+            args: --target aarch64-apple-darwin --bundles dmg
+            asset_os: macos
+            asset_arch: arm64
+            asset_kind: installer
+            upload_updater: true
+          - platform: macos-latest
+            args: --target x86_64-apple-darwin --bundles dmg
+            asset_os: macos
+            asset_arch: x64
+            asset_kind: installer
+            upload_updater: true
+          - platform: ubuntu-22.04
+            args: --bundles deb,rpm
+            asset_os: linux
+            asset_arch: x64
+            asset_kind: installer
+            upload_updater: false
+          - platform: ubuntu-22.04
+            args: --bundles appimage
+            asset_os: linux
+            asset_arch: x64
+            asset_kind: standalone
+            upload_updater: true
+          - platform: windows-latest
+            args: --bundles nsis
+            asset_os: windows
+            asset_arch: x64
+            asset_kind: installer
+            upload_updater: true
+          - platform: windows-latest
+            args: --bundles msi
+            asset_os: windows
+            asset_arch: x64
+            asset_kind: installer
+            upload_updater: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Add macOS targets
+        if: matrix.platform == 'macos-latest'
+        run: rustup target add aarch64-apple-darwin x86_64-apple-darwin
+
+      - name: Cache Rust build
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev libdbus-1-dev patchelf
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Sync app version from release tag
+        run: node ./scripts/release/sync-version.mjs --version "${{ needs.release.outputs.tag }}"
+
+      - name: Build and upload bundles
+        uses: tauri-apps/tauri-action@v0.6.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: ${{ needs.release.outputs.tag }}
+          releaseId: ${{ needs.release.outputs.release_id }}
+          args: ${{ matrix.args }}
+          assetNamePattern: "object0_[version]_${{ matrix.asset_os }}_${{ matrix.asset_arch }}_${{ matrix.asset_kind }}[ext]"
+          uploadUpdaterJson: ${{ matrix.upload_updater }}
+          uploadUpdaterSignatures: ${{ matrix.upload_updater }}
+
+  publish-standalone-binaries:
+    needs:
+      - release
+      - publish-tauri
+    runs-on: ${{ matrix.platform }}
+
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include:
+          - platform: macos-latest
+            args: --target aarch64-apple-darwin --no-bundle
+            asset_os: macos
+            asset_arch: arm64
+          - platform: macos-latest
+            args: --target x86_64-apple-darwin --no-bundle
+            asset_os: macos
+            asset_arch: x64
+          - platform: ubuntu-22.04
+            args: --no-bundle
+            asset_os: linux
+            asset_arch: x64
+          - platform: windows-latest
+            args: --no-bundle
+            asset_os: windows
+            asset_arch: x64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Add macOS targets
+        if: matrix.platform == 'macos-latest'
+        run: rustup target add aarch64-apple-darwin x86_64-apple-darwin
+
+      - name: Cache Rust build
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev libdbus-1-dev patchelf
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Sync app version from release tag
+        run: node ./scripts/release/sync-version.mjs --version "${{ needs.release.outputs.tag }}"
+
+      - name: Build and upload standalone binaries
+        uses: tauri-apps/tauri-action@v0.6.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: ${{ needs.release.outputs.tag }}
+          releaseId: ${{ needs.release.outputs.release_id }}
+          args: ${{ matrix.args }}
+          uploadPlainBinary: true
+          assetNamePattern: "object0_[version]_${{ matrix.asset_os }}_${{ matrix.asset_arch }}_standalone[ext]"
+          uploadUpdaterJson: false
+          uploadUpdaterSignatures: false
