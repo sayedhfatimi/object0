@@ -96,6 +96,26 @@ Download the latest release for your platform from the [Releases](https://github
 | Linux | x64 | `.AppImage` / `.deb` / `.rpm` |
 | Windows | x64 | `.msi` / `NSIS .exe` |
 
+### Arch Linux (AUR)
+
+`object0` is also available on AUR as [`object0-bin`](https://aur.archlinux.org/packages/object0-bin).
+
+Install with your AUR helper:
+
+```bash
+yay -S object0-bin
+# or
+paru -S object0-bin
+```
+
+Or build/install manually:
+
+```bash
+git clone https://aur.archlinux.org/object0-bin.git
+cd object0-bin
+makepkg -si
+```
+
 ## Development
 
 ### Prerequisites

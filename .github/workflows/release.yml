@@ -285,3 +285,36 @@ jobs:
           assetNamePattern: "object0_[version]_${{ matrix.asset_os }}_${{ matrix.asset_arch }}_standalone[ext]"
           uploadUpdaterJson: false
           uploadUpdaterSignatures: false
+
+  publish-aur:
+    needs:
+      - release
+      - publish-tauri
+    runs-on: ubuntu-latest
+    if: ${{ !contains(needs.release.outputs.tag, '-') }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup AUR SSH key
+        env:
+          AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+        run: |
+          if [ -z "${AUR_SSH_PRIVATE_KEY}" ]; then
+            echo "AUR_SSH_PRIVATE_KEY secret is not configured" >&2
+            exit 1
+          fi
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "${AUR_SSH_PRIVATE_KEY}" > ~/.ssh/aur
+          chmod 600 ~/.ssh/aur
+          ssh-keyscan -t ed25519 aur.archlinux.org >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Publish object0-bin to AUR
+        env:
+          AUR_PACKAGE: object0-bin
+          GIT_SSH_COMMAND: ssh -i ~/.ssh/aur -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: ./scripts/release/publish-aur.sh "${{ needs.release.outputs.tag }}"
