@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { useBucketStore } from "../stores/useBucketStore";
 import { useObjectStore } from "../stores/useObjectStore";
 import { useProfileStore } from "../stores/useProfileStore";
+import { useUIStore } from "../stores/useUIStore";
 
 /**
  * Convenience hook to manage S3 object listing with currently-selected
@@ -10,6 +11,7 @@ import { useProfileStore } from "../stores/useProfileStore";
 export function useS3Objects() {
   const profileId = useProfileStore((s) => s.activeProfileId);
   const bucket = useBucketStore((s) => s.selectedBucket);
+  const pageSize = useUIStore((s) => s.pageSize);
   const {
     objects,
     prefixes,
@@ -35,16 +37,16 @@ export function useS3Objects() {
 
   const refresh = useCallback(() => {
     if (!profileId || !bucket) return;
-    loadObjects(profileId, bucket, currentPrefix);
-  }, [profileId, bucket, currentPrefix, loadObjects]);
+    loadObjects(profileId, bucket, currentPrefix, pageSize);
+  }, [profileId, bucket, currentPrefix, pageSize, loadObjects]);
 
   const navigate = useCallback(
     (prefix: string) => {
       navigateToPrefix(prefix);
       if (!profileId || !bucket) return;
-      loadObjects(profileId, bucket, prefix);
+      loadObjects(profileId, bucket, prefix, pageSize);
     },
-    [profileId, bucket, navigateToPrefix, loadObjects],
+    [profileId, bucket, pageSize, navigateToPrefix, loadObjects],
   );
 
   const goBack = useCallback(() => {
@@ -53,13 +55,13 @@ export function useS3Objects() {
     const prev = history[history.length - 1];
     navigateBack();
     if (!profileId || !bucket) return;
-    loadObjects(profileId, bucket, prev);
-  }, [profileId, bucket, navigateBack, loadObjects]);
+    loadObjects(profileId, bucket, prev, pageSize);
+  }, [profileId, bucket, pageSize, navigateBack, loadObjects]);
 
   const nextPage = useCallback(() => {
     if (!profileId || !bucket || !nextCursor) return;
-    loadObjects(profileId, bucket, currentPrefix, undefined, nextCursor);
-  }, [profileId, bucket, currentPrefix, nextCursor, loadObjects]);
+    loadObjects(profileId, bucket, currentPrefix, pageSize, nextCursor);
+  }, [profileId, bucket, currentPrefix, pageSize, nextCursor, loadObjects]);
 
   return {
     objects,

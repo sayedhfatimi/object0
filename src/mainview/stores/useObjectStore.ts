@@ -2,6 +2,7 @@ import { create } from "zustand";
 import type { ObjectFilters, S3Object, S3Prefix } from "../../shared/s3.types";
 import { DEFAULT_PAGE_SIZE } from "../lib/constants";
 import { rpcCall } from "../lib/rpc-client";
+import { useUIStore } from "./useUIStore";
 
 interface ObjectState {
   objects: S3Object[];
@@ -71,12 +72,14 @@ export const useObjectStore = create<ObjectState>()((set, get) => ({
   loadObjects: async (profileId, bucket, prefix, pageSize, startAfter) => {
     try {
       set({ loading: true, error: null });
+      const resolvedPageSize =
+        pageSize ?? useUIStore.getState().pageSize ?? DEFAULT_PAGE_SIZE;
 
       const result = await rpcCall("objects:list", {
         profileId,
         bucket,
         prefix: prefix ?? get().currentPrefix,
-        maxKeys: pageSize ?? DEFAULT_PAGE_SIZE,
+        maxKeys: resolvedPageSize,
         startAfter,
       });
 
