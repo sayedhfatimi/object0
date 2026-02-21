@@ -48,6 +48,14 @@ use url::Url;
 use uuid::Uuid;
 use walkdir::WalkDir;
 
+mod config_paths;
+mod rpc_method;
+
+use config_paths::{
+    favorites_path, folder_sync_records_path, folder_sync_rules_path, job_history_path, vault_path,
+};
+use rpc_method::RpcMethod;
+
 const CURRENT_VAULT_VERSION: u8 = 3;
 const PBKDF2_ITERATIONS: u32 = 600_000;
 const KEY_BYTES: usize = 32;
@@ -767,49 +775,6 @@ where
     T: for<'de> Deserialize<'de>,
 {
     serde_json::from_value(payload).map_err(|err| format!("Invalid payload: {err}"))
-}
-
-fn object0_config_dir() -> Result<PathBuf, String> {
-    let home = if cfg!(target_os = "windows") {
-        std::env::var("USERPROFILE")
-            .or_else(|_| std::env::var("HOME"))
-            .map_err(|_| "Unable to resolve USERPROFILE/HOME".to_string())?
-    } else {
-        std::env::var("HOME").map_err(|_| "Unable to resolve HOME".to_string())?
-    };
-
-    let mut path = PathBuf::from(home);
-    if cfg!(target_os = "macos") {
-        path.push("Library");
-        path.push("Application Support");
-        path.push("object0");
-    } else {
-        path.push(".config");
-        path.push("object0");
-    }
-    Ok(path)
-}
-
-fn vault_path() -> Result<PathBuf, String> {
-    Ok(object0_config_dir()?.join("vault.enc"))
-}
-
-fn favorites_path() -> Result<PathBuf, String> {
-    Ok(object0_config_dir()?.join("favorites.json"))
-}
-
-fn folder_sync_rules_path() -> Result<PathBuf, String> {
-    Ok(object0_config_dir()?.join("folder-sync-rules.json"))
-}
-
-fn folder_sync_records_path(rule_id: &str) -> Result<PathBuf, String> {
-    Ok(object0_config_dir()?
-        .join("folder-sync")
-        .join(format!("{rule_id}.json")))
-}
-
-fn job_history_path() -> Result<PathBuf, String> {
-    Ok(object0_config_dir()?.join("job-history.json"))
 }
 
 fn ensure_parent_dir(path: &Path) -> Result<(), String> {
@@ -4139,13 +4104,15 @@ fn handle_tray_menu_action(app: &AppHandle, action_id: &str) {
 async fn rpc_request(
     app: AppHandle,
     state: State<'_, AppState>,
-    method: String,
+    method_name: String,
     payload: Option<Value>,
 ) -> Result<Value, String> {
     let payload = payload_or_null(payload);
+    let method = RpcMethod::parse(&method_name)
+        .ok_or_else(|| format!("RPC method not implemented yet: {method_name}"))?;
 
-    match method.as_str() {
-        "vault:status" => {
+    match method {
+        RpcMethod::VaultStatus => {
             let path = vault_path()?;
             let exists = path.exists();
             let unlocked = lock(&state.vault)?.unlocked;
@@ -4161,7 +4128,7 @@ async fn rpc_request(
                 "hasRecoveryKey": has_recovery_key,
             }))
         }
-        "vault:setup" => {
+        RpcMethod::VaultSetup => {
             let input: VaultSetupInput = parse_payload(payload)?;
             if input.passphrase.trim().is_empty() {
                 return Err("Passphrase cannot be empty".to_string());
@@ -4198,7 +4165,7 @@ async fn rpc_request(
 
             Ok(json!({ "success": true, "recoveryKey": recovery_key_plain }))
         }
-        "vault:unlock" => {
+        RpcMethod::VaultUnlock => {
             let input: VaultUnlockInput = parse_payload(payload)?;
             if input.passphrase.trim().is_empty() {
                 return Ok(json!({
@@ -4256,7 +4223,7 @@ async fn rpc_request(
                 })),
             }
         }
-        "vault:auto-unlock" | "vault:unlock-keychain" => {
+        RpcMethod::VaultAutoUnlock | RpcMethod::VaultUnlockKeychain => {
             let path = vault_path()?;
             if !path.exists() {
                 return Ok(json!({
@@ -4332,14 +4299,14 @@ async fn rpc_request(
                 }
             }
         }
-        "vault:lock" => {
+        RpcMethod::VaultLock => {
             let mut vault = lock(&state.vault)?;
             lock_vault_runtime(&mut vault);
             stop_all_folder_sync_rules(&app);
             refresh_tray_menu(&app);
             Ok(Value::Null)
         }
-        "vault:keychain-status" => {
+        RpcMethod::VaultKeychainStatus => {
             let (has_stored, available, error) = match read_stored_passphrase() {
                 KeychainReadResult::Available(Some(_)) => (true, true, String::new()),
                 KeychainReadResult::Available(None) => (false, true, String::new()),
@@ -4351,11 +4318,11 @@ async fn rpc_request(
                 "error": error,
             }))
         }
-        "vault:keychain-clear" => match clear_stored_passphrase() {
+        RpcMethod::VaultKeychainClear => match clear_stored_passphrase() {
             Ok(had) => Ok(json!({ "success": true, "hadStoredPassphrase": had })),
             Err(_) => Ok(json!({ "success": false, "hadStoredPassphrase": false })),
         },
-        "vault:recover-key" => {
+        RpcMethod::VaultRecoverKey => {
             let input: RecoveryKeyInput = parse_payload(payload)?;
             let path = vault_path()?;
             if !path.exists() {
@@ -4381,7 +4348,7 @@ async fn rpc_request(
                 Err(_) => Ok(json!({ "success": false, "profiles": [] })),
             }
         }
-        "vault:change-passphrase" => {
+        RpcMethod::VaultChangePassphrase => {
             let input: ChangePassphraseInput = parse_payload(payload)?;
             if input.new_passphrase.trim().is_empty() {
                 return Err("Passphrase cannot be empty".to_string());
@@ -4414,7 +4381,7 @@ async fn rpc_request(
 
             Ok(json!({ "success": true, "recoveryKey": new_recovery_key_plain }))
         }
-        "vault:add-recovery-key" => {
+        RpcMethod::VaultAddRecoveryKey => {
             let path = vault_path()?;
             let mut vault = lock(&state.vault)?;
             ensure_writable(&vault)?;
@@ -4429,11 +4396,11 @@ async fn rpc_request(
 
             Ok(json!({ "recoveryKey": recovery_key_plain }))
         }
-        "vault:has-recovery-key" => {
+        RpcMethod::VaultHasRecoveryKey => {
             let path = vault_path()?;
             Ok(json!({ "hasRecoveryKey": has_recovery_key_on_disk(&path)? }))
         }
-        "vault:reset" => {
+        RpcMethod::VaultReset => {
             let path = vault_path()?;
             if path.exists() {
                 let _ = fs::remove_file(path);
@@ -4447,12 +4414,12 @@ async fn rpc_request(
             Ok(json!({ "success": true }))
         }
 
-        "profile:list" => {
+        RpcMethod::ProfileList => {
             let vault = lock(&state.vault)?;
             ensure_unlocked(&vault)?;
             Ok(json!(profile_infos(&vault)))
         }
-        "profile:add" => {
+        RpcMethod::ProfileAdd => {
             let input: ProfileInput = parse_payload(payload)?;
             let path = vault_path()?;
             let mut vault = lock(&state.vault)?;
@@ -4482,7 +4449,7 @@ async fn rpc_request(
 
             Ok(json!(to_profile_info(&profile)))
         }
-        "profile:update" => {
+        RpcMethod::ProfileUpdate => {
             let input: ProfileUpdateInput = parse_payload(payload)?;
             let path = vault_path()?;
             let mut vault = lock(&state.vault)?;
@@ -4521,7 +4488,8 @@ async fn rpc_request(
             profile.default_bucket = input.default_bucket;
             profile.updated_at = now_iso();
 
-            if profile.access_key_id.trim().is_empty() || profile.secret_access_key.trim().is_empty()
+            if profile.access_key_id.trim().is_empty()
+                || profile.secret_access_key.trim().is_empty()
             {
                 return Err("Profile credentials cannot be empty".to_string());
             }
@@ -4531,7 +4499,7 @@ async fn rpc_request(
 
             Ok(json!(profile_info))
         }
-        "profile:remove" => {
+        RpcMethod::ProfileRemove => {
             let input: IdInput = parse_payload(payload)?;
             let path = vault_path()?;
             let mut vault = lock(&state.vault)?;
@@ -4551,7 +4519,7 @@ async fn rpc_request(
             save_vault(&path, &vault)?;
             Ok(Value::Null)
         }
-        "profile:test" => {
+        RpcMethod::ProfileTest => {
             let input: ProfileTestInput = parse_payload(payload)?;
             let profile = Profile {
                 id: "test".to_string(),
@@ -4610,7 +4578,7 @@ async fn rpc_request(
             }
         }
 
-        "buckets:list" => {
+        RpcMethod::BucketsList => {
             let input: ProfileIdInput = parse_payload(payload)?;
             let profile = profile_for_id(&state, &input.profile_id)?;
             let client = to_s3_client(&profile)?;
@@ -4643,7 +4611,7 @@ async fn rpc_request(
             }
         }
 
-        "objects:list" => {
+        RpcMethod::ObjectsList => {
             let input: ObjectsListInput = parse_payload(payload)?;
             let profile = profile_for_id(&state, &input.profile_id)?;
             let client = to_s3_client(&profile)?;
@@ -4697,7 +4665,7 @@ async fn rpc_request(
                 "nextCursor": next_cursor,
             }))
         }
-        "objects:delete" => {
+        RpcMethod::ObjectsDelete => {
             let input: ObjectsDeleteInput = parse_payload(payload)?;
             if input.keys.is_empty() {
                 return Ok(Value::Null);
@@ -4741,7 +4709,7 @@ async fn rpc_request(
 
             Ok(Value::Null)
         }
-        "objects:rename" => {
+        RpcMethod::ObjectsRename => {
             let input: ObjectsRenameInput = parse_payload(payload)?;
             let profile = profile_for_id(&state, &input.profile_id)?;
             let client = to_s3_client(&profile)?;
@@ -4768,7 +4736,7 @@ async fn rpc_request(
 
             Ok(Value::Null)
         }
-        "objects:stat" => {
+        RpcMethod::ObjectsStat => {
             let input: ObjectsStatInput = parse_payload(payload)?;
             let profile = profile_for_id(&state, &input.profile_id)?;
             let client = to_s3_client(&profile)?;
@@ -4789,7 +4757,7 @@ async fn rpc_request(
             }))
         }
 
-        "transfer:upload" => {
+        RpcMethod::TransferUpload => {
             let input: UploadInput = parse_payload(payload)?;
             let bytes_total = if input.local_path.trim().is_empty() {
                 0
@@ -4821,7 +4789,7 @@ async fn rpc_request(
             )?;
             Ok(json!({ "jobId": job_id }))
         }
-        "transfer:download" => {
+        RpcMethod::TransferDownload => {
             let input: DownloadInput = parse_payload(payload)?;
             let file_name = input
                 .key
@@ -4845,7 +4813,7 @@ async fn rpc_request(
             )?;
             Ok(json!({ "jobId": job_id }))
         }
-        "transfer:pick-and-upload" => {
+        RpcMethod::TransferPickAndUpload => {
             let input: PickUploadInput = parse_payload(payload)?;
             let Some(paths) = FileDialog::new().pick_files() else {
                 return Err("No files selected".to_string());
@@ -4884,7 +4852,7 @@ async fn rpc_request(
 
             Ok(json!({ "jobIds": job_ids }))
         }
-        "transfer:pick-and-upload-folder" => {
+        RpcMethod::TransferPickAndUploadFolder => {
             let input: PickUploadInput = parse_payload(payload)?;
             let Some(dir_path) = FileDialog::new().pick_folder() else {
                 return Err("No folder selected".to_string());
@@ -4937,7 +4905,7 @@ async fn rpc_request(
 
             Ok(json!({ "jobIds": job_ids }))
         }
-        "transfer:download-folder" => {
+        RpcMethod::TransferDownloadFolder => {
             let input: DownloadFolderInput = parse_payload(payload)?;
             let profile = profile_for_id(&state, &input.profile_id)?;
             let client = to_s3_client(&profile)?;
@@ -4993,7 +4961,7 @@ async fn rpc_request(
 
             Ok(json!({ "jobIds": job_ids }))
         }
-        "transfer:copy" => {
+        RpcMethod::TransferCopy => {
             let input: CopyInput = parse_payload(payload)?;
             let file_name = input
                 .source_key
@@ -5022,7 +4990,7 @@ async fn rpc_request(
             )?;
             Ok(json!({ "jobId": job_id }))
         }
-        "transfer:move" => {
+        RpcMethod::TransferMove => {
             let input: CopyInput = parse_payload(payload)?;
             let file_name = input
                 .source_key
@@ -5051,7 +5019,7 @@ async fn rpc_request(
             )?;
             Ok(json!({ "jobId": job_id }))
         }
-        "transfer:cross-bucket" => {
+        RpcMethod::TransferCrossBucket => {
             let input: CrossBucketInput = parse_payload(payload)?;
             let source_profile = profile_for_id(&state, &input.source_profile_id)?;
             let source_client = to_s3_client(&source_profile)?;
@@ -5134,7 +5102,7 @@ async fn rpc_request(
 
             Ok(json!({ "jobIds": job_ids }))
         }
-        "transfer:download-archive" => {
+        RpcMethod::TransferDownloadArchive => {
             let input: DownloadArchiveInput = parse_payload(payload)?;
             let profile = profile_for_id(&state, &input.profile_id)?;
             let client = to_s3_client(&profile)?;
@@ -5263,19 +5231,19 @@ async fn rpc_request(
             Ok(json!({ "jobId": job_id }))
         }
 
-        "sync:preview" => {
+        RpcMethod::SyncPreview => {
             let input: SyncInput = parse_payload(payload)?;
             let diff = generate_sync_diff(&state, &input).await?;
             Ok(json!(diff))
         }
-        "sync:execute" => {
+        RpcMethod::SyncExecute => {
             let input: SyncInput = parse_payload(payload)?;
             let diff = generate_sync_diff(&state, &input).await?;
             let job_id = execute_sync_diff(&app, &input, &diff)?;
             Ok(json!({ "jobId": job_id }))
         }
 
-        "jobs:list" => {
+        RpcMethod::JobsList => {
             let jobs_runtime = lock(&state.jobs)?;
             let mut seen = HashSet::new();
             let mut list = Vec::new();
@@ -5292,12 +5260,12 @@ async fn rpc_request(
             }
             Ok(json!(list))
         }
-        "jobs:cancel" => {
+        RpcMethod::JobsCancel => {
             let input: JobIdInput = parse_payload(payload)?;
             cancel_job(&app, &input.job_id);
             Ok(Value::Null)
         }
-        "jobs:clear" => {
+        RpcMethod::JobsClear => {
             let mut jobs_runtime = lock(&state.jobs)?;
             let removable: Vec<String> = jobs_runtime
                 .jobs
@@ -5329,11 +5297,11 @@ async fn rpc_request(
             persist_job_history_snapshot(&app);
             Ok(Value::Null)
         }
-        "jobs:get-concurrency" => {
+        RpcMethod::JobsGetConcurrency => {
             let jobs_runtime = lock(&state.jobs)?;
             Ok(json!({ "concurrency": jobs_runtime.concurrency }))
         }
-        "jobs:set-concurrency" => {
+        RpcMethod::JobsSetConcurrency => {
             let input: JobConcurrencyInput = parse_payload(payload)?;
             {
                 let mut jobs_runtime = lock(&state.jobs)?;
@@ -5344,14 +5312,14 @@ async fn rpc_request(
             Ok(json!({ "concurrency": jobs_runtime.concurrency }))
         }
 
-        "favorites:load" => Ok(json!(load_favorites_from_disk())),
-        "favorites:save" => {
+        RpcMethod::FavoritesLoad => Ok(json!(load_favorites_from_disk())),
+        RpcMethod::FavoritesSave => {
             let input: FavoritesSaveInput = parse_payload(payload)?;
             save_favorites_to_disk(&input.favorites)?;
             Ok(Value::Null)
         }
 
-        "share:generate" => {
+        RpcMethod::ShareGenerate => {
             let input: ShareGenerateInput = parse_payload(payload)?;
             let ttl = input.expires_in.clamp(1, 604_800);
             let expires_at = (Utc::now() + Duration::seconds(ttl)).to_rfc3339();
@@ -5376,8 +5344,8 @@ async fn rpc_request(
             }))
         }
 
-        "folder-sync:list-rules" => Ok(json!(load_folder_sync_rules_records())),
-        "folder-sync:add-rule" => {
+        RpcMethod::FolderSyncListRules => Ok(json!(load_folder_sync_rules_records())),
+        RpcMethod::FolderSyncAddRule => {
             let mut rule = payload
                 .as_object()
                 .cloned()
@@ -5423,7 +5391,7 @@ async fn rpc_request(
             refresh_tray_menu(&app);
             Ok(json!(rule_record))
         }
-        "folder-sync:update-rule" => {
+        RpcMethod::FolderSyncUpdateRule => {
             let update = payload
                 .as_object()
                 .cloned()
@@ -5459,7 +5427,7 @@ async fn rpc_request(
 
             Err("Rule not found".to_string())
         }
-        "folder-sync:remove-rule" => {
+        RpcMethod::FolderSyncRemoveRule => {
             let input: IdInput = parse_payload(payload)?;
             let mut rules = load_folder_sync_rules_records();
             let before = rules.len();
@@ -5480,7 +5448,7 @@ async fn rpc_request(
             refresh_tray_menu(&app);
             Ok(Value::Null)
         }
-        "folder-sync:toggle-rule" => {
+        RpcMethod::FolderSyncToggleRule => {
             let input: FolderSyncToggleInput = parse_payload(payload)?;
             let mut rules = load_folder_sync_rules_records();
 
@@ -5509,34 +5477,34 @@ async fn rpc_request(
 
             Err("Rule not found".to_string())
         }
-        "folder-sync:sync-now" => {
+        RpcMethod::FolderSyncSyncNow => {
             let input: IdInput = parse_payload(payload)?;
             trigger_folder_sync_now(&app, &input.id)?;
             refresh_tray_menu(&app);
             Ok(Value::Null)
         }
-        "folder-sync:start-all" => {
+        RpcMethod::FolderSyncStartAll => {
             start_all_folder_sync_rules(&app)?;
             refresh_tray_menu(&app);
             Ok(Value::Null)
         }
-        "folder-sync:stop-all" => {
+        RpcMethod::FolderSyncStopAll => {
             stop_all_folder_sync_rules(&app);
             refresh_tray_menu(&app);
             Ok(Value::Null)
         }
-        "folder-sync:pause-all" => {
+        RpcMethod::FolderSyncPauseAll => {
             pause_all_folder_sync_rules(&app);
             refresh_tray_menu(&app);
             Ok(Value::Null)
         }
-        "folder-sync:resume-all" => {
+        RpcMethod::FolderSyncResumeAll => {
             resume_all_folder_sync_rules(&app);
             refresh_tray_menu(&app);
             Ok(Value::Null)
         }
-        "folder-sync:get-status" => Ok(json!(folder_sync_statuses_snapshot(&app))),
-        "folder-sync:preview" => {
+        RpcMethod::FolderSyncGetStatus => Ok(json!(folder_sync_statuses_snapshot(&app))),
+        RpcMethod::FolderSyncPreview => {
             let input: IdInput = parse_payload(payload)?;
             let rule = get_folder_sync_rule(&input.id)?;
             let profile = profile_for_id(&state, &rule.profile_id)?;
@@ -5545,14 +5513,14 @@ async fn rpc_request(
             let diff = generate_folder_sync_diff_for_rule(&rule, &client, &known_records).await?;
             Ok(json!(diff))
         }
-        "folder-sync:pick-folder" => {
+        RpcMethod::FolderSyncPickFolder => {
             let path = FileDialog::new()
                 .pick_folder()
                 .map(|path| path.to_string_lossy().to_string());
             Ok(json!({ "path": path }))
         }
 
-        "updater:check" => {
+        RpcMethod::UpdaterCheck => {
             let (cached_version, cached_ready) = updater_cached_state(&app);
             let current_version = env!("CARGO_PKG_VERSION").to_string();
 
@@ -5605,15 +5573,15 @@ async fn rpc_request(
                 }
             }
         }
-        "updater:download" => {
+        RpcMethod::UpdaterDownload => {
             let success = download_update_if_available(&app).await?;
             Ok(json!({ "success": success }))
         }
-        "updater:apply" => {
+        RpcMethod::UpdaterApply => {
             apply_downloaded_update(&app).await?;
             Ok(Value::Null)
         }
-        "updater:local-info" => Ok(json!({
+        RpcMethod::UpdaterLocalInfo => Ok(json!({
             "version": env!("CARGO_PKG_VERSION"),
             "hash": "",
             "baseUrl": updater_local_info_base_url(),
@@ -5621,8 +5589,6 @@ async fn rpc_request(
             "name": "object0",
             "identifier": "dev.object0.app"
         })),
-
-        _ => Err(format!("RPC method not implemented yet: {method}")),
     }
 }
 
