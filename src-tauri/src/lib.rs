@@ -4104,12 +4104,12 @@ fn handle_tray_menu_action(app: &AppHandle, action_id: &str) {
 async fn rpc_request(
     app: AppHandle,
     state: State<'_, AppState>,
-    method_name: String,
+    method: String,
     payload: Option<Value>,
 ) -> Result<Value, String> {
     let payload = payload_or_null(payload);
-    let method = RpcMethod::parse(&method_name)
-        .ok_or_else(|| format!("RPC method not implemented yet: {method_name}"))?;
+    let method = RpcMethod::parse(&method)
+        .ok_or_else(|| format!("RPC method not implemented yet: {method}"))?;
 
     match method {
         RpcMethod::VaultStatus => {
