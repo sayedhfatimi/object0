@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import type { ShareHistoryEntry } from "../../shared/s3.types";
+import { useUIStore } from "./useUIStore";
 
 interface ShareHistoryState {
   entries: ShareHistoryEntry[];
@@ -18,6 +19,10 @@ export const useShareHistoryStore = create<ShareHistoryState>()(
       entries: [],
 
       addEntry: (entry) => {
+        if (!useUIStore.getState().persistShareHistory) {
+          return;
+        }
+
         const newEntry: ShareHistoryEntry = {
           ...entry,
           id: crypto.randomUUID(),

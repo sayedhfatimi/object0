@@ -32,6 +32,7 @@ interface UIState {
   shareHistoryOpen: boolean;
   settingsOpen: boolean;
   desktopNotifications: boolean;
+  persistShareHistory: boolean;
   jobConcurrency: number;
   sidebarWidth: number;
   detailPanelWidth: number;
@@ -55,6 +56,7 @@ interface UIState {
   setShareHistoryOpen: (open: boolean) => void;
   setSettingsOpen: (open: boolean) => void;
   setDesktopNotifications: (on: boolean) => void;
+  setPersistShareHistory: (on: boolean) => void;
   setJobConcurrency: (n: number) => void;
   setSidebarWidth: (width: number) => void;
   setDetailPanelWidth: (width: number) => void;
@@ -80,6 +82,7 @@ export const useUIStore = create<UIState>()(
       shareHistoryOpen: false,
       settingsOpen: false,
       desktopNotifications: true,
+      persistShareHistory: false,
       jobConcurrency: 3,
       sidebarWidth: 256,
       detailPanelWidth: 320,
@@ -118,6 +121,7 @@ export const useUIStore = create<UIState>()(
       setShareHistoryOpen: (open) => set({ shareHistoryOpen: open }),
       setSettingsOpen: (open) => set({ settingsOpen: open }),
       setDesktopNotifications: (on) => set({ desktopNotifications: on }),
+      setPersistShareHistory: (on) => set({ persistShareHistory: on }),
       setJobConcurrency: (n) => set({ jobConcurrency: n }),
       setSidebarWidth: (width) => set({ sidebarWidth: width }),
       setDetailPanelWidth: (width) => set({ detailPanelWidth: width }),
@@ -133,6 +137,7 @@ export const useUIStore = create<UIState>()(
         viewMode: state.viewMode,
         pageSize: state.pageSize,
         desktopNotifications: state.desktopNotifications,
+        persistShareHistory: state.persistShareHistory,
         jobConcurrency: state.jobConcurrency,
         sidebarWidth: state.sidebarWidth,
         detailPanelWidth: state.detailPanelWidth,

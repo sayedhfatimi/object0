@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { CONCURRENCY_OPTIONS, PAGE_SIZES } from "../../lib/constants";
 import { rpcCall } from "../../lib/rpc-client";
+import { useShareHistoryStore } from "../../stores/useShareHistoryStore";
 import { useThemeStore } from "../../stores/useThemeStore";
 import { useUIStore } from "../../stores/useUIStore";
 
@@ -13,8 +14,11 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
   const setPageSize = useUIStore((s) => s.setPageSize);
   const desktopNotifications = useUIStore((s) => s.desktopNotifications);
   const setDesktopNotifications = useUIStore((s) => s.setDesktopNotifications);
+  const persistShareHistory = useUIStore((s) => s.persistShareHistory);
+  const setPersistShareHistory = useUIStore((s) => s.setPersistShareHistory);
   const jobConcurrency = useUIStore((s) => s.jobConcurrency);
   const setJobConcurrency = useUIStore((s) => s.setJobConcurrency);
+  const clearShareHistory = useShareHistoryStore((s) => s.clearAll);
   const [hasStoredPassphrase, setHasStoredPassphrase] = useState<
     boolean | null
   >(null);
@@ -195,6 +199,35 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
                   className="toggle toggle-primary toggle-sm"
                   checked={desktopNotifications}
                   onChange={(e) => setDesktopNotifications(e.target.checked)}
+                />
+              </label>
+            </div>
+          </section>
+
+          {/* Privacy */}
+          <section>
+            <h4 className="mb-3 font-semibold text-base-content/50 text-xs uppercase tracking-wider">
+              Privacy
+            </h4>
+            <div className="flex flex-col gap-3">
+              <label className="flex cursor-pointer items-center justify-between">
+                <div>
+                  <span className="text-sm">Persist Share History</span>
+                  <p className="text-[10px] text-base-content/40">
+                    Save generated share URLs locally between app restarts
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  className="toggle toggle-primary toggle-sm"
+                  checked={persistShareHistory}
+                  onChange={(e) => {
+                    const enabled = e.target.checked;
+                    setPersistShareHistory(enabled);
+                    if (!enabled) {
+                      clearShareHistory();
+                    }
+                  }}
                 />
               </label>
             </div>

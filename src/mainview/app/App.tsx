@@ -18,6 +18,7 @@ import {
 import { rpcCall } from "../lib/rpc-client";
 import { useFavoritesStore } from "../stores/useFavoritesStore";
 import { useFolderSyncStore } from "../stores/useFolderSyncStore";
+import { useShareHistoryStore } from "../stores/useShareHistoryStore";
 import { useThemeStore } from "../stores/useThemeStore";
 import { useUIStore } from "../stores/useUIStore";
 import { useVaultStore } from "../stores/useVaultStore";
@@ -44,6 +45,10 @@ export default function App() {
     checkStatus();
     useFavoritesStore.getState().init();
     useFolderSyncStore.getState().init();
+
+    if (!useUIStore.getState().persistShareHistory) {
+      useShareHistoryStore.getState().clearAll();
+    }
 
     // Sync persisted concurrency setting to backend
     const concurrency = useUIStore.getState().jobConcurrency;
