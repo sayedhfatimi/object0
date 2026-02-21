@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type {
   FolderSyncRule,
   FolderSyncRuleStatus,
@@ -76,11 +76,13 @@ export function FolderSyncPanel({ onClose }: { onClose: () => void }) {
   const rules = useFolderSyncStore((s) => s.rules);
   const statuses = useFolderSyncStore((s) => s.statuses);
   const errors = useFolderSyncStore((s) => s.errors);
+  const conflicts = useFolderSyncStore((s) => s.conflicts);
   const loading = useFolderSyncStore((s) => s.loading);
   const loadRules = useFolderSyncStore((s) => s.loadRules);
   const removeRule = useFolderSyncStore((s) => s.removeRule);
   const toggleRule = useFolderSyncStore((s) => s.toggleRule);
   const syncNow = useFolderSyncStore((s) => s.syncNow);
+  const clearConflicts = useFolderSyncStore((s) => s.clearConflicts);
   const pauseAll = useFolderSyncStore((s) => s.pauseAll);
   const resumeAll = useFolderSyncStore((s) => s.resumeAll);
   const getActiveCount = useFolderSyncStore((s) => s.getActiveCount);
@@ -135,6 +137,18 @@ export function FolderSyncPanel({ onClose }: { onClose: () => void }) {
 
   const activeCount = getActiveCount();
   const isCompact = folderSyncListDensity === "compact";
+  const recentConflicts = useMemo(() => conflicts.slice(0, 20), [conflicts]);
+  const conflictCountByRule = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const conflict of conflicts) {
+      counts.set(conflict.ruleId, (counts.get(conflict.ruleId) ?? 0) + 1);
+    }
+    return counts;
+  }, [conflicts]);
+  const rulesById = useMemo(
+    () => new Map(rules.map((rule) => [rule.id, rule])),
+    [rules],
+  );
 
   return (
     <div className="flex h-full flex-col">
@@ -167,6 +181,12 @@ export function FolderSyncPanel({ onClose }: { onClose: () => void }) {
             {activeCount > 0 && (
               <span className="rounded-full bg-success/20 px-1.5 py-px text-[9px] text-success tabular-nums">
                 {activeCount} active
+              </span>
+            )}
+            {conflicts.length > 0 && (
+              <span className="rounded-full bg-warning/20 px-1.5 py-px text-[9px] text-warning tabular-nums">
+                {conflicts.length} conflict
+                {conflicts.length === 1 ? "" : "s"}
               </span>
             )}
             <button
@@ -202,6 +222,17 @@ export function FolderSyncPanel({ onClose }: { onClose: () => void }) {
             </div>
             {rules.length > 0 && (
               <>
+                {conflicts.length > 0 && (
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-xs h-5 min-h-5 gap-1 px-1.5 text-[10px] text-warning/70 hover:text-warning"
+                    onClick={() => clearConflicts()}
+                    title="Clear conflict notifications"
+                  >
+                    <i className="fa-solid fa-broom text-[9px]" />
+                    Clear conflicts
+                  </button>
+                )}
                 <button
                   type="button"
                   className="btn btn-ghost btn-xs btn-square h-5 min-h-5 w-5 text-base-content/40 hover:text-success"
@@ -266,6 +297,44 @@ export function FolderSyncPanel({ onClose }: { onClose: () => void }) {
           </div>
         )}
 
+        {!loading && recentConflicts.length > 0 && (
+          <div className="border-base-300 border-b bg-warning/5 px-2.5 py-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1 text-[10px] text-warning/80">
+                <i className="fa-solid fa-triangle-exclamation text-[9px]" />
+                Recent conflicts
+              </div>
+              <button
+                type="button"
+                className="btn btn-ghost btn-xs h-5 min-h-5 px-1.5 text-[10px] text-warning/70 hover:text-warning"
+                onClick={() => clearConflicts()}
+              >
+                Clear
+              </button>
+            </div>
+            <ul className="mt-1 space-y-1">
+              {recentConflicts.map((conflict) => {
+                const rule = rulesById.get(conflict.ruleId);
+                const key = `${conflict.ruleId}:${conflict.relativePath}`;
+                const ruleName =
+                  rule?.localPath.split("/").pop() ?? conflict.ruleId;
+                return (
+                  <li
+                    key={key}
+                    className="truncate text-[10px] text-base-content/65"
+                    title={`${ruleName}: ${conflict.relativePath}`}
+                  >
+                    <i className="fa-solid fa-folder-open mr-1 text-[8px] text-warning/70" />
+                    {ruleName}
+                    <span className="mx-1 text-base-content/30">·</span>
+                    {conflict.relativePath}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+
         <AnimatePresence>
           {rules.map((rule) => {
             const state = statuses.get(rule.id);
@@ -275,6 +344,7 @@ export function FolderSyncPanel({ onClose }: { onClose: () => void }) {
             const error = errors.get(rule.id);
             const progress = state?.progress;
             const ruleName = rule.localPath.split("/").pop() || rule.localPath;
+            const ruleConflictCount = conflictCountByRule.get(rule.id) ?? 0;
 
             return (
               <motion.div
@@ -314,6 +384,16 @@ export function FolderSyncPanel({ onClose }: { onClose: () => void }) {
                       >
                         {si.label}
                       </span>
+                      {ruleConflictCount > 0 && (
+                        <span
+                          className={`ml-1 inline-flex rounded-full bg-warning/20 px-1.5 py-px text-[9px] text-warning ${
+                            isCompact ? "mt-0.5" : "mt-1"
+                          }`}
+                        >
+                          {ruleConflictCount} conflict
+                          {ruleConflictCount === 1 ? "" : "s"}
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -445,6 +525,21 @@ export function FolderSyncPanel({ onClose }: { onClose: () => void }) {
                       />
                       {rule.enabled ? "Pause" : "Enable"}
                     </button>
+                    {ruleConflictCount > 0 && (
+                      <button
+                        type="button"
+                        className={`btn btn-ghost btn-xs gap-1 px-2 text-warning/80 hover:text-warning ${
+                          isCompact
+                            ? "h-5 min-h-5 text-[9px]"
+                            : "h-6 min-h-6 text-[10px]"
+                        }`}
+                        onClick={() => clearConflicts(rule.id)}
+                        title="Clear conflicts for this rule"
+                      >
+                        <i className="fa-solid fa-broom text-[9px]" />
+                        Clear conflicts
+                      </button>
+                    )}
                     <div className="ml-auto flex items-center gap-0.5">
                       <button
                         type="button"

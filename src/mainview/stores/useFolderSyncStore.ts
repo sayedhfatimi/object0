@@ -12,6 +12,8 @@ import type {
 } from "../../shared/folder-sync.types";
 import { onEvent, rpcCall } from "../lib/rpc-client";
 
+const MAX_CONFLICTS = 200;
+
 interface FolderSyncStore {
   // ── Data ──
   rules: FolderSyncRule[];
@@ -38,6 +40,7 @@ interface FolderSyncStore {
   refreshStatuses: () => Promise<void>;
   previewRule: (id: string) => Promise<void>;
   clearPreview: () => void;
+  clearConflicts: (ruleId?: string) => void;
   pickFolder: () => Promise<string | null>;
   startAll: () => Promise<void>;
   stopAll: () => Promise<void>;
@@ -92,7 +95,6 @@ export const useFolderSyncStore = create<FolderSyncStore>()((set, get) => ({
     onEvent("folder-sync:conflict", (data: FolderSyncConflictEvent) => {
       set((state) => ({
         conflicts: [
-          ...state.conflicts,
           {
             ruleId: data.ruleId,
             relativePath: data.relativePath,
@@ -102,7 +104,14 @@ export const useFolderSyncStore = create<FolderSyncStore>()((set, get) => ({
             remoteLastModified: data.remoteLastModified,
             remoteEtag: "",
           },
-        ],
+          ...state.conflicts.filter(
+            (conflict) =>
+              !(
+                conflict.ruleId === data.ruleId &&
+                conflict.relativePath === data.relativePath
+              ),
+          ),
+        ].slice(0, MAX_CONFLICTS),
       }));
     });
 
@@ -143,6 +152,12 @@ export const useFolderSyncStore = create<FolderSyncStore>()((set, get) => ({
     await rpcCall("folder-sync:remove-rule", { id });
     set((state) => ({
       rules: state.rules.filter((r) => r.id !== id),
+      conflicts: state.conflicts.filter((conflict) => conflict.ruleId !== id),
+      errors: (() => {
+        const m = new Map(state.errors);
+        m.delete(id);
+        return m;
+      })(),
       statuses: (() => {
         const m = new Map(state.statuses);
         m.delete(id);
@@ -178,6 +193,13 @@ export const useFolderSyncStore = create<FolderSyncStore>()((set, get) => ({
   },
 
   clearPreview: () => set({ previewDiff: null, previewRuleId: null }),
+
+  clearConflicts: (ruleId) =>
+    set((state) => ({
+      conflicts: ruleId
+        ? state.conflicts.filter((conflict) => conflict.ruleId !== ruleId)
+        : [],
+    })),
 
   pickFolder: async () => {
     const result = await rpcCall("folder-sync:pick-folder", undefined);
