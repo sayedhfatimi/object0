@@ -1,24 +1,59 @@
 import { AnimatePresence, motion } from "framer-motion";
-import type { ReactNode } from "react";
+import { lazy, type ReactNode, Suspense } from "react";
 import { transitions } from "../../lib/animations";
 import { useTabStore } from "../../stores/useTabStore";
 import { useUIStore } from "../../stores/useUIStore";
-import { CommandPalette } from "../common/CommandPalette";
 import { ResizeHandle } from "../common/ResizeHandle";
-import { JobPanel } from "../jobs/JobPanel";
 import { DetailPanel } from "../objects/DetailPanel";
-import { SettingsPanel } from "../settings/SettingsPanel";
-import { ShareDialog } from "../share/ShareDialog";
-import { ShareHistory } from "../share/ShareHistory";
-import { FolderSyncPanel } from "../sync/FolderSyncPanel";
-import { SyncDialog } from "../sync/SyncDialog";
-import { SyncTypeChooserDialog } from "../sync/SyncTypeChooserDialog";
-import { TransferDialog } from "../transfer/TransferDialog";
 import { ContentArea } from "./ContentArea";
 import { Sidebar } from "./Sidebar";
 import { StatusBar } from "./StatusBar";
 import { TabBar } from "./TabBar";
 import { TopBar } from "./TopBar";
+
+const JobPanel = lazy(() =>
+  import("../jobs/JobPanel").then((module) => ({ default: module.JobPanel })),
+);
+const SettingsPanel = lazy(() =>
+  import("../settings/SettingsPanel").then((module) => ({
+    default: module.SettingsPanel,
+  })),
+);
+const ShareHistory = lazy(() =>
+  import("../share/ShareHistory").then((module) => ({
+    default: module.ShareHistory,
+  })),
+);
+const FolderSyncPanel = lazy(() =>
+  import("../sync/FolderSyncPanel").then((module) => ({
+    default: module.FolderSyncPanel,
+  })),
+);
+const SyncDialog = lazy(() =>
+  import("../sync/SyncDialog").then((module) => ({
+    default: module.SyncDialog,
+  })),
+);
+const SyncTypeChooserDialog = lazy(() =>
+  import("../sync/SyncTypeChooserDialog").then((module) => ({
+    default: module.SyncTypeChooserDialog,
+  })),
+);
+const TransferDialog = lazy(() =>
+  import("../transfer/TransferDialog").then((module) => ({
+    default: module.TransferDialog,
+  })),
+);
+const ShareDialog = lazy(() =>
+  import("../share/ShareDialog").then((module) => ({
+    default: module.ShareDialog,
+  })),
+);
+const CommandPalette = lazy(() =>
+  import("../common/CommandPalette").then((module) => ({
+    default: module.CommandPalette,
+  })),
+);
 
 interface RightRailPanelProps {
   open: boolean;
@@ -156,7 +191,9 @@ export function MainLayout() {
               ariaLabel="Share history"
               width={288}
             >
-              <ShareHistory onClose={() => setShareHistoryOpen(false)} />
+              <Suspense fallback={null}>
+                <ShareHistory onClose={() => setShareHistoryOpen(false)} />
+              </Suspense>
             </RightRailPanel>
             <RightRailPanel
               open={settingsOpen}
@@ -164,7 +201,9 @@ export function MainLayout() {
               ariaLabel="Settings"
               width={288}
             >
-              <SettingsPanel onClose={() => setSettingsOpen(false)} />
+              <Suspense fallback={null}>
+                <SettingsPanel onClose={() => setSettingsOpen(false)} />
+              </Suspense>
             </RightRailPanel>
             <RightRailPanel
               open={folderSyncPanelOpen}
@@ -172,11 +211,19 @@ export function MainLayout() {
               ariaLabel="Live Folder Sync"
               width={320}
             >
-              <FolderSyncPanel onClose={() => setFolderSyncPanelOpen(false)} />
+              <Suspense fallback={null}>
+                <FolderSyncPanel
+                  onClose={() => setFolderSyncPanelOpen(false)}
+                />
+              </Suspense>
             </RightRailPanel>
           </div>
           <AnimatePresence>
-            {jobPanelOpen && <JobPanel key="job-panel" />}
+            {jobPanelOpen && (
+              <Suspense fallback={null}>
+                <JobPanel key="job-panel" />
+              </Suspense>
+            )}
           </AnimatePresence>
         </main>
       </div>
@@ -184,11 +231,21 @@ export function MainLayout() {
       <footer>
         <StatusBar />
       </footer>
-      <SyncDialog />
-      <SyncTypeChooserDialog />
-      <TransferDialog />
-      <ShareDialog />
-      <CommandPalette />
+      <Suspense fallback={null}>
+        <SyncDialog />
+      </Suspense>
+      <Suspense fallback={null}>
+        <SyncTypeChooserDialog />
+      </Suspense>
+      <Suspense fallback={null}>
+        <TransferDialog />
+      </Suspense>
+      <Suspense fallback={null}>
+        <ShareDialog />
+      </Suspense>
+      <Suspense fallback={null}>
+        <CommandPalette />
+      </Suspense>
     </div>
   );
 }
