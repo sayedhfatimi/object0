@@ -135,33 +135,64 @@ export function ProfileForm({ onDone, editProfile }: ProfileFormProps) {
   };
 
   const handleSave = async () => {
+    const trimmedName = name.trim();
+    const trimmedAccessKeyId = accessKeyId.trim();
+    const trimmedSecretAccessKey = secretAccessKey.trim();
+    const trimmedEndpoint = endpoint.trim();
+    const trimmedRegion = region.trim();
+    const trimmedDefaultBucket = defaultBucket.trim();
+
+    if (!trimmedName) {
+      toast.error("Profile name is required");
+      return;
+    }
+
+    if (!isEditing && (!trimmedAccessKeyId || !trimmedSecretAccessKey)) {
+      toast.error("Access key and secret key are required");
+      return;
+    }
+
+    if (
+      isEditing &&
+      Boolean(trimmedAccessKeyId) !== Boolean(trimmedSecretAccessKey)
+    ) {
+      toast.error(
+        "Provide both access key and secret key to rotate credentials",
+      );
+      return;
+    }
+
     setSaving(true);
     try {
       if (isEditing) {
         await rpcCall("profile:update", {
           id: editProfile.id,
           provider,
-          name,
-          accessKeyId,
-          secretAccessKey,
-          endpoint: needsEndpoint ? endpoint : undefined,
-          region,
-          defaultBucket: defaultBucket || undefined,
+          name: trimmedName,
+          ...(trimmedAccessKeyId ? { accessKeyId: trimmedAccessKeyId } : {}),
+          ...(trimmedSecretAccessKey
+            ? { secretAccessKey: trimmedSecretAccessKey }
+            : {}),
+          endpoint:
+            needsEndpoint && trimmedEndpoint ? trimmedEndpoint : undefined,
+          region: trimmedRegion,
+          defaultBucket: trimmedDefaultBucket || undefined,
         });
         await refreshProfiles();
-        toast.success(`Profile "${name}" updated`);
+        toast.success(`Profile "${trimmedName}" updated`);
       } else {
         await rpcCall("profile:add", {
           provider,
-          name,
-          accessKeyId,
-          secretAccessKey,
-          endpoint: needsEndpoint ? endpoint : undefined,
-          region,
-          defaultBucket: defaultBucket || undefined,
+          name: trimmedName,
+          accessKeyId: trimmedAccessKeyId,
+          secretAccessKey: trimmedSecretAccessKey,
+          endpoint:
+            needsEndpoint && trimmedEndpoint ? trimmedEndpoint : undefined,
+          region: trimmedRegion,
+          defaultBucket: trimmedDefaultBucket || undefined,
         });
         await refreshProfiles();
-        toast.success(`Profile "${name}" added`);
+        toast.success(`Profile "${trimmedName}" added`);
       }
       onDone();
     } catch (err: unknown) {
@@ -217,6 +248,11 @@ export function ProfileForm({ onDone, editProfile }: ProfileFormProps) {
         {hints?.accessKey && (
           <p className="fieldset-label text-xs opacity-50">{hints.accessKey}</p>
         )}
+        {isEditing && (
+          <p className="fieldset-label text-xs opacity-50">
+            Leave blank to keep the current value
+          </p>
+        )}
       </fieldset>
 
       {/* Secret Key */}
@@ -232,6 +268,11 @@ export function ProfileForm({ onDone, editProfile }: ProfileFormProps) {
         />
         {hints?.secretKey && (
           <p className="fieldset-label text-xs opacity-50">{hints.secretKey}</p>
+        )}
+        {isEditing && (
+          <p className="fieldset-label text-xs opacity-50">
+            Leave blank to keep the current value
+          </p>
         )}
       </fieldset>
 
@@ -320,7 +361,7 @@ export function ProfileForm({ onDone, editProfile }: ProfileFormProps) {
           onClick={handleSave}
           disabled={
             saving ||
-            !name ||
+            !name.trim() ||
             (!isEditing && (!accessKeyId || !secretAccessKey))
           }
         >

@@ -27,6 +27,16 @@ import type {
   UploadReq,
 } from "./s3.types";
 
+type ProfileUpdateReq = Omit<
+  ProfileInput,
+  "accessKeyId" | "secretAccessKey" | "sessionToken"
+> & {
+  id: string;
+  accessKeyId?: string;
+  secretAccessKey?: string;
+  sessionToken?: string | null;
+};
+
 export type KeychainUnlockFailureReason =
   | "vault_missing"
   | "no_stored_passphrase"
@@ -106,7 +116,7 @@ export interface RPCSchema {
   "profile:list": { req: undefined; res: ProfileInfo[] };
   "profile:add": { req: ProfileInput; res: ProfileInfo };
   "profile:update": {
-    req: ProfileInput & { id: string };
+    req: ProfileUpdateReq;
     res: ProfileInfo;
   };
   "profile:remove": { req: { id: string }; res: undefined };

@@ -549,9 +549,9 @@ struct ProfileUpdateInput {
     id: String,
     name: String,
     provider: String,
-    access_key_id: String,
-    secret_access_key: String,
-    session_token: Option<String>,
+    access_key_id: Option<String>,
+    secret_access_key: Option<String>,
+    session_token: Option<Option<String>>,
     endpoint: Option<String>,
     region: Option<String>,
     default_bucket: Option<String>,
@@ -4503,13 +4503,28 @@ async fn rpc_request(
 
             profile.name = input.name;
             profile.provider = input.provider;
-            profile.access_key_id = input.access_key_id;
-            profile.secret_access_key = input.secret_access_key;
-            profile.session_token = input.session_token;
+            if let Some(access_key_id) = input.access_key_id {
+                if !access_key_id.trim().is_empty() {
+                    profile.access_key_id = access_key_id;
+                }
+            }
+            if let Some(secret_access_key) = input.secret_access_key {
+                if !secret_access_key.trim().is_empty() {
+                    profile.secret_access_key = secret_access_key;
+                }
+            }
+            if let Some(session_token) = input.session_token {
+                profile.session_token = session_token.filter(|value| !value.trim().is_empty());
+            }
             profile.endpoint = input.endpoint;
             profile.region = input.region;
             profile.default_bucket = input.default_bucket;
             profile.updated_at = now_iso();
+
+            if profile.access_key_id.trim().is_empty() || profile.secret_access_key.trim().is_empty()
+            {
+                return Err("Profile credentials cannot be empty".to_string());
+            }
 
             let profile_info = to_profile_info(profile);
             save_vault(&path, &vault)?;
