@@ -9,7 +9,7 @@
 Manage objects across AWS S3, Cloudflare R2, DigitalOcean Spaces, MinIO, Backblaze B2, Google Cloud Storage, and any S3-compatible provider from a single, fast, cross-platform desktop app.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.1.0-green.svg)](https://github.com/sayedhfatimi/object0/releases)
+[![Version](https://img.shields.io/badge/version-1.2.0-green.svg)](https://github.com/sayedhfatimi/object0/releases)
 [![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey.svg)](#installation)
 
 Built with [Tauri](https://tauri.app) · [Rust](https://www.rust-lang.org) · [Bun](https://bun.sh) · [React](https://react.dev) · [Tailwind CSS](https://tailwindcss.com) · [daisyUI](https://daisyui.com) · [Zustand](https://zustand.docs.pmnd.rs)
