@@ -35,7 +35,6 @@ interface UIState {
   persistShareHistory: boolean;
   jobConcurrency: number;
   sidebarWidth: number;
-  detailPanelWidth: number;
   folderSyncPanelOpen: boolean;
   folderSyncListDensity: FolderSyncListDensity;
 
@@ -59,7 +58,6 @@ interface UIState {
   setPersistShareHistory: (on: boolean) => void;
   setJobConcurrency: (n: number) => void;
   setSidebarWidth: (width: number) => void;
-  setDetailPanelWidth: (width: number) => void;
   setFolderSyncPanelOpen: (open: boolean) => void;
   setFolderSyncListDensity: (density: FolderSyncListDensity) => void;
 }
@@ -85,7 +83,6 @@ export const useUIStore = create<UIState>()(
       persistShareHistory: false,
       jobConcurrency: 3,
       sidebarWidth: 256,
-      detailPanelWidth: 320,
       folderSyncPanelOpen: false,
       folderSyncListDensity: "comfortable",
 
@@ -124,7 +121,6 @@ export const useUIStore = create<UIState>()(
       setPersistShareHistory: (on) => set({ persistShareHistory: on }),
       setJobConcurrency: (n) => set({ jobConcurrency: n }),
       setSidebarWidth: (width) => set({ sidebarWidth: width }),
-      setDetailPanelWidth: (width) => set({ detailPanelWidth: width }),
       setFolderSyncPanelOpen: (open) => set({ folderSyncPanelOpen: open }),
       setFolderSyncListDensity: (density) =>
         set({ folderSyncListDensity: density }),
@@ -140,7 +136,6 @@ export const useUIStore = create<UIState>()(
         persistShareHistory: state.persistShareHistory,
         jobConcurrency: state.jobConcurrency,
         sidebarWidth: state.sidebarWidth,
-        detailPanelWidth: state.detailPanelWidth,
         syncEntryPreference: state.syncEntryPreference,
         folderSyncListDensity: state.folderSyncListDensity,
       }),
