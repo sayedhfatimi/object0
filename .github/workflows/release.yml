@@ -21,7 +21,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -60,7 +60,7 @@ jobs:
 
       - name: Create or update GitHub release
         id: upsert_release
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           RELEASE_TAG: ${{ steps.tag.outputs.tag }}
         with:
@@ -155,10 +155,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
 
@@ -202,8 +202,7 @@ jobs:
           releaseId: ${{ needs.release.outputs.release_id }}
           args: ${{ matrix.args }}
           assetNamePattern: "object0_[version]_${{ matrix.asset_os }}_${{ matrix.asset_arch }}_${{ matrix.asset_kind }}[ext]"
-          uploadUpdaterJson: ${{ matrix.upload_updater }}
-          uploadUpdaterSignatures: ${{ matrix.upload_updater }}
+          includeUpdaterJson: ${{ matrix.upload_updater }}
 
   publish-standalone-binaries:
     needs:
@@ -235,10 +234,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
 
@@ -283,8 +282,7 @@ jobs:
           args: ${{ matrix.args }}
           uploadPlainBinary: true
           assetNamePattern: "object0_[version]_${{ matrix.asset_os }}_${{ matrix.asset_arch }}_standalone[ext]"
-          uploadUpdaterJson: false
-          uploadUpdaterSignatures: false
+          includeUpdaterJson: false
 
   publish-aur:
     needs:
@@ -295,7 +293,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup AUR SSH key
         env:
