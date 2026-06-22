@@ -31,5 +31,13 @@
     "parser": {
       "tailwindDirectives": true
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["src/mainview/components/ui/**"],
+      "linter": {
+        "enabled": false
+      }
+    }
+  ]
 }
