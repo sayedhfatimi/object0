@@ -21,7 +21,6 @@
     "tauri": "tauri"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-free": "^7.1.0",
     "@tanstack/react-virtual": "^3.13.18",
     "@tauri-apps/api": "^2.10.1",
     "@tauri-apps/plugin-opener": "^2.5.3",
@@ -39,7 +38,6 @@
     "@types/react": "^19.2.13",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.4",
-    "daisyui": "^5.5.18",
     "tailwindcss": "^4.1.18",
     "typescript": "~5.9.3",
     "vite": "^7.3.1"
