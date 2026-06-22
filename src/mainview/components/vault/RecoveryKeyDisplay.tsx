@@ -1,5 +1,15 @@
 import { useState } from "react";
-import { Modal } from "../common/Modal";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { IconKey, IconCheck, IconCopy, IconDownload } from "@/lib/icons";
 
 interface RecoveryKeyDisplayProps {
   recoveryKey: string;
@@ -35,70 +45,80 @@ export function RecoveryKeyDisplay({
   };
 
   return (
-    <Modal
-      open={true}
-      onClose={() => {}}
-      title=""
-      actions={
-        <button
-          type="button"
-          className="btn btn-primary w-full"
-          disabled={!confirmed}
-          onClick={onDone}
-        >
-          I've saved my recovery key
-        </button>
-      }
-    >
-      <div className="space-y-4">
-        <div className="text-center">
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-warning/20">
-            <i className="fa-solid fa-key text-2xl text-warning" />
+    <Dialog open={true} onOpenChange={() => {}}>
+      <DialogContent showCloseButton={false}>
+        <DialogHeader>
+          <DialogTitle className="sr-only">Save Your Recovery Key</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div className="text-center">
+            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-warning/20">
+              <IconKey className="size-6 text-warning" />
+            </div>
+            <h3 className="font-bold text-lg">Save Your Recovery Key</h3>
+            <p className="mt-1 text-muted-foreground text-sm">
+              This key is the only way to recover your vault if you forget your
+              passphrase. Store it somewhere safe — it won't be shown again.
+            </p>
           </div>
-          <h3 className="font-bold text-lg">Save Your Recovery Key</h3>
-          <p className="mt-1 text-base-content/60 text-sm">
-            This key is the only way to recover your vault if you forget your
-            passphrase. Store it somewhere safe — it won't be shown again.
-          </p>
+
+          <div className="rounded-lg border border-border bg-background p-4">
+            <code className="block select-all text-center font-mono text-lg tracking-wider">
+              {recoveryKey}
+            </code>
+          </div>
+
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="flex-1"
+              onClick={handleCopy}
+            >
+              {copied ? (
+                <IconCheck className="size-4 mr-1" />
+              ) : (
+                <IconCopy className="size-4 mr-1" />
+              )}
+              {copied ? "Copied!" : "Copy"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="flex-1"
+              onClick={handleDownload}
+            >
+              <IconDownload className="size-4 mr-1" />
+              Download
+            </Button>
+          </div>
+
+          <div className="flex cursor-pointer items-center gap-3 rounded-lg border border-border p-3">
+            <Checkbox
+              id="recovery-confirmed"
+              checked={confirmed}
+              onCheckedChange={(v) => setConfirmed(!!v)}
+            />
+            <Label htmlFor="recovery-confirmed" className="text-sm font-normal cursor-pointer">
+              I've saved this recovery key in a safe place
+            </Label>
+          </div>
         </div>
 
-        <div className="rounded-lg border border-base-300 bg-base-100 p-4">
-          <code className="block select-all text-center font-mono text-lg tracking-wider">
-            {recoveryKey}
-          </code>
-        </div>
-
-        <div className="flex gap-2">
-          <button
+        <DialogFooter>
+          <Button
             type="button"
-            className="btn btn-outline btn-sm flex-1"
-            onClick={handleCopy}
+            className="w-full"
+            disabled={!confirmed}
+            onClick={onDone}
           >
-            <i className={`fa-solid ${copied ? "fa-check" : "fa-copy"} mr-1`} />
-            {copied ? "Copied!" : "Copy"}
-          </button>
-          <button
-            type="button"
-            className="btn btn-outline btn-sm flex-1"
-            onClick={handleDownload}
-          >
-            <i className="fa-solid fa-download mr-1" />
-            Download
-          </button>
-        </div>
-
-        <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-base-300 p-3">
-          <input
-            type="checkbox"
-            className="checkbox checkbox-sm checkbox-warning"
-            checked={confirmed}
-            onChange={(e) => setConfirmed(e.target.checked)}
-          />
-          <span className="text-sm">
-            I've saved this recovery key in a safe place
-          </span>
-        </label>
-      </div>
-    </Modal>
+            I've saved my recovery key
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

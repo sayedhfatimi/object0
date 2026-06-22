@@ -8,6 +8,17 @@ import { PROVIDERS } from "../../lib/constants";
 import { rpcCall } from "../../lib/rpc-client";
 import { useVaultStore } from "../../stores/useVaultStore";
 import { toast } from "../common/Toast";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { IconSpinner } from "@/lib/icons";
 
 interface ProfileFormProps {
   onDone: () => void;
@@ -204,160 +215,168 @@ export function ProfileForm({ onDone, editProfile }: ProfileFormProps) {
   return (
     <div className="space-y-3">
       {/* Provider */}
-      <fieldset className="fieldset">
-        <legend className="fieldset-legend text-xs">Provider</legend>
-        <select
-          id="pf-provider"
-          className="select select-sm w-full"
+      <div className="space-y-1.5">
+        <Label htmlFor="pf-provider" className="text-xs">Provider</Label>
+        <Select
           value={provider}
-          onChange={(e) => handleProviderChange(e.target.value as Provider)}
+          onValueChange={(v) => handleProviderChange(v as Provider)}
         >
-          {PROVIDERS.map((p) => (
-            <option key={p.value} value={p.value}>
-              {p.label}
-            </option>
-          ))}
-        </select>
-      </fieldset>
+          <SelectTrigger id="pf-provider" className="h-8 text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {PROVIDERS.map((p) => (
+              <SelectItem key={p.value} value={p.value}>
+                {p.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       {/* Name */}
-      <fieldset className="fieldset">
-        <legend className="fieldset-legend text-xs">Profile Name</legend>
-        <input
+      <div className="space-y-1.5">
+        <Label htmlFor="pf-name" className="text-xs">Profile Name</Label>
+        <Input
           id="pf-name"
-          className="input input-sm w-full"
+          className="h-8 text-sm"
           placeholder="My AWS Account"
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
-        <p className="fieldset-label text-xs opacity-50">
+        <p className="text-xs text-muted-foreground/50">
           A friendly name to identify this connection
         </p>
-      </fieldset>
+      </div>
 
       {/* Access Key */}
-      <fieldset className="fieldset">
-        <legend className="fieldset-legend text-xs">Access Key ID</legend>
-        <input
+      <div className="space-y-1.5">
+        <Label htmlFor="pf-access-key" className="text-xs">Access Key ID</Label>
+        <Input
           id="pf-access-key"
-          className="input input-sm w-full font-mono"
+          className="h-8 text-sm font-mono"
           placeholder={isEditing ? "Enter new key to change" : "AKIA..."}
           value={accessKeyId}
           onChange={(e) => setAccessKeyId(e.target.value)}
         />
         {hints?.accessKey && (
-          <p className="fieldset-label text-xs opacity-50">{hints.accessKey}</p>
+          <p className="text-xs text-muted-foreground/50">{hints.accessKey}</p>
         )}
         {isEditing && (
-          <p className="fieldset-label text-xs opacity-50">
+          <p className="text-xs text-muted-foreground/50">
             Leave blank to keep the current value
           </p>
         )}
-      </fieldset>
+      </div>
 
       {/* Secret Key */}
-      <fieldset className="fieldset">
-        <legend className="fieldset-legend text-xs">Secret Access Key</legend>
-        <input
+      <div className="space-y-1.5">
+        <Label htmlFor="pf-secret-key" className="text-xs">Secret Access Key</Label>
+        <Input
           id="pf-secret-key"
           type="password"
-          className="input input-sm w-full font-mono"
+          className="h-8 text-sm font-mono"
           placeholder={isEditing ? "Enter new secret to change" : "••••••••"}
           value={secretAccessKey}
           onChange={(e) => setSecretAccessKey(e.target.value)}
         />
         {hints?.secretKey && (
-          <p className="fieldset-label text-xs opacity-50">{hints.secretKey}</p>
+          <p className="text-xs text-muted-foreground/50">{hints.secretKey}</p>
         )}
         {isEditing && (
-          <p className="fieldset-label text-xs opacity-50">
+          <p className="text-xs text-muted-foreground/50">
             Leave blank to keep the current value
           </p>
         )}
-      </fieldset>
+      </div>
 
       {/* Endpoint (conditional) */}
       {needsEndpoint && (
-        <fieldset className="fieldset">
-          <legend className="fieldset-legend text-xs">Endpoint URL</legend>
-          <input
+        <div className="space-y-1.5">
+          <Label htmlFor="pf-endpoint" className="text-xs">Endpoint URL</Label>
+          <Input
             id="pf-endpoint"
-            className="input input-sm w-full font-mono"
+            className="h-8 text-sm font-mono"
             placeholder="https://..."
             value={endpoint}
             onChange={(e) => setEndpoint(e.target.value)}
           />
           {hints?.endpoint && (
-            <p className="fieldset-label text-xs opacity-50">
+            <p className="text-xs text-muted-foreground/50">
               {hints.endpoint}
             </p>
           )}
-        </fieldset>
+        </div>
       )}
 
       {/* Region */}
-      <fieldset className="fieldset">
-        <legend className="fieldset-legend text-xs">Region</legend>
-        <input
+      <div className="space-y-1.5">
+        <Label htmlFor="pf-region" className="text-xs">Region</Label>
+        <Input
           id="pf-region"
-          className="input input-sm w-full"
+          className="h-8 text-sm"
           placeholder="us-east-1"
           value={region}
           onChange={(e) => setRegion(e.target.value)}
         />
         {hints?.region && (
-          <p className="fieldset-label text-xs opacity-50">{hints.region}</p>
+          <p className="text-xs text-muted-foreground/50">{hints.region}</p>
         )}
-      </fieldset>
+      </div>
 
       {/* Default Bucket (optional — required for bucket-scoped tokens) */}
-      <fieldset className="fieldset">
-        <legend className="fieldset-legend text-xs">
+      <div className="space-y-1.5">
+        <Label htmlFor="pf-default-bucket" className="text-xs">
           Default Bucket{" "}
           <span className="font-normal opacity-40">optional</span>
-        </legend>
-        <input
+        </Label>
+        <Input
           id="pf-default-bucket"
-          className="input input-sm w-full"
+          className="h-8 text-sm"
           placeholder="my-bucket"
           value={defaultBucket}
           onChange={(e) => setDefaultBucket(e.target.value)}
         />
-        <p className="fieldset-label text-xs opacity-50">
+        <p className="text-xs text-muted-foreground/50">
           {provider === "r2"
             ? "Required for R2 tokens scoped to a specific bucket"
             : "Bucket to select by default when using this profile"}
         </p>
-      </fieldset>
+      </div>
 
       {/* Test result */}
       {testResult && (
         <div
-          className={`alert text-xs ${
-            testResult.ok ? "alert-success" : "alert-error"
+          className={`rounded-lg border p-2 text-xs ${
+            testResult.ok
+              ? "border-success/30 bg-success/10 text-success"
+              : "border-destructive/30 bg-destructive/10 text-destructive"
           }`}
         >
-          <span>{testResult.msg}</span>
+          {testResult.msg}
         </div>
       )}
 
       {/* Actions */}
       <div className="flex gap-2 pt-2">
-        <button
+        <Button
           type="button"
-          className="btn btn-outline btn-sm flex-1"
+          variant="outline"
+          size="sm"
+          className="flex-1"
           onClick={handleTest}
           disabled={testing || !accessKeyId || !secretAccessKey}
         >
           {testing ? (
-            <span className="loading loading-spinner loading-xs" />
+            <IconSpinner className="size-3.5 animate-spin" />
           ) : (
             "Test Connection"
           )}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
-          className="btn btn-primary btn-sm flex-1"
+          size="sm"
+          className="flex-1"
           onClick={handleSave}
           disabled={
             saving ||
@@ -366,13 +385,13 @@ export function ProfileForm({ onDone, editProfile }: ProfileFormProps) {
           }
         >
           {saving ? (
-            <span className="loading loading-spinner loading-xs" />
+            <IconSpinner className="size-3.5 animate-spin" />
           ) : isEditing ? (
             "Update"
           ) : (
             "Save"
           )}
-        </button>
+        </Button>
       </div>
     </div>
   );

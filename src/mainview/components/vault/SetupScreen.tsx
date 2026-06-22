@@ -1,6 +1,18 @@
 import type React from "react";
 import { useState } from "react";
 import { useVaultStore } from "../../stores/useVaultStore";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { IconVault, IconSpinner } from "@/lib/icons";
 
 export function SetupScreen() {
   const [passphrase, setPassphrase] = useState("");
@@ -30,84 +42,83 @@ export function SetupScreen() {
   };
 
   return (
-    <div className="flex h-screen items-center justify-center bg-base-100">
-      <div className="card w-full max-w-md bg-base-200 shadow-xl">
-        <div className="card-body">
-          <div className="mb-6 text-center">
+    <div className="flex h-screen items-center justify-center bg-background/50">
+      <Card className="w-full max-w-md shadow-xl">
+        <CardHeader>
+          <div className="mb-4 text-center">
             <img
               src="/logo.png"
               alt="object0"
               className="mx-auto mb-3 h-16 w-16"
             />
             <h1 className="font-bold text-3xl text-primary">object0</h1>
-            <p className="mt-2 text-base-content/60 text-sm">
+            <p className="mt-2 text-muted-foreground text-sm">
               S3 Bucket Manager
             </p>
           </div>
-
-          <h2 className="card-title text-lg">
-            <i className="fa-solid fa-vault" /> Create Vault
-          </h2>
-          <p className="text-base-content/60 text-sm">
+          <CardTitle className="flex items-center gap-2">
+            <IconVault className="size-4" />
+            Create Vault
+          </CardTitle>
+          <CardDescription>
             Set a passphrase to encrypt your API keys. A recovery key will be
             generated after setup.
-          </p>
+          </CardDescription>
+        </CardHeader>
 
-          <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-            <fieldset className="fieldset">
-              <legend className="fieldset-legend">Passphrase</legend>
-              <input
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="setup-passphrase">Passphrase</Label>
+              <Input
                 id="setup-passphrase"
                 type="password"
-                className="input w-full"
                 placeholder="Enter passphrase (min 8 characters)"
                 value={passphrase}
                 onChange={(e) => setPassphrase(e.target.value)}
               />
-            </fieldset>
+            </div>
 
-            <fieldset className="fieldset">
-              <legend className="fieldset-legend">Confirm Passphrase</legend>
-              <input
+            <div className="space-y-2">
+              <Label htmlFor="setup-confirm">Confirm Passphrase</Label>
+              <Input
                 id="setup-confirm"
                 type="password"
-                className="input w-full"
                 placeholder="Re-enter passphrase"
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
               />
-            </fieldset>
+            </div>
 
             <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                className="checkbox checkbox-sm checkbox-primary"
+              <Checkbox
+                id="setup-remember"
                 checked={remember}
-                onChange={(e) => setRemember(e.target.checked)}
+                onCheckedChange={(v) => setRemember(!!v)}
               />
-              <span className="label text-sm">Remember in OS keychain</span>
+              <Label htmlFor="setup-remember" className="text-sm font-normal cursor-pointer">
+                Remember in OS keychain
+              </Label>
             </div>
 
             {error && (
-              <div className="alert alert-error text-sm">
-                <span>{error}</span>
-              </div>
+              <p className="text-sm text-destructive">{error}</p>
             )}
 
-            <button
+            <Button
               type="submit"
-              className="btn btn-primary w-full"
+              className="w-full"
               disabled={loading || !passphrase || !confirm}
             >
               {loading ? (
-                <span className="loading loading-spinner loading-sm" />
+                <IconSpinner className="size-4 animate-spin" />
               ) : (
                 "Create Vault"
               )}
-            </button>
+            </Button>
           </form>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

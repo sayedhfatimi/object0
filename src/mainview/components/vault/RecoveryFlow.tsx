@@ -1,6 +1,24 @@
 import type React from "react";
 import { useState } from "react";
 import { useVaultStore } from "../../stores/useVaultStore";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  IconKey,
+  IconTrashCan,
+  IconTriangleExclamation,
+  IconArrowLeft,
+  IconSpinner,
+} from "@/lib/icons";
 
 type RecoveryTab = "recovery-key" | "reset";
 
@@ -39,9 +57,9 @@ export function RecoveryFlow({ onBack }: RecoveryFlowProps) {
   };
 
   return (
-    <div className="flex h-screen items-center justify-center bg-base-100">
-      <div className="card w-full max-w-lg bg-base-200 shadow-xl">
-        <div className="card-body">
+    <div className="flex h-screen items-center justify-center bg-background/50">
+      <Card className="w-full max-w-lg shadow-xl">
+        <CardHeader>
           <div className="mb-4 text-center">
             <img
               src="/logo.png"
@@ -49,40 +67,39 @@ export function RecoveryFlow({ onBack }: RecoveryFlowProps) {
               className="mx-auto mb-3 h-16 w-16"
             />
             <h1 className="font-bold text-3xl text-primary">object0</h1>
-            <p className="mt-2 text-base-content/60 text-sm">Vault Recovery</p>
+            <p className="mt-2 text-muted-foreground text-sm">Vault Recovery</p>
           </div>
+          <CardTitle>Recovery</CardTitle>
+          <CardDescription>
+            Recover your vault using a recovery key or reset it entirely.
+          </CardDescription>
+        </CardHeader>
 
+        <CardContent className="space-y-4">
           {/* Tab selector */}
-          <div role="tablist" className="tabs tabs-border mb-4">
-            <button
-              type="button"
-              role="tab"
-              className={`tab ${tab === "recovery-key" ? "tab-active" : ""}`}
-              onClick={() => switchTab("recovery-key")}
-            >
-              <i className="fa-solid fa-key mr-1.5" />
-              Recovery Key
-            </button>
-            <button
-              type="button"
-              role="tab"
-              className={`tab ${tab === "reset" ? "tab-active" : ""}`}
-              onClick={() => switchTab("reset")}
-            >
-              <i className="fa-solid fa-trash mr-1.5" />
-              Reset
-            </button>
-          </div>
+          <Tabs
+            value={tab}
+            onValueChange={(v) => switchTab(v as RecoveryTab)}
+          >
+            <TabsList className="w-full">
+              <TabsTrigger value="recovery-key" className="flex-1">
+                <IconKey className="size-4 mr-1.5" />
+                Recovery Key
+              </TabsTrigger>
+              <TabsTrigger value="reset" className="flex-1">
+                <IconTrashCan className="size-4 mr-1.5" />
+                Reset
+              </TabsTrigger>
+            </TabsList>
 
-          {/* Tab content */}
-          {tab === "recovery-key" && (
-            <div className="space-y-4">
-              <div className="rounded-lg bg-base-100 p-4">
-                <h3 className="mb-2 font-semibold text-sm">
-                  <i className="fa-solid fa-key mr-2 text-warning" />
+            {/* Recovery key tab */}
+            <TabsContent value="recovery-key" className="space-y-4 mt-4">
+              <div className="rounded-lg bg-muted p-4">
+                <h3 className="mb-2 font-semibold text-sm flex items-center gap-2">
+                  <IconKey className="size-4 text-warning" />
                   Enter Recovery Key
                 </h3>
-                <p className="text-base-content/60 text-sm">
+                <p className="text-muted-foreground text-sm">
                   Enter the recovery key you saved when you created your vault.
                   After unlocking, you'll set a new passphrase and can choose to
                   save it in OS keychain.
@@ -90,8 +107,8 @@ export function RecoveryFlow({ onBack }: RecoveryFlowProps) {
               </div>
 
               {!hasRecoveryKey && (
-                <div className="alert alert-warning text-sm">
-                  <i className="fa-solid fa-triangle-exclamation" />
+                <div className="rounded-lg border border-warning/30 bg-warning/10 p-3 flex items-start gap-2 text-sm">
+                  <IconTriangleExclamation className="size-4 text-warning shrink-0 mt-0.5" />
                   <span>
                     This vault does not have a recovery key configured. You may
                     need to reset the vault.
@@ -100,43 +117,42 @@ export function RecoveryFlow({ onBack }: RecoveryFlowProps) {
               )}
 
               <form onSubmit={handleRecoveryKeySubmit} className="space-y-4">
-                <fieldset className="fieldset">
-                  <legend className="fieldset-legend">Recovery Key</legend>
-                  <input
+                <div className="space-y-2">
+                  <Label htmlFor="recovery-key-input">Recovery Key</Label>
+                  <Input
+                    id="recovery-key-input"
                     type="text"
-                    className="input w-full font-mono uppercase tracking-wider"
+                    className="font-mono uppercase tracking-wider"
                     placeholder="XXXX-XXXX-XXXX-XXXX-XXXX-XXXX"
                     value={recoveryKey}
                     onChange={(e) => setRecoveryKey(e.target.value)}
                   />
-                </fieldset>
+                </div>
 
                 {error && (
-                  <div className="alert alert-error text-sm">
-                    <span>{error}</span>
-                  </div>
+                  <p className="text-sm text-destructive">{error}</p>
                 )}
 
-                <button
+                <Button
                   type="submit"
-                  className="btn btn-warning w-full"
+                  variant="default"
+                  className="w-full"
                   disabled={loading || !recoveryKey.trim()}
                 >
                   {loading ? (
-                    <span className="loading loading-spinner loading-sm" />
+                    <IconSpinner className="size-4 animate-spin" />
                   ) : (
                     "Recover with Key"
                   )}
-                </button>
+                </Button>
               </form>
-            </div>
-          )}
+            </TabsContent>
 
-          {tab === "reset" && (
-            <div className="space-y-4">
-              <div className="rounded-lg border border-error/30 bg-error/10 p-4">
-                <h3 className="mb-2 font-semibold text-error text-sm">
-                  <i className="fa-solid fa-triangle-exclamation mr-2" />
+            {/* Reset tab */}
+            <TabsContent value="reset" className="space-y-4 mt-4">
+              <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4">
+                <h3 className="mb-2 font-semibold text-destructive text-sm flex items-center gap-2">
+                  <IconTriangleExclamation className="size-4" />
                   Destructive Action
                 </h3>
                 <p className="text-sm">
@@ -146,13 +162,12 @@ export function RecoveryFlow({ onBack }: RecoveryFlowProps) {
                 </p>
               </div>
 
-              <fieldset className="fieldset">
-                <legend className="fieldset-legend">
-                  Type DELETE to confirm
-                </legend>
-                <input
+              <div className="space-y-2">
+                <Label htmlFor="confirm-delete">Type DELETE to confirm</Label>
+                <Input
+                  id="confirm-delete"
                   type="text"
-                  className="input input-error w-full"
+                  className="border-destructive/50 focus-visible:ring-destructive/50"
                   placeholder="DELETE"
                   value={confirmText}
                   onChange={(e) => {
@@ -160,45 +175,44 @@ export function RecoveryFlow({ onBack }: RecoveryFlowProps) {
                     setConfirmReset(e.target.value === "DELETE");
                   }}
                 />
-              </fieldset>
+              </div>
 
               {error && (
-                <div className="alert alert-error text-sm">
-                  <span>{error}</span>
-                </div>
+                <p className="text-sm text-destructive">{error}</p>
               )}
 
-              <button
+              <Button
                 type="button"
-                className="btn btn-error w-full"
+                variant="destructive"
+                className="w-full"
                 disabled={loading || !confirmReset}
                 onClick={handleReset}
               >
                 {loading ? (
-                  <span className="loading loading-spinner loading-sm" />
+                  <IconSpinner className="size-4 animate-spin" />
                 ) : (
                   <>
-                    <i className="fa-solid fa-trash mr-2" />
+                    <IconTrashCan className="size-4 mr-2" />
                     Delete Vault & Start Over
                   </>
                 )}
-              </button>
-            </div>
-          )}
+              </Button>
+            </TabsContent>
+          </Tabs>
 
           {/* Back button */}
-          <div className="mt-2">
-            <button
-              type="button"
-              className="btn btn-ghost btn-sm w-full"
-              onClick={onBack}
-            >
-              <i className="fa-solid fa-arrow-left mr-2" />
-              Back to Unlock
-            </button>
-          </div>
-        </div>
-      </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="w-full"
+            onClick={onBack}
+          >
+            <IconArrowLeft className="size-4 mr-2" />
+            Back to Unlock
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }

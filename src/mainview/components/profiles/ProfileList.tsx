@@ -1,6 +1,9 @@
+import type React from "react";
 import { useState } from "react";
 import type { ProfileInfo } from "../../../shared/profile.types";
 import { PROVIDER_LABELS } from "../../../shared/profile.types";
+import { Button } from "@/components/ui/button";
+import { IconPenToSquare, IconTrashCan, IconAws, IconCloud, IconDigitalOcean, IconServer, IconGoogle, IconFire, IconGear } from "@/lib/icons";
 
 interface ProfileListProps {
   profiles: ProfileInfo[];
@@ -38,7 +41,7 @@ export function ProfileList({
 
   if (profiles.length === 0) {
     return (
-      <div className="px-3 py-4 text-center text-base-content/40 text-xs">
+      <div className="px-3 py-4 text-center text-muted-foreground/60 text-xs">
         No profiles yet. Click + to add one.
       </div>
     );
@@ -69,13 +72,15 @@ export function ProfileList({
         />
       )}
 
-      <ul className="menu menu-sm w-full px-1">
+      <ul className="w-full space-y-0.5 px-1">
         {profiles.map((p) => (
           <li key={p.id}>
             <button
               type="button"
-              className={`flex w-full items-center gap-2 transition-colors duration-150 ${
-                p.id === activeId ? "active" : ""
+              className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors duration-150 hover:bg-accent hover:text-accent-foreground ${
+                p.id === activeId
+                  ? "bg-accent text-accent-foreground"
+                  : "text-foreground"
               }`}
               onClick={() => onSelect(p)}
               onContextMenu={(e) => handleContextMenu(e, p)}
@@ -94,11 +99,11 @@ export function ProfileList({
                 }
               }}
             >
-              <span className="text-lg">
-                <i className={providerIcon(p.provider)} />
+              <span className="text-base shrink-0">
+                <ProviderIcon provider={p.provider} />
               </span>
-              <div className="flex flex-col items-start">
-                <span className="font-medium text-sm">{p.name}</span>
+              <div className="flex flex-col items-start min-w-0">
+                <span className="font-medium text-sm truncate w-full">{p.name}</span>
                 <span
                   className={`inline-flex items-center gap-1 rounded-full px-1.5 py-px text-[9px] leading-tight ${providerBadge(p.provider)}`}
                 >
@@ -115,50 +120,59 @@ export function ProfileList({
 
       {/* Context menu */}
       {contextMenu && (
-        <ul
-          className="menu menu-sm fixed z-60 w-40 rounded-box bg-base-300 p-1 shadow-lg"
+        <div
+          className="fixed z-60 w-40 rounded-lg border border-border bg-popover p-1 shadow-lg"
           style={{ top: clampedMenu?.y, left: clampedMenu?.x }}
         >
-          <li>
-            <button
-              type="button"
-              onClick={() => {
-                onEdit(contextMenu.profile);
-                closeContextMenu();
-              }}
-            >
-              <i className="fa-solid fa-pen-to-square" /> Edit
-            </button>
-          </li>
-          <li>
-            <button
-              type="button"
-              className="text-error"
-              onClick={() => {
-                onDelete(contextMenu.profile);
-                closeContextMenu();
-              }}
-            >
-              <i className="fa-solid fa-trash" /> Delete
-            </button>
-          </li>
-        </ul>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start gap-2 px-2 py-1.5 h-auto font-normal"
+            onClick={() => {
+              onEdit(contextMenu.profile);
+              closeContextMenu();
+            }}
+          >
+            <IconPenToSquare className="size-3.5" /> Edit
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start gap-2 px-2 py-1.5 h-auto font-normal text-destructive hover:text-destructive"
+            onClick={() => {
+              onDelete(contextMenu.profile);
+              closeContextMenu();
+            }}
+          >
+            <IconTrashCan className="size-3.5" /> Delete
+          </Button>
+        </div>
       )}
     </>
   );
 }
 
-function providerIcon(provider: ProfileInfo["provider"]): string {
-  const map: Record<string, string> = {
-    aws: "fa-brands fa-aws text-warning",
-    r2: "fa-solid fa-cloud text-accent",
-    spaces: "fa-brands fa-digital-ocean text-info",
-    minio: "fa-solid fa-server text-error",
-    gcs: "fa-brands fa-google text-success",
-    backblaze: "fa-solid fa-fire text-base-content",
-    custom: "fa-solid fa-gear text-base-content/60",
-  };
-  return map[provider] ?? "fa-solid fa-cloud";
+function ProviderIcon({ provider }: { provider: ProfileInfo["provider"] }) {
+  switch (provider) {
+    case "aws":
+      return <IconAws className="size-4 text-warning" />;
+    case "r2":
+      return <IconCloud className="size-4 text-accent" />;
+    case "spaces":
+      return <IconDigitalOcean className="size-4 text-info" />;
+    case "minio":
+      return <IconServer className="size-4 text-destructive" />;
+    case "gcs":
+      return <IconGoogle className="size-4 text-success" />;
+    case "backblaze":
+      return <IconFire className="size-4 text-foreground" />;
+    case "custom":
+      return <IconGear className="size-4 text-muted-foreground" />;
+    default:
+      return <IconCloud className="size-4" />;
+  }
 }
 
 function providerBadge(provider: ProfileInfo["provider"]): string {
@@ -166,12 +180,12 @@ function providerBadge(provider: ProfileInfo["provider"]): string {
     aws: "bg-warning/10 text-warning",
     r2: "bg-accent/10 text-accent",
     spaces: "bg-info/10 text-info",
-    minio: "bg-error/10 text-error",
+    minio: "bg-destructive/10 text-destructive",
     gcs: "bg-success/10 text-success",
-    backblaze: "bg-base-content/10 text-base-content/60",
-    custom: "bg-base-content/5 text-base-content/40",
+    backblaze: "bg-foreground/10 text-foreground/60",
+    custom: "bg-foreground/5 text-foreground/40",
   };
-  return map[provider] ?? "bg-base-content/5 text-base-content/40";
+  return map[provider] ?? "bg-foreground/5 text-foreground/40";
 }
 
 function providerDot(provider: ProfileInfo["provider"]): string {
@@ -179,10 +193,10 @@ function providerDot(provider: ProfileInfo["provider"]): string {
     aws: "bg-warning",
     r2: "bg-accent",
     spaces: "bg-info",
-    minio: "bg-error",
+    minio: "bg-destructive",
     gcs: "bg-success",
-    backblaze: "bg-base-content",
-    custom: "bg-base-content/40",
+    backblaze: "bg-foreground",
+    custom: "bg-foreground/40",
   };
-  return map[provider] ?? "bg-base-content/40";
+  return map[provider] ?? "bg-foreground/40";
 }

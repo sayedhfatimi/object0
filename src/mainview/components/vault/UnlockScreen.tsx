@@ -1,6 +1,24 @@
 import type React from "react";
 import { useState } from "react";
 import { useVaultStore } from "../../stores/useVaultStore";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
+import {
+  IconLock,
+  IconFingerprint,
+  IconCircleQuestion,
+  IconSpinner,
+} from "@/lib/icons";
 
 interface UnlockScreenProps {
   onForgotPassphrase: () => void;
@@ -23,97 +41,104 @@ export function UnlockScreen({ onForgotPassphrase }: UnlockScreenProps) {
   };
 
   return (
-    <div className="flex h-screen items-center justify-center bg-base-100">
-      <div className="card w-full max-w-md bg-base-200 shadow-xl">
-        <div className="card-body">
-          <div className="mb-6 text-center">
+    <div className="flex h-screen items-center justify-center bg-background/50">
+      <Card className="w-full max-w-md shadow-xl">
+        <CardHeader>
+          <div className="mb-4 text-center">
             <img
               src="/logo.png"
               alt="object0"
               className="mx-auto mb-3 h-16 w-16"
             />
             <h1 className="font-bold text-3xl text-primary">object0</h1>
-            <p className="mt-2 text-base-content/60 text-sm">
+            <p className="mt-2 text-muted-foreground text-sm">
               S3 Bucket Manager
             </p>
           </div>
-
-          <h2 className="card-title text-lg">
-            <i className="fa-solid fa-lock" /> Vault Locked
-          </h2>
-          <p className="text-base-content/60 text-sm">
+          <CardTitle className="flex items-center gap-2">
+            <IconLock className="size-4" />
+            Vault Locked
+          </CardTitle>
+          <CardDescription>
             Unlock with OS keychain or enter your passphrase to access profiles.
-          </p>
+          </CardDescription>
+        </CardHeader>
 
-          <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-            <button
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <Button
               type="button"
-              className="btn btn-outline w-full"
+              variant="outline"
+              className="w-full"
               disabled={loading}
               onClick={handleKeychainUnlock}
             >
-              <i className="fa-solid fa-fingerprint mr-2" />
+              <IconFingerprint className="size-4 mr-2" />
               Unlock with OS Keychain
-            </button>
+            </Button>
 
-            <div className="divider my-0 text-xs opacity-50">OR</div>
+            <div className="flex items-center gap-3">
+              <Separator className="flex-1" />
+              <span className="text-xs text-muted-foreground">OR</span>
+              <Separator className="flex-1" />
+            </div>
 
-            <fieldset className="fieldset">
-              <legend className="fieldset-legend">Passphrase</legend>
-              <input
+            <div className="space-y-2">
+              <Label htmlFor="unlock-passphrase">Passphrase</Label>
+              <Input
                 id="unlock-passphrase"
                 type="password"
-                className="input w-full"
                 placeholder="Enter vault passphrase"
                 value={passphrase}
                 onChange={(e) => setPassphrase(e.target.value)}
               />
-            </fieldset>
+            </div>
 
             <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                className="checkbox checkbox-sm checkbox-primary"
+              <Checkbox
+                id="unlock-remember"
                 checked={remember}
-                onChange={(e) => setRemember(e.target.checked)}
+                onCheckedChange={(v) => setRemember(!!v)}
               />
-              <span className="label text-sm">Remember in OS keychain</span>
+              <Label htmlFor="unlock-remember" className="text-sm font-normal cursor-pointer">
+                Remember in OS keychain
+              </Label>
             </div>
 
             {error && (
-              <div className="alert alert-error text-sm">
-                <span>{error}</span>
-              </div>
+              <p className="text-sm text-destructive">{error}</p>
             )}
 
-            <button
+            <Button
               type="submit"
-              className="btn btn-primary w-full"
+              className="w-full"
               disabled={loading || !passphrase}
             >
               {loading ? (
-                <span className="loading loading-spinner loading-sm" />
+                <IconSpinner className="size-4 animate-spin" />
               ) : (
                 "Unlock"
               )}
-            </button>
+            </Button>
 
             <div className="text-center">
-              <button
+              <Button
                 type="button"
-                className="btn btn-ghost btn-sm text-base-content/50 hover:text-base-content"
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-foreground"
                 onClick={() => {
                   clearError();
                   onForgotPassphrase();
                 }}
               >
-                <i className="fa-solid fa-circle-question mr-1.5" />
+                <IconCircleQuestion className="size-4 mr-1.5" />
                 Forgot passphrase?
-              </button>
+              </Button>
             </div>
           </form>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

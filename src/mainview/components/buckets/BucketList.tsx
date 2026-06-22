@@ -1,7 +1,8 @@
-import { AnimatePresence, motion } from "framer-motion";
 import type { BucketInfo } from "../../../shared/s3.types";
-import { staggerItemVariants, transitions } from "../../lib/animations";
 import { useFavoritesStore } from "../../stores/useFavoritesStore";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { IconBucket, IconStar } from "@/lib/icons";
 
 interface BucketListProps {
   buckets: BucketInfo[];
@@ -30,8 +31,8 @@ export function BucketList({
             key={`skel-${i}`}
             className="flex items-center gap-2 rounded px-2 py-1.5"
           >
-            <div className="skeleton h-3 w-3 rounded" />
-            <div className="skeleton h-3 flex-1 rounded" />
+            <Skeleton className="h-3 w-3 rounded" />
+            <Skeleton className="h-3 flex-1 rounded" />
           </div>
         ))}
       </div>
@@ -40,7 +41,7 @@ export function BucketList({
 
   if (buckets.length === 0) {
     return (
-      <div className="px-3 py-4 text-center text-base-content/40 text-xs">
+      <div className="px-3 py-4 text-center text-muted-foreground/60 text-xs">
         No buckets found
       </div>
     );
@@ -53,30 +54,24 @@ export function BucketList({
   const unpinned = buckets.filter((b) => !isFav(b.name));
 
   const renderBucket = (b: BucketInfo, showStar: boolean) => (
-    <motion.li
-      key={b.name}
-      layout
-      variants={staggerItemVariants}
-      initial="initial"
-      animate="animate"
-      exit="exit"
-      transition={transitions.spring}
-    >
+    <li key={b.name}>
       <div
-        className={`group/bucket flex w-full items-center gap-1 text-sm ${b.name === selectedBucket ? "active" : ""}`}
+        className={`group/bucket flex w-full items-center gap-1 text-sm rounded-md ${b.name === selectedBucket ? "bg-accent text-accent-foreground" : ""}`}
       >
         <button
           type="button"
-          className="flex flex-1 items-center gap-2 overflow-hidden"
+          className="flex flex-1 items-center gap-2 overflow-hidden px-2 py-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
           onClick={() => onSelect(b.name)}
         >
-          <i className="fa-solid fa-bucket shrink-0" />
+          <IconBucket className="size-3.5 shrink-0" />
           <span className="truncate">{b.name}</span>
         </button>
         {profileId && (
-          <button
+          <Button
             type="button"
-            className={`btn btn-ghost btn-xs shrink-0 ${
+            variant="ghost"
+            size="icon"
+            className={`size-6 shrink-0 ${
               showStar
                 ? "text-warning"
                 : "opacity-0 group-hover/bucket:opacity-100"
@@ -87,40 +82,32 @@ export function BucketList({
             }}
             title={showStar ? "Unpin bucket" : "Pin bucket"}
           >
-            <i
-              className={`${showStar ? "fa-solid" : "fa-regular"} fa-star fa-xs`}
-            />
-          </button>
+            <IconStar className="size-3" />
+          </Button>
         )}
       </div>
-    </motion.li>
+    </li>
   );
 
   return (
-    <ul className="menu menu-sm w-full px-1">
+    <ul className="w-full space-y-0.5 px-1">
       {/* Pinned section */}
-      <AnimatePresence>
-        {pinned.length > 0 && (
-          <>
-            <li className="menu-title text-[10px] text-base-content/40">
-              <span>
-                <i className="fa-solid fa-star fa-xs mr-1" />
-                Pinned
-              </span>
+      {pinned.length > 0 && (
+        <>
+          <li className="px-2 py-1 text-[10px] text-muted-foreground/60 flex items-center gap-1">
+            <IconStar className="size-2.5" />
+            Pinned
+          </li>
+          {pinned.map((b) => renderBucket(b, true))}
+          {unpinned.length > 0 && (
+            <li className="px-2 py-1 text-[10px] text-muted-foreground/60">
+              All Buckets
             </li>
-            {pinned.map((b) => renderBucket(b, true))}
-            {unpinned.length > 0 && (
-              <li className="menu-title text-[10px] text-base-content/40">
-                <span>All Buckets</span>
-              </li>
-            )}
-          </>
-        )}
-      </AnimatePresence>
+          )}
+        </>
+      )}
       {/* Regular buckets */}
-      <AnimatePresence>
-        {unpinned.map((b) => renderBucket(b, false))}
-      </AnimatePresence>
+      {unpinned.map((b) => renderBucket(b, false))}
     </ul>
   );
 }

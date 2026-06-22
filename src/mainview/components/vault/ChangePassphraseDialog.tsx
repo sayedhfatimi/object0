@@ -1,6 +1,18 @@
 import type React from "react";
 import { useState } from "react";
 import { useVaultStore } from "../../stores/useVaultStore";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { IconLockOpen, IconSpinner } from "@/lib/icons";
 
 interface ChangePassphraseDialogProps {
   onComplete: () => void;
@@ -37,73 +49,74 @@ export function ChangePassphraseDialog({
   };
 
   return (
-    <div className="flex h-screen items-center justify-center bg-base-100">
-      <div className="card w-full max-w-md bg-base-200 shadow-xl">
-        <div className="card-body">
+    <div className="flex h-screen items-center justify-center bg-background/50">
+      <Card className="w-full max-w-md shadow-xl">
+        <CardHeader>
           <div className="mb-4 text-center">
             <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-success/20">
-              <i className="fa-solid fa-lock-open text-2xl text-success" />
+              <IconLockOpen className="size-6 text-success" />
             </div>
-            <h2 className="font-bold text-lg">Vault Recovered</h2>
-            <p className="mt-1 text-base-content/60 text-sm">
+            <CardTitle>Vault Recovered</CardTitle>
+            <CardDescription className="mt-1">
               Set a new passphrase to secure your vault. A new recovery key will
               also be generated.
-            </p>
+            </CardDescription>
           </div>
+        </CardHeader>
 
+        <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <fieldset className="fieldset">
-              <legend className="fieldset-legend">New Passphrase</legend>
-              <input
+            <div className="space-y-2">
+              <Label htmlFor="cp-passphrase">New Passphrase</Label>
+              <Input
+                id="cp-passphrase"
                 type="password"
-                className="input w-full"
                 placeholder="Enter new passphrase (min 8 characters)"
                 value={passphrase}
                 onChange={(e) => setPassphrase(e.target.value)}
               />
-            </fieldset>
+            </div>
 
-            <fieldset className="fieldset">
-              <legend className="fieldset-legend">Confirm Passphrase</legend>
-              <input
+            <div className="space-y-2">
+              <Label htmlFor="cp-confirm">Confirm Passphrase</Label>
+              <Input
+                id="cp-confirm"
                 type="password"
-                className="input w-full"
                 placeholder="Re-enter new passphrase"
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
               />
-            </fieldset>
+            </div>
 
             <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                className="checkbox checkbox-sm checkbox-primary"
+              <Checkbox
+                id="cp-remember"
                 checked={remember}
-                onChange={(e) => setRemember(e.target.checked)}
+                onCheckedChange={(v) => setRemember(!!v)}
               />
-              <span className="label text-sm">Remember in OS keychain</span>
+              <Label htmlFor="cp-remember" className="text-sm font-normal cursor-pointer">
+                Remember in OS keychain
+              </Label>
             </div>
 
             {error && (
-              <div className="alert alert-error text-sm">
-                <span>{error}</span>
-              </div>
+              <p className="text-sm text-destructive">{error}</p>
             )}
 
-            <button
+            <Button
               type="submit"
-              className="btn btn-primary w-full"
+              className="w-full"
               disabled={loading || !passphrase || !confirm}
             >
               {loading ? (
-                <span className="loading loading-spinner loading-sm" />
+                <IconSpinner className="size-4 animate-spin" />
               ) : (
                 "Set New Passphrase"
               )}
-            </button>
+            </Button>
           </form>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
