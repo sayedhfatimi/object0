@@ -103,7 +103,7 @@ export function TopBar() {
             <IconListCheck className="size-4" />
           </Button>
           {activeJobCount > 0 && (
-            <Badge className="absolute -top-1 -right-1 min-w-4 px-1 text-[10px] bg-blue-500 text-white border-transparent">
+            <Badge className="absolute -top-1 -right-1 min-w-4 px-1 text-[10px] bg-info text-info-foreground border-transparent">
               {activeJobCount}
             </Badge>
           )}
@@ -118,11 +118,11 @@ export function TopBar() {
             aria-label="Toggle live folder sync panel"
           >
             <IconFolderOpen
-              className={`size-4 ${syncingCount() > 0 ? "text-blue-500" : ""}`}
+              className={`size-4 ${syncingCount() > 0 ? "text-info" : ""}`}
             />
           </Button>
           {activeCount() > 0 && (
-            <Badge className="absolute -top-1 -right-1 min-w-4 px-1 text-[10px] bg-green-500 text-white border-transparent">
+            <Badge className="absolute -top-1 -right-1 min-w-4 px-1 text-[10px] bg-success text-success-foreground border-transparent">
               {activeCount()}
             </Badge>
           )}

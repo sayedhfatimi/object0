@@ -161,7 +161,7 @@ export function StatusBar() {
         {activeCount > 0 && (
           <button
             type="button"
-            className="flex items-center gap-2 text-blue-500 transition-colors hover:text-blue-400"
+            className="flex items-center gap-2 text-info transition-colors hover:text-info/80"
             onClick={() => setJobPanelOpen(true)}
           >
             <span>
@@ -187,15 +187,17 @@ export function StatusBar() {
             type="button"
             className={`flex items-center gap-1 transition-colors ${
               folderSyncSyncing > 0
-                ? "text-blue-500"
+                ? "text-info"
                 : folderSyncActive > 0
-                  ? "text-green-500/70"
+                  ? "text-success/70"
                   : "text-foreground/40"
             } hover:text-primary`}
             onClick={() => setFolderSyncPanelOpen(true)}
             title="Live Folder Sync"
           >
-            <IconFolderOpen className="size-3" />
+            <IconFolderOpen
+              className={`size-3 ${folderSyncSyncing > 0 ? "animate-pulse" : ""}`}
+            />
             {folderSyncSyncing > 0
               ? `Live syncing ${folderSyncSyncing} folder(s)`
               : `${folderSyncActive} live sync active`}
@@ -204,7 +206,7 @@ export function StatusBar() {
         {updateReady && updateVersion && (
           <button
             type="button"
-            className="flex items-center gap-1 text-green-500 transition-colors hover:text-green-400"
+            className="flex items-center gap-1 text-success transition-colors hover:text-success/80"
             onClick={handleApplyUpdate}
             disabled={applying}
           >

@@ -66,15 +66,16 @@ export default function App() {
   }, [unlocked, exists]);
 
   const toggleTheme = useThemeStore((s) => s.toggle);
-  const toggleSidebar = useUIStore((s) => s.toggleSidebar);
   const setJobPanelOpen = useUIStore((s) => s.setJobPanelOpen);
   const jobPanelOpen = useUIStore((s) => s.jobPanelOpen);
   const setSettingsOpen = useUIStore((s) => s.setSettingsOpen);
   const settingsOpen = useUIStore((s) => s.settingsOpen);
 
+  // NOTE: "ctrl+b" is intentionally absent — SidebarProvider (sidebar.tsx)
+  // already registers its own Ctrl/Cmd+B listener. Adding a second handler
+  // here would fire toggleSidebar twice, resulting in a net no-change.
   const shortcuts = useMemo(
     () => ({
-      "ctrl+b": () => toggleSidebar(),
       "ctrl+j": () => setJobPanelOpen(!jobPanelOpen),
       "ctrl+\\": () => toggleTheme(),
       "ctrl+,": () => setSettingsOpen(!settingsOpen),
@@ -82,7 +83,6 @@ export default function App() {
         dispatchObjectToolbarEvent(OBJECT_TOOLBAR_EVENTS.OPEN_SEARCH),
     }),
     [
-      toggleSidebar,
       toggleTheme,
       setJobPanelOpen,
       jobPanelOpen,
