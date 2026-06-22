@@ -10,6 +10,8 @@ import {
 } from "../../lib/formatters";
 import { useJobStore } from "../../stores/useJobStore";
 import { Button } from "@/components/ui/button";
+import { Progress as ProgressPrimitive } from "@base-ui/react/progress";
+import { cn } from "@/lib/utils";
 import {
   IconArrowsRotate,
   IconBan,
@@ -209,12 +211,23 @@ const JobItemInner = function JobItemInner({ job }: JobItemProps) {
           {/* Progress bar */}
           {hasProgress && (
             <div className="mt-1.5">
-              <div className="relative h-2 w-full overflow-hidden rounded-full bg-muted/80">
-                <div
-                  style={{ width: `${pct}%` }}
-                  className={`absolute inset-y-0 left-0 rounded-full transition-[width] duration-300 ease-out ${job.status === "running" ? "bg-linear-to-r from-primary to-info" : "bg-primary/60"}`}
-                />
-              </div>
+              <ProgressPrimitive.Root
+                value={pct}
+                className="flex flex-wrap"
+              >
+                <ProgressPrimitive.Track
+                  className="relative flex h-2 w-full items-center overflow-x-hidden rounded-full bg-muted/80"
+                >
+                  <ProgressPrimitive.Indicator
+                    className={cn(
+                      "h-full transition-all",
+                      job.status === "running"
+                        ? "bg-linear-to-r from-primary to-info"
+                        : "bg-primary/60",
+                    )}
+                  />
+                </ProgressPrimitive.Track>
+              </ProgressPrimitive.Root>
             </div>
           )}
 

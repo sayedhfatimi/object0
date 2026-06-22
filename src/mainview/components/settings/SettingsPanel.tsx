@@ -12,10 +12,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
-import { IconGear, IconSpinner, IconTrashCan, IconXmark } from "@/lib/icons";
+import { IconGear, IconSpinner, IconTrashCan } from "@/lib/icons";
 
-export function SettingsPanel({ onClose }: { onClose: () => void }) {
+export function SettingsPanel() {
+  const settingsOpen = useUIStore((s) => s.settingsOpen);
+  const setSettingsOpen = useUIStore((s) => s.setSettingsOpen);
   const theme = useThemeStore((s) => s.theme);
   const setTheme = useThemeStore((s) => s.setTheme);
   const viewMode = useUIStore((s) => s.viewMode);
@@ -119,263 +127,272 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="flex h-full flex-col">
-      {/* Header */}
-      <div className="flex items-center justify-between border-border border-b px-4 py-3">
-        <div className="flex items-center gap-2">
-          <IconGear className="size-4 text-foreground/60" />
-          <h3 className="font-semibold text-sm">Settings</h3>
-        </div>
-        <Button variant="ghost" size="icon-xs" onClick={onClose}>
-          <IconXmark className="size-3.5" />
-        </Button>
-      </div>
+    <Sheet
+      open={settingsOpen}
+      onOpenChange={(o) => {
+        if (!o) setSettingsOpen(false);
+      }}
+    >
+      <SheetContent
+        side="right"
+        showCloseButton
+        className="flex w-[360px] flex-col gap-0 p-0 sm:max-w-none"
+      >
+        <SheetHeader className="border-border border-b px-4 py-3">
+          <SheetTitle className="flex items-center gap-2 font-semibold text-sm">
+            <IconGear className="size-4 text-foreground/60" />
+            Settings
+          </SheetTitle>
+        </SheetHeader>
 
-      {/* Settings body */}
-      <div className="flex-1 overflow-y-auto p-4">
-        <div className="flex flex-col gap-6">
-          {/* Appearance */}
-          <section>
-            <h4 className="mb-3 font-semibold text-foreground/50 text-xs uppercase tracking-wider">
-              Appearance
-            </h4>
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Theme</span>
-                <Select
-                  value={theme}
-                  onValueChange={(v) => {
-                    if (v != null) setTheme(v as "dark" | "light");
-                  }}
-                >
-                  <SelectTrigger size="sm" className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="dark">Dark</SelectItem>
-                    <SelectItem value="light">Light</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Default View</span>
-                <Select
-                  value={viewMode}
-                  onValueChange={(v) => {
-                    if (v != null) setViewMode(v as "table" | "grid");
-                  }}
-                >
-                  <SelectTrigger size="sm" className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="table">Table</SelectItem>
-                    <SelectItem value="grid">Grid</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </section>
-
-          {/* Browsing */}
-          <section>
-            <h4 className="mb-3 font-semibold text-foreground/50 text-xs uppercase tracking-wider">
-              Browsing
-            </h4>
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-sm">Page Size</span>
-                  <p className="text-[10px] text-foreground/40">
-                    Objects loaded per page
-                  </p>
+        {/* Settings body */}
+        <div className="flex-1 overflow-y-auto p-4">
+          <div className="flex flex-col gap-6">
+            {/* Appearance */}
+            <section>
+              <h4 className="mb-3 font-semibold text-foreground/50 text-xs uppercase tracking-wider">
+                Appearance
+              </h4>
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Theme</span>
+                  <Select
+                    value={theme}
+                    onValueChange={(v) => {
+                      if (v != null) setTheme(v as "dark" | "light");
+                    }}
+                  >
+                    <SelectTrigger size="sm" className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="dark">Dark</SelectItem>
+                      <SelectItem value="light">Light</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <Select
-                  value={String(pageSize)}
-                  onValueChange={(v) => {
-                    if (v != null) setPageSize(Number(v));
-                  }}
-                >
-                  <SelectTrigger size="sm" className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PAGE_SIZES.map((s) => (
-                      <SelectItem key={s} value={String(s)}>
-                        {s}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </section>
-
-          {/* Notifications */}
-          <section>
-            <h4 className="mb-3 font-semibold text-foreground/50 text-xs uppercase tracking-wider">
-              Notifications
-            </h4>
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-sm">Desktop Notifications</span>
-                  <p className="text-[10px] text-foreground/40">
-                    Notify when jobs complete
-                  </p>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Default View</span>
+                  <Select
+                    value={viewMode}
+                    onValueChange={(v) => {
+                      if (v != null) setViewMode(v as "table" | "grid");
+                    }}
+                  >
+                    <SelectTrigger size="sm" className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="table">Table</SelectItem>
+                      <SelectItem value="grid">Grid</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <Switch
-                  checked={desktopNotifications}
-                  onCheckedChange={setDesktopNotifications}
-                />
               </div>
-            </div>
-          </section>
+            </section>
 
-          {/* Privacy */}
-          <section>
-            <h4 className="mb-3 font-semibold text-foreground/50 text-xs uppercase tracking-wider">
-              Privacy
-            </h4>
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-sm">Persist Share History</span>
-                  <p className="text-[10px] text-foreground/40">
-                    Save generated share URLs locally between app restarts
-                  </p>
-                </div>
-                <Switch
-                  checked={persistShareHistory}
-                  onCheckedChange={(enabled) => {
-                    setPersistShareHistory(enabled);
-                    if (!enabled) clearShareHistory();
-                  }}
-                />
-              </div>
-            </div>
-          </section>
-
-          {/* Transfers */}
-          <section>
-            <h4 className="mb-3 font-semibold text-foreground/50 text-xs uppercase tracking-wider">
-              Transfers
-            </h4>
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-sm">Concurrent Jobs</span>
-                  <p className="text-[10px] text-foreground/40">
-                    Max parallel transfers (default 3)
-                  </p>
-                </div>
-                <Select
-                  value={String(jobConcurrency)}
-                  onValueChange={(v) => {
-                    if (v == null) return;
-                    const n = Number(v);
-                    setJobConcurrency(n);
-                    rpcCall("jobs:set-concurrency", { concurrency: n });
-                  }}
-                >
-                  <SelectTrigger size="sm" className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CONCURRENCY_OPTIONS.map((n) => (
-                      <SelectItem key={n} value={String(n)}>
-                        {n}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </section>
-
-          {/* Vault */}
-          <section>
-            <h4 className="mb-3 font-semibold text-foreground/50 text-xs uppercase tracking-wider">
-              Vault
-            </h4>
-            <div className="flex flex-col gap-3">
-              <div className="space-y-2 rounded-md border border-border/70 bg-card/35 p-2.5">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <span className="text-sm">Stored Passphrase</span>
+            {/* Browsing */}
+            <section>
+              <h4 className="mb-3 font-semibold text-foreground/50 text-xs uppercase tracking-wider">
+                Browsing
+              </h4>
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-sm">Page Size</span>
                     <p className="text-[10px] text-foreground/40">
-                      {keychainStatusText}
+                      Objects loaded per page
                     </p>
                   </div>
-                  <span
-                    className={`rounded-full px-1.5 py-px text-[9px] ${keychainBadgeClass}`}
+                  <Select
+                    value={String(pageSize)}
+                    onValueChange={(v) => {
+                      if (v != null) setPageSize(Number(v));
+                    }}
                   >
-                    {keychainBadge.label}
-                  </span>
+                    <SelectTrigger size="sm" className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PAGE_SIZES.map((s) => (
+                        <SelectItem key={s} value={String(s)}>
+                          {s}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="xs"
-                    className="w-full"
-                    disabled={
-                      keychainBusy ||
-                      keychainAvailable === false ||
-                      hasStoredPassphrase === null ||
-                      !hasStoredPassphrase
-                    }
-                    onClick={handleForgetStoredPassphrase}
-                  >
-                    {keychainBusy ? (
-                      <IconSpinner className="size-3.5 animate-spin" />
-                    ) : (
-                      <>
-                        <IconTrashCan className="size-3.5" />
-                        Forget Stored Passphrase
-                      </>
-                    )}
-                  </Button>
-                </div>
-                <p className="text-[10px] text-foreground/35">
-                  Removes the saved passphrase from your OS keychain.
-                </p>
-
-                {keychainMessage && (
-                  <p className="text-[10px] text-success">{keychainMessage}</p>
-                )}
-                {keychainError && (
-                  <p className="text-[10px] text-destructive">
-                    {keychainError}
-                  </p>
-                )}
               </div>
-            </div>
-          </section>
+            </section>
 
-          {/* Keyboard Shortcuts */}
-          <section>
-            <h4 className="mb-3 font-semibold text-foreground/50 text-xs uppercase tracking-wider">
-              Keyboard Shortcuts
-            </h4>
-            <div className="flex flex-col gap-1.5 text-sm">
-              <ShortcutRow combo="Ctrl+K" label="Command Palette" />
-              <ShortcutRow combo="Ctrl+B" label="Toggle Sidebar" />
-              <ShortcutRow combo="Ctrl+J" label="Toggle Job Panel" />
-              <ShortcutRow combo="Ctrl+\" label="Toggle Theme" />
-              <ShortcutRow combo="Ctrl+," label="Open Settings" />
-              <ShortcutRow combo="↑ / ↓" label="Navigate rows" />
-              <ShortcutRow combo="Space" label="Toggle selection" />
-              <ShortcutRow combo="Enter" label="Open folder" />
-              <ShortcutRow combo="F2" label="Rename file" />
-              <ShortcutRow combo="Ctrl+A" label="Select all" />
-              <ShortcutRow combo="Esc" label="Clear selection" />
-              <ShortcutRow combo="Backspace" label="Go back" />
-            </div>
-          </section>
+            {/* Notifications */}
+            <section>
+              <h4 className="mb-3 font-semibold text-foreground/50 text-xs uppercase tracking-wider">
+                Notifications
+              </h4>
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-sm">Desktop Notifications</span>
+                    <p className="text-[10px] text-foreground/40">
+                      Notify when jobs complete
+                    </p>
+                  </div>
+                  <Switch
+                    checked={desktopNotifications}
+                    onCheckedChange={setDesktopNotifications}
+                  />
+                </div>
+              </div>
+            </section>
+
+            {/* Privacy */}
+            <section>
+              <h4 className="mb-3 font-semibold text-foreground/50 text-xs uppercase tracking-wider">
+                Privacy
+              </h4>
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-sm">Persist Share History</span>
+                    <p className="text-[10px] text-foreground/40">
+                      Save generated share URLs locally between app restarts
+                    </p>
+                  </div>
+                  <Switch
+                    checked={persistShareHistory}
+                    onCheckedChange={(enabled) => {
+                      setPersistShareHistory(enabled);
+                      if (!enabled) clearShareHistory();
+                    }}
+                  />
+                </div>
+              </div>
+            </section>
+
+            {/* Transfers */}
+            <section>
+              <h4 className="mb-3 font-semibold text-foreground/50 text-xs uppercase tracking-wider">
+                Transfers
+              </h4>
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-sm">Concurrent Jobs</span>
+                    <p className="text-[10px] text-foreground/40">
+                      Max parallel transfers (default 3)
+                    </p>
+                  </div>
+                  <Select
+                    value={String(jobConcurrency)}
+                    onValueChange={(v) => {
+                      if (v == null) return;
+                      const n = Number(v);
+                      setJobConcurrency(n);
+                      rpcCall("jobs:set-concurrency", { concurrency: n });
+                    }}
+                  >
+                    <SelectTrigger size="sm" className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CONCURRENCY_OPTIONS.map((n) => (
+                        <SelectItem key={n} value={String(n)}>
+                          {n}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </section>
+
+            {/* Vault */}
+            <section>
+              <h4 className="mb-3 font-semibold text-foreground/50 text-xs uppercase tracking-wider">
+                Vault
+              </h4>
+              <div className="flex flex-col gap-3">
+                <div className="space-y-2 rounded-md border border-border/70 bg-card/35 p-2.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <span className="text-sm">Stored Passphrase</span>
+                      <p className="text-[10px] text-foreground/40">
+                        {keychainStatusText}
+                      </p>
+                    </div>
+                    <span
+                      className={`rounded-full px-1.5 py-px text-[9px] ${keychainBadgeClass}`}
+                    >
+                      {keychainBadge.label}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="xs"
+                      className="w-full"
+                      disabled={
+                        keychainBusy ||
+                        keychainAvailable === false ||
+                        hasStoredPassphrase === null ||
+                        !hasStoredPassphrase
+                      }
+                      onClick={handleForgetStoredPassphrase}
+                    >
+                      {keychainBusy ? (
+                        <IconSpinner className="size-3.5 animate-spin" />
+                      ) : (
+                        <>
+                          <IconTrashCan className="size-3.5" />
+                          Forget Stored Passphrase
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  <p className="text-[10px] text-foreground/35">
+                    Removes the saved passphrase from your OS keychain.
+                  </p>
+
+                  {keychainMessage && (
+                    <p className="text-[10px] text-success">
+                      {keychainMessage}
+                    </p>
+                  )}
+                  {keychainError && (
+                    <p className="text-[10px] text-destructive">
+                      {keychainError}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </section>
+
+            {/* Keyboard Shortcuts */}
+            <section>
+              <h4 className="mb-3 font-semibold text-foreground/50 text-xs uppercase tracking-wider">
+                Keyboard Shortcuts
+              </h4>
+              <div className="flex flex-col gap-1.5 text-sm">
+                <ShortcutRow combo="Ctrl+K" label="Command Palette" />
+                <ShortcutRow combo="Ctrl+B" label="Toggle Sidebar" />
+                <ShortcutRow combo="Ctrl+J" label="Toggle Job Panel" />
+                <ShortcutRow combo="Ctrl+\" label="Toggle Theme" />
+                <ShortcutRow combo="Ctrl+," label="Open Settings" />
+                <ShortcutRow combo="↑ / ↓" label="Navigate rows" />
+                <ShortcutRow combo="Space" label="Toggle selection" />
+                <ShortcutRow combo="Enter" label="Open folder" />
+                <ShortcutRow combo="F2" label="Rename file" />
+                <ShortcutRow combo="Ctrl+A" label="Select all" />
+                <ShortcutRow combo="Esc" label="Clear selection" />
+                <ShortcutRow combo="Backspace" label="Go back" />
+              </div>
+            </section>
+          </div>
         </div>
-      </div>
-    </div>
+      </SheetContent>
+    </Sheet>
   );
 }
 

@@ -1,4 +1,4 @@
-import { lazy, type ReactNode, Suspense } from "react";
+import { lazy, Suspense } from "react";
 import { useTabStore } from "../../stores/useTabStore";
 import { useUIStore } from "../../stores/useUIStore";
 import { ResizeHandle } from "../common/ResizeHandle";
@@ -54,52 +54,16 @@ const CommandPalette = lazy(() =>
   })),
 );
 
-interface RightRailPanelProps {
-  open: boolean;
-  ariaLabel: string;
-  width: number;
-  children: ReactNode;
-}
-
-function RightRailPanel({
-  open,
-  ariaLabel,
-  width,
-  children,
-}: RightRailPanelProps) {
-  if (!open) return null;
-  return (
-    <div
-      className="relative flex h-full shrink-0 overflow-hidden border-border border-l bg-background"
-      style={{ width }}
-    >
-      <aside
-        aria-label={ariaLabel}
-        className="h-full shrink-0"
-        style={{ width }}
-      >
-        {children}
-      </aside>
-    </div>
-  );
-}
-
 export function MainLayout() {
   const sidebarCollapsed = useUIStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
   const jobPanelOpen = useUIStore((s) => s.jobPanelOpen);
-  const detailKey = useUIStore((s) => s.detailKey);
   const shareHistoryOpen = useUIStore((s) => s.shareHistoryOpen);
-  const setShareHistoryOpen = useUIStore((s) => s.setShareHistoryOpen);
   const settingsOpen = useUIStore((s) => s.settingsOpen);
-  const setSettingsOpen = useUIStore((s) => s.setSettingsOpen);
   const folderSyncPanelOpen = useUIStore((s) => s.folderSyncPanelOpen);
-  const setFolderSyncPanelOpen = useUIStore((s) => s.setFolderSyncPanelOpen);
   const hasTabs = useTabStore((s) => s.tabs.length > 0);
   const sidebarWidth = useUIStore((s) => s.sidebarWidth);
   const setSidebarWidth = useUIStore((s) => s.setSidebarWidth);
-  const detailPanelWidth = useUIStore((s) => s.detailPanelWidth);
-  const setDetailPanelWidth = useUIStore((s) => s.setDetailPanelWidth);
 
   return (
     // SidebarProvider is the outermost wrapper; controlled open state wired
@@ -137,65 +101,38 @@ export function MainLayout() {
           {hasTabs && <TabBar />}
           <div className="flex flex-1 overflow-hidden">
             <ContentArea />
-            {detailKey && (
-              <div className="flex shrink-0" style={{ width: detailPanelWidth }}>
-                <ResizeHandle
-                  side="left"
-                  width={detailPanelWidth}
-                  minWidth={240}
-                  maxWidth={500}
-                  onResize={setDetailPanelWidth}
-                />
-                <aside
-                  aria-label="Object details"
-                  style={{ width: detailPanelWidth }}
-                  className="shrink-0"
-                >
-                  <DetailPanel />
-                </aside>
-              </div>
-            )}
-            <RightRailPanel
-              open={shareHistoryOpen}
-              ariaLabel="Share history"
-              width={288}
-            >
-              <Suspense fallback={null}>
-                <ShareHistory onClose={() => setShareHistoryOpen(false)} />
-              </Suspense>
-            </RightRailPanel>
-            <RightRailPanel
-              open={settingsOpen}
-              ariaLabel="Settings"
-              width={288}
-            >
-              <Suspense fallback={null}>
-                <SettingsPanel onClose={() => setSettingsOpen(false)} />
-              </Suspense>
-            </RightRailPanel>
-            <RightRailPanel
-              open={folderSyncPanelOpen}
-              ariaLabel="Live Folder Sync"
-              width={320}
-            >
-              <Suspense fallback={null}>
-                <FolderSyncPanel
-                  onClose={() => setFolderSyncPanelOpen(false)}
-                />
-              </Suspense>
-            </RightRailPanel>
           </div>
-          {jobPanelOpen && (
-            <Suspense fallback={null}>
-              <JobPanel />
-            </Suspense>
-          )}
         </SidebarInset>
       </div>
 
       <footer>
         <StatusBar />
       </footer>
+
+      {/* DetailPanel self-manages as a Sheet (open={!!detailKey}) */}
+      <DetailPanel />
+
+      {/* Right-side panel Sheets — each self-manages open state via useUIStore */}
+      {jobPanelOpen && (
+        <Suspense fallback={null}>
+          <JobPanel />
+        </Suspense>
+      )}
+      {settingsOpen && (
+        <Suspense fallback={null}>
+          <SettingsPanel />
+        </Suspense>
+      )}
+      {shareHistoryOpen && (
+        <Suspense fallback={null}>
+          <ShareHistory />
+        </Suspense>
+      )}
+      {folderSyncPanelOpen && (
+        <Suspense fallback={null}>
+          <FolderSyncPanel />
+        </Suspense>
+      )}
 
       <Suspense fallback={null}>
         <SyncDialog />
