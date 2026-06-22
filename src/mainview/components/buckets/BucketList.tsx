@@ -56,11 +56,11 @@ export function BucketList({
   const renderBucket = (b: BucketInfo, showStar: boolean) => (
     <li key={b.name}>
       <div
-        className={`group/bucket flex w-full items-center gap-1 text-sm rounded-md ${b.name === selectedBucket ? "bg-accent text-accent-foreground" : ""}`}
+        className={`group/bucket flex w-full items-center gap-1 rounded-none text-sm ${b.name === selectedBucket ? "bg-accent text-accent-foreground" : ""}`}
       >
         <button
           type="button"
-          className="flex flex-1 items-center gap-2 overflow-hidden px-2 py-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
+          className="flex flex-1 items-center gap-2 overflow-hidden rounded-none px-3 py-1.5 transition-colors hover:bg-accent hover:text-accent-foreground"
           onClick={() => onSelect(b.name)}
         >
           <IconBucket className="size-3.5 shrink-0" />
@@ -90,17 +90,17 @@ export function BucketList({
   );
 
   return (
-    <ul className="w-full space-y-0.5 px-1">
+    <ul className="w-full px-0">
       {/* Pinned section */}
       {pinned.length > 0 && (
         <>
-          <li className="px-2 py-1 text-[10px] text-muted-foreground/60 flex items-center gap-1">
+          <li className="flex items-center gap-1 px-3 py-1 text-[10px] text-muted-foreground/60">
             <IconStar className="size-2.5" />
             Pinned
           </li>
           {pinned.map((b) => renderBucket(b, true))}
           {unpinned.length > 0 && (
-            <li className="px-2 py-1 text-[10px] text-muted-foreground/60">
+            <li className="px-3 py-1 text-[10px] text-muted-foreground/60">
               All Buckets
             </li>
           )}

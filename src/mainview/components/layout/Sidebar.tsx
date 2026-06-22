@@ -23,6 +23,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  SidebarTrigger,
   Sidebar as SidebarPrimitive,
 } from "../ui/sidebar";
 import {
@@ -92,44 +93,47 @@ export function Sidebar() {
 
   return (
     <SidebarPrimitive collapsible="icon">
-      {/* ── Header: active profile summary ── */}
-      <SidebarHeader className="border-border border-b px-3 py-2">
-        {activeProfile ? (
-          <div className="flex items-center gap-2.5 group-data-[collapsible=icon]:justify-center">
-            {(() => {
-              const ProviderIcon = providerIcon(activeProfile.provider);
-              return (
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <ProviderIcon className="size-4" />
+      {/* ── Header: active profile summary + collapse toggle ── */}
+      <SidebarHeader className="border-border border-b px-2 py-2">
+        <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
+          <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
+            {activeProfile ? (
+              <div className="flex items-center gap-2.5">
+                {(() => {
+                  const ProviderIcon = providerIcon(activeProfile.provider);
+                  return (
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <ProviderIcon className="size-4" />
+                    </div>
+                  );
+                })()}
+                <div className="min-w-0 flex-1">
+                  <div className="truncate font-medium text-sm leading-tight">
+                    {activeProfile.name}
+                  </div>
+                  <div className="truncate text-[11px] text-foreground/40">
+                    {PROVIDER_LABELS[activeProfile.provider]}
+                    {selectedBucket && (
+                      <>
+                        <span className="mx-1">·</span>
+                        <IconBucket className="mr-0.5 inline size-[10px]" />
+                        {selectedBucket}
+                      </>
+                    )}
+                  </div>
                 </div>
-              );
-            })()}
-            <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
-              <div className="truncate font-medium text-sm leading-tight">
-                {activeProfile.name}
               </div>
-              <div className="truncate text-[11px] text-foreground/40">
-                {PROVIDER_LABELS[activeProfile.provider]}
-                {selectedBucket && (
-                  <>
-                    <span className="mx-1">·</span>
-                    <IconBucket className="mr-0.5 inline size-[10px]" />
-                    {selectedBucket}
-                  </>
-                )}
+            ) : (
+              <div className="flex items-center gap-2.5 text-foreground/40">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-foreground/20 border-dashed">
+                  <IconUser className="size-3" />
+                </div>
+                <span className="text-xs">Select a profile</span>
               </div>
-            </div>
+            )}
           </div>
-        ) : (
-          <div className="flex items-center gap-2.5 text-foreground/40 group-data-[collapsible=icon]:justify-center">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-foreground/20 border-dashed">
-              <IconUser className="size-3" />
-            </div>
-            <span className="text-xs group-data-[collapsible=icon]:hidden">
-              Select a profile
-            </span>
-          </div>
-        )}
+          <SidebarTrigger className="size-7 shrink-0 rounded-none text-foreground/50 hover:text-foreground" />
+        </div>
       </SidebarHeader>
 
       {/* ── Scrollable content ── */}
@@ -137,7 +141,7 @@ export function Sidebar() {
         {/* Favorites section */}
         {favoriteEntries.length > 0 && (
           <SidebarGroup className="p-0">
-            <SidebarGroupLabel className="sticky top-0 z-10 flex items-center justify-between border-border border-b bg-card px-3 py-2 text-foreground/50">
+            <SidebarGroupLabel className="sticky top-0 z-10 flex items-center justify-between rounded-none border-border border-b bg-card px-3 text-foreground/50">
               <div className="flex items-center gap-1.5">
                 <IconStar className="size-[11px]" />
                 <span className="font-semibold text-[11px] uppercase tracking-wider">
@@ -148,7 +152,7 @@ export function Sidebar() {
                 </span>
               </div>
             </SidebarGroupLabel>
-            <SidebarMenu className="px-1">
+            <SidebarMenu className="gap-0 px-0">
               {favoriteEntries.map((fav) => {
                 const profile = profiles.find((p) => p.id === fav.profileId);
                 const isActive =
@@ -159,6 +163,7 @@ export function Sidebar() {
                     <SidebarMenuButton
                       isActive={isActive}
                       tooltip={fav.bucket}
+                      className="rounded-none px-3"
                       onClick={() =>
                         selectFavoriteBucket(fav.profileId, fav.bucket)
                       }
@@ -192,7 +197,7 @@ export function Sidebar() {
 
         {/* Profiles section */}
         <SidebarGroup className="p-0">
-          <SidebarGroupLabel className="sticky top-0 z-10 flex items-center justify-between border-border border-b bg-card px-3 py-2 text-foreground/50">
+          <SidebarGroupLabel className="sticky top-0 z-10 flex items-center justify-between rounded-none border-border border-b bg-card px-3 text-foreground/50">
             <div className="flex items-center gap-1.5">
               <IconUserGroup className="size-[11px]" />
               <span className="font-semibold text-[11px] uppercase tracking-wider">
@@ -247,10 +252,10 @@ export function Sidebar() {
           )}
         </SidebarGroup>
 
-        {/* Buckets section (when profile selected) */}
+        {/* Buckets section (when profile selected) — pinned to the bottom */}
         {activeProfile && (
-          <SidebarGroup className="p-0">
-            <SidebarGroupLabel className="sticky top-0 z-10 flex items-center justify-between border-border border-b bg-card px-3 py-2 text-foreground/50">
+          <SidebarGroup className="mt-auto p-0">
+            <SidebarGroupLabel className="sticky top-0 z-10 flex items-center justify-between rounded-none border-border border-b bg-card px-3 text-foreground/50">
               <div className="flex items-center gap-1.5">
                 <IconBucket className="size-[11px]" />
                 <span className="font-semibold text-[11px] uppercase tracking-wider">

@@ -43,7 +43,7 @@ export function ProfileList({
   }
 
   return (
-    <ul className="w-full space-y-0.5 px-1">
+    <ul className="w-full px-0">
       {profiles.map((p) => (
         <ContextMenu key={p.id}>
           <ContextMenuPrimitive.Trigger
@@ -53,7 +53,7 @@ export function ProfileList({
           >
             <button
               type="button"
-              className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors duration-150 hover:bg-accent hover:text-accent-foreground ${
+              className={`flex w-full items-center gap-2 rounded-none px-3 py-1.5 text-sm transition-colors duration-150 hover:bg-accent hover:text-accent-foreground ${
                 p.id === activeId
                   ? "bg-accent text-accent-foreground"
                   : "text-foreground"
