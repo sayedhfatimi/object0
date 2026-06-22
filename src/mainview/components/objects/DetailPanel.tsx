@@ -1,7 +1,5 @@
-import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import type { S3StatResult } from "../../../shared/s3.types";
-import { slideRightVariants, transitions } from "../../lib/animations";
 import {
   formatBytes,
   formatDate,
@@ -12,7 +10,16 @@ import { rpcCall } from "../../lib/rpc-client";
 import { useBucketStore } from "../../stores/useBucketStore";
 import { useProfileStore } from "../../stores/useProfileStore";
 import { useUIStore } from "../../stores/useUIStore";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { FileIcon } from "../common/FileIcon";
+import { IconImage, IconClipboard } from "@/lib/icons";
 
 const PREVIEWABLE_IMAGES = new Set([
   "png",
@@ -65,109 +72,94 @@ export function DetailPanel() {
     };
   }, [detailKey, profileId, bucket]);
 
-  if (!detailKey) return null;
-
-  const fileName = getFileName(detailKey);
-  const ext = getExtension(detailKey).toLowerCase();
+  const fileName = detailKey ? getFileName(detailKey) : "";
+  const ext = detailKey ? getExtension(detailKey).toLowerCase() : "";
   const isImage = PREVIEWABLE_IMAGES.has(ext);
 
   return (
-    <motion.div
-      variants={slideRightVariants}
-      initial="initial"
-      animate="animate"
-      exit="exit"
-      transition={transitions.spring}
-      className="flex h-full flex-col border-base-300 border-l bg-base-200/50"
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between border-base-300 border-b px-3 py-2">
-        <span className="font-semibold text-base-content/50 text-xs uppercase tracking-wider">
-          Details
-        </span>
-        <button
-          type="button"
-          className="btn btn-ghost btn-xs"
-          onClick={() => setDetailKey(null)}
-          title="Close details"
-        >
-          <i className="fa-solid fa-xmark" />
-        </button>
-      </div>
+    <Sheet open={!!detailKey} onOpenChange={(open) => !open && setDetailKey(null)}>
+      <SheetContent side="right" showCloseButton className="flex flex-col gap-0 p-0 w-72 sm:max-w-xs">
+        <SheetHeader className="border-b border-border px-3 py-2">
+          <SheetTitle className="text-xs font-semibold text-foreground/50 uppercase tracking-wider">
+            Details
+          </SheetTitle>
+        </SheetHeader>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-3">
-        {loading ? (
-          <div className="space-y-3">
-            <div className="flex flex-col items-center gap-2 py-4">
-              <div className="skeleton h-10 w-10 rounded" />
-              <div className="skeleton h-3 w-32 rounded" />
-            </div>
-            {Array.from({ length: 4 }).map((_, i) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton
-              <div key={`ds-${i}`} className="space-y-1">
-                <div className="skeleton h-2 w-12 rounded" />
-                <div className="skeleton h-3 w-full rounded" />
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-3">
+          {loading ? (
+            <div className="space-y-3">
+              <div className="flex flex-col items-center gap-2 py-4">
+                <Skeleton className="h-10 w-10 rounded" />
+                <Skeleton className="h-3 w-32 rounded" />
               </div>
-            ))}
-          </div>
-        ) : error ? (
-          <div className="py-4 text-center text-error text-xs">{error}</div>
-        ) : stat ? (
-          <div className="space-y-4">
-            {/* File icon + name */}
-            <div className="flex flex-col items-center gap-2 py-2">
-              <FileIcon name={detailKey} className="text-3xl" />
-              <span className="max-w-full break-all text-center font-medium text-sm">
-                {fileName}
-              </span>
-            </div>
-
-            {/* Image preview */}
-            {isImage && profileId && bucket && (
-              <div className="overflow-hidden rounded-lg bg-base-300">
-                <div className="flex items-center justify-center p-2 text-base-content/30 text-xs">
-                  <i className="fa-regular fa-image mr-1" />
-                  Image preview not available in S3 directly
+              {Array.from({ length: 4 }).map((_, i) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton
+                <div key={`ds-${i}`} className="space-y-1">
+                  <Skeleton className="h-2 w-12 rounded" />
+                  <Skeleton className="h-3 w-full rounded" />
                 </div>
-              </div>
-            )}
-
-            {/* Metadata table */}
-            <table className="w-full text-xs">
-              <tbody>
-                <DetailRow label="Full Key" value={detailKey} mono />
-                <DetailRow label="Size" value={formatBytes(stat.size)} />
-                <DetailRow
-                  label="Last Modified"
-                  value={formatDate(stat.lastModified)}
-                />
-                <DetailRow label="ETag" value={stat.etag} mono />
-                <DetailRow label="Content Type" value={stat.type || "—"} />
-                <DetailRow label="Extension" value={ext || "—"} />
-              </tbody>
-            </table>
-
-            {/* Quick actions */}
-            <div className="space-y-1 pt-2">
-              <button
-                type="button"
-                className="btn btn-ghost btn-xs btn-block justify-start"
-                onClick={async () => {
-                  try {
-                    await navigator.clipboard.writeText(detailKey);
-                  } catch {
-                    // ignore
-                  }
-                }}
-              >
-                <i className="fa-regular fa-clipboard w-4" /> Copy Key
-              </button>
+              ))}
             </div>
-          </div>
-        ) : null}
-      </div>
-    </motion.div>
+          ) : error ? (
+            <div className="py-4 text-center text-destructive text-xs">{error}</div>
+          ) : stat && detailKey ? (
+            <div className="space-y-4">
+              {/* File icon + name */}
+              <div className="flex flex-col items-center gap-2 py-2">
+                <FileIcon name={detailKey} className="text-3xl" />
+                <span className="max-w-full break-all text-center font-medium text-sm">
+                  {fileName}
+                </span>
+              </div>
+
+              {/* Image preview notice */}
+              {isImage && profileId && bucket && (
+                <div className="overflow-hidden rounded-lg bg-muted">
+                  <div className="flex items-center justify-center p-2 text-foreground/30 text-xs">
+                    <IconImage className="mr-1 size-3" />
+                    Image preview not available in S3 directly
+                  </div>
+                </div>
+              )}
+
+              {/* Metadata table */}
+              <table className="w-full text-xs">
+                <tbody>
+                  <DetailRow label="Full Key" value={detailKey} mono />
+                  <DetailRow label="Size" value={formatBytes(stat.size)} />
+                  <DetailRow
+                    label="Last Modified"
+                    value={formatDate(stat.lastModified)}
+                  />
+                  <DetailRow label="ETag" value={stat.etag} mono />
+                  <DetailRow label="Content Type" value={stat.type || "—"} />
+                  <DetailRow label="Extension" value={ext || "—"} />
+                </tbody>
+              </table>
+
+              {/* Quick actions */}
+              <div className="space-y-1 pt-2">
+                <Button
+                  variant="ghost"
+                  size="xs"
+                  className="w-full justify-start"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(detailKey);
+                    } catch {
+                      // ignore
+                    }
+                  }}
+                >
+                  <IconClipboard /> Copy Key
+                </Button>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
 
@@ -182,11 +174,11 @@ function DetailRow({
 }) {
   return (
     <tr>
-      <td className="whitespace-nowrap py-1.5 pr-3 align-top font-semibold text-base-content/50">
+      <td className="whitespace-nowrap py-1.5 pr-3 align-top font-semibold text-foreground/50">
         {label}
       </td>
       <td
-        className={`break-all py-1.5 text-base-content/80 ${mono ? "font-mono text-[10px]" : ""}`}
+        className={`break-all py-1.5 text-foreground/80 ${mono ? "font-mono text-[10px]" : ""}`}
       >
         {value}
       </td>

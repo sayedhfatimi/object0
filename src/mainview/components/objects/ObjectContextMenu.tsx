@@ -1,12 +1,20 @@
-import { AnimatePresence, motion } from "framer-motion";
-import { useState } from "react";
-import { scaleVariants, transitions } from "../../lib/animations";
+import { useEffect, useRef } from "react";
 import { rpcCall } from "../../lib/rpc-client";
 import { useBucketStore } from "../../stores/useBucketStore";
 import { useObjectStore } from "../../stores/useObjectStore";
 import { useProfileStore } from "../../stores/useProfileStore";
 import { useUIStore } from "../../stores/useUIStore";
 import { toast } from "../common/Toast";
+import {
+  IconCircleInfo,
+  IconCloudArrowDown,
+  IconShareNodes,
+  IconPen,
+  IconCopy,
+  IconArrowRightArrowLeft,
+  IconClipboard,
+  IconTrashCan,
+} from "@/lib/icons";
 
 interface ContextMenuState {
   x: number;
@@ -51,56 +59,27 @@ export function ObjectContextMenu({
   const bucket = useBucketStore((s) => s.selectedBucket);
   const openShareDialog = useUIStore((s) => s.openShareDialog);
   const setDetailKey = useUIStore((s) => s.setDetailKey);
-  const [deleting, setDeleting] = useState(false);
-
-  if (!profileId || !bucket) return null;
-
-  return (
-    <AnimatePresence>
-      {menu && (
-        <ObjectContextMenuInner
-          menu={menu}
-          onClose={onClose}
-          onRename={onRename}
-          profileId={profileId}
-          bucket={bucket}
-          openShareDialog={openShareDialog}
-          setDetailKey={setDetailKey}
-          deleting={deleting}
-          setDeleting={setDeleting}
-        />
-      )}
-    </AnimatePresence>
-  );
-}
-
-function ObjectContextMenuInner({
-  menu,
-  onClose,
-  onRename,
-  profileId,
-  bucket,
-  openShareDialog,
-  setDetailKey,
-  deleting,
-  setDeleting,
-}: {
-  menu: ContextMenuState;
-  onClose: () => void;
-  onRename: (key: string) => void;
-  profileId: string;
-  bucket: string;
-  openShareDialog: (opts: {
-    key: string;
-    bucket: string;
-    profileId: string;
-  }) => void;
-  setDetailKey: (key: string | null) => void;
-  deleting: boolean;
-  setDeleting: (v: boolean) => void;
-}) {
-  const fileName = menu.key.split("/").filter(Boolean).pop() ?? menu.key;
   const openTransferDialog = useUIStore((s) => s.openTransferDialog);
+
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close on outside click or Escape
+  useEffect(() => {
+    if (!menu) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [menu, onClose]);
+
+  if (!menu || !profileId || !bucket) return null;
+
+  const fileName = menu.key.split("/").filter(Boolean).pop() ?? menu.key;
   const menuPosition = clampMenuPosition(
     menu.x,
     menu.y,
@@ -168,7 +147,6 @@ function ObjectContextMenuInner({
   };
 
   const handleDelete = async () => {
-    setDeleting(true);
     try {
       await rpcCall("objects:delete", {
         profileId,
@@ -181,14 +159,13 @@ function ObjectContextMenuInner({
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Unknown error");
     }
-    setDeleting(false);
     onClose();
   };
 
   return (
     <>
       {/* Dismiss overlay */}
-      <motion.button
+      <button
         type="button"
         className="fixed inset-0 z-50 cursor-default bg-transparent"
         onClick={onClose}
@@ -196,105 +173,112 @@ function ObjectContextMenuInner({
           e.preventDefault();
           onClose();
         }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+        aria-hidden
       />
 
-      <motion.ul
-        className="menu menu-sm fixed z-60 w-48 rounded-box bg-base-300 p-1 shadow-lg"
+      {/* Menu panel */}
+      <div
+        ref={menuRef}
+        role="menu"
+        aria-label="Object actions"
+        className="fixed z-60 w-48 rounded-lg border border-foreground/10 bg-popover p-1 text-popover-foreground shadow-md"
         style={{
           top: menuPosition.y,
           left: menuPosition.x,
-          transformOrigin: "top left",
         }}
-        variants={scaleVariants}
-        initial="initial"
-        animate="animate"
-        exit="exit"
-        transition={transitions.fast}
       >
-        {/* Details */}
+        {/* Details (files only) */}
         {!menu.isFolder && (
-          <li>
-            <button type="button" onClick={handleDetails}>
-              <i className="fa-solid fa-circle-info w-4 text-center" /> Details
-            </button>
-          </li>
+          <button
+            type="button"
+            role="menuitem"
+            className="flex w-full cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm outline-hidden select-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+            onClick={handleDetails}
+          >
+            <IconCircleInfo className="size-4 shrink-0" /> Details
+          </button>
         )}
 
         {/* Download */}
-        <li>
-          <button type="button" onClick={handleDownload}>
-            <i className="fa-solid fa-cloud-arrow-down w-4 text-center" />{" "}
-            Download
-          </button>
-        </li>
+        <button
+          type="button"
+          role="menuitem"
+          className="flex w-full cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm outline-hidden select-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+          onClick={() => void handleDownload()}
+        >
+          <IconCloudArrowDown className="size-4 shrink-0" /> Download
+        </button>
 
         {/* Share (files only) */}
         {!menu.isFolder && (
-          <li>
-            <button type="button" onClick={handleShare}>
-              <i className="fa-solid fa-share-nodes w-4 text-center" /> Share
-            </button>
-          </li>
+          <button
+            type="button"
+            role="menuitem"
+            className="flex w-full cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm outline-hidden select-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+            onClick={handleShare}
+          >
+            <IconShareNodes className="size-4 shrink-0" /> Share
+          </button>
         )}
 
         {/* Rename */}
-        <li>
-          <button type="button" onClick={handleRename}>
-            <i className="fa-solid fa-pen w-4 text-center" /> Rename
-          </button>
-        </li>
+        <button
+          type="button"
+          role="menuitem"
+          className="flex w-full cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm outline-hidden select-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+          onClick={handleRename}
+        >
+          <IconPen className="size-4 shrink-0" /> Rename
+        </button>
 
         {/* Copy to bucket */}
-        <li>
-          <button
-            type="button"
-            onClick={() => {
-              openTransferDialog({ keys: [menu.key], defaultMode: "copy" });
-              onClose();
-            }}
-          >
-            <i className="fa-regular fa-copy w-4 text-center" /> Copy to Bucket
-          </button>
-        </li>
+        <button
+          type="button"
+          role="menuitem"
+          className="flex w-full cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm outline-hidden select-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+          onClick={() => {
+            openTransferDialog({ keys: [menu.key], defaultMode: "copy" });
+            onClose();
+          }}
+        >
+          <IconCopy className="size-4 shrink-0" /> Copy to Bucket
+        </button>
 
         {/* Move to bucket */}
-        <li>
-          <button
-            type="button"
-            onClick={() => {
-              openTransferDialog({ keys: [menu.key], defaultMode: "move" });
-              onClose();
-            }}
-          >
-            <i className="fa-solid fa-arrow-right-arrow-left w-4 text-center" />{" "}
-            Move to Bucket
-          </button>
-        </li>
+        <button
+          type="button"
+          role="menuitem"
+          className="flex w-full cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm outline-hidden select-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+          onClick={() => {
+            openTransferDialog({ keys: [menu.key], defaultMode: "move" });
+            onClose();
+          }}
+        >
+          <IconArrowRightArrowLeft className="size-4 shrink-0" /> Move to Bucket
+        </button>
 
         {/* Copy key */}
-        <li>
-          <button type="button" onClick={handleCopyKey}>
-            <i className="fa-regular fa-clipboard w-4 text-center" /> Copy Key
-          </button>
-        </li>
+        <button
+          type="button"
+          role="menuitem"
+          className="flex w-full cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm outline-hidden select-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+          onClick={() => void handleCopyKey()}
+        >
+          <IconClipboard className="size-4 shrink-0" /> Copy Key
+        </button>
 
-        <li className="my-0.5 border-base-content/10 border-t" />
+        <hr className="-mx-1 my-1 border-t border-border" />
 
         {/* Delete */}
-        <li>
-          <button
-            type="button"
-            className="text-error"
-            onClick={handleDelete}
-            disabled={deleting}
-          >
-            <i className="fa-regular fa-trash-can w-4 text-center" /> Delete
-          </button>
-        </li>
-      </motion.ul>
+        <button
+          type="button"
+          role="menuitem"
+          className="flex w-full cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm text-destructive outline-hidden select-none hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive"
+          onClick={() => void handleDelete()}
+        >
+          <IconTrashCan className="size-4 shrink-0 text-destructive" /> Delete
+        </button>
+      </div>
     </>
   );
 }

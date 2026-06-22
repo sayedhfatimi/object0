@@ -1,13 +1,12 @@
-import { AnimatePresence, motion } from "framer-motion";
 import type React from "react";
 import { useCallback, useRef, useState } from "react";
-import { transitions } from "../../lib/animations";
 import { rpcCall } from "../../lib/rpc-client";
 import { useBucketStore } from "../../stores/useBucketStore";
 import { useObjectStore } from "../../stores/useObjectStore";
 import { useProfileStore } from "../../stores/useProfileStore";
 import { useUIStore } from "../../stores/useUIStore";
 import { toast } from "../common/Toast";
+import { IconCloudArrowUp } from "@/lib/icons";
 
 interface DropZoneProps {
   children: React.ReactNode;
@@ -123,33 +122,19 @@ export function DropZone({ children }: DropZoneProps) {
       {children}
 
       {/* Drop overlay */}
-      <AnimatePresence>
-        {dragging && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={transitions.fast}
-            className="absolute inset-0 z-40 flex items-center justify-center bg-primary/10 backdrop-blur-sm"
-          >
-            <motion.div
-              initial={{ scale: 0.85, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.85, opacity: 0 }}
-              transition={transitions.spring}
-              className="flex flex-col items-center gap-3 rounded-2xl border-2 border-primary border-dashed bg-base-100/80 px-12 py-10"
-            >
-              <i className="fa-solid fa-cloud-arrow-up text-4xl text-primary" />
-              <span className="font-semibold text-base-content text-sm">
-                Drop files to upload
-              </span>
-              <span className="text-base-content/50 text-xs">
-                Files will be uploaded to the current folder
-              </span>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {dragging && (
+        <div className="absolute inset-0 z-40 flex items-center justify-center bg-primary/10 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-3 rounded-2xl border-2 border-primary border-dashed bg-background/80 px-12 py-10">
+            <IconCloudArrowUp className="size-10 text-primary" />
+            <span className="font-semibold text-foreground text-sm">
+              Drop files to upload
+            </span>
+            <span className="text-foreground/50 text-xs">
+              Files will be uploaded to the current folder
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

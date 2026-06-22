@@ -4,7 +4,16 @@ import { rpcCall } from "../../lib/rpc-client";
 import { useBucketStore } from "../../stores/useBucketStore";
 import { useObjectStore } from "../../stores/useObjectStore";
 import { useProfileStore } from "../../stores/useProfileStore";
-import { Modal } from "../common/Modal";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "../common/Toast";
 
 interface CreateFolderDialogProps {
@@ -19,8 +28,8 @@ export function CreateFolderDialog({ open, onClose }: CreateFolderDialogProps) {
   const [name, setName] = useState("");
   const [creating, setCreating] = useState(false);
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCreate = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     if (!name.trim() || !profileId || !bucket) return;
 
     const cleanName = name.trim().replace(/\/+$/, "");
@@ -56,49 +65,56 @@ export function CreateFolderDialog({ open, onClose }: CreateFolderDialogProps) {
   };
 
   return (
-    <Modal
-      open={open}
-      onClose={handleClose}
-      title="Create Folder"
-      actions={
-        <div className="flex gap-2">
-          <button type="button" className="btn btn-sm" onClick={handleClose}>
+    <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
+      <DialogContent showCloseButton={false}>
+        <DialogHeader>
+          <DialogTitle>Create Folder</DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={(e) => void handleCreate(e)} className="space-y-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="folder-name" className="text-xs">
+              Folder Name
+            </Label>
+            <Input
+              id="folder-name"
+              type="text"
+              placeholder="my-folder"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  void handleCreate();
+                }
+              }}
+              autoFocus
+            />
+            <p className="text-[11px] text-foreground/50">
+              {currentPrefix
+                ? `Will create: ${currentPrefix}${name.trim()}/`
+                : `Will create: ${name.trim()}/`}
+            </p>
+          </div>
+        </form>
+
+        <DialogFooter>
+          <Button variant="outline" size="sm" onClick={handleClose}>
             Cancel
-          </button>
-          <button
-            type="button"
-            className="btn btn-primary btn-sm"
-            onClick={handleCreate}
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => void handleCreate()}
             disabled={creating || !name.trim()}
           >
             {creating ? (
-              <span className="loading loading-spinner loading-xs" />
+              <div className="size-3.5 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
             ) : (
               "Create"
             )}
-          </button>
-        </div>
-      }
-    >
-      <form onSubmit={handleCreate}>
-        <fieldset className="fieldset">
-          <legend className="fieldset-legend text-xs">Folder Name</legend>
-          <input
-            type="text"
-            className="input input-sm w-full"
-            placeholder="my-folder"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            // biome-ignore lint/a11y/noAutofocus: focus on open is intentional UX
-            autoFocus
-          />
-          <p className="fieldset-label text-xs opacity-50">
-            {currentPrefix
-              ? `Will create: ${currentPrefix}${name.trim()}/`
-              : `Will create: ${name.trim()}/`}
-          </p>
-        </fieldset>
-      </form>
-    </Modal>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

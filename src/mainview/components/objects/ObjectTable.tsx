@@ -9,6 +9,16 @@ import { rpcCall } from "../../lib/rpc-client";
 import { useBucketStore } from "../../stores/useBucketStore";
 import { useObjectStore } from "../../stores/useObjectStore";
 import { useProfileStore } from "../../stores/useProfileStore";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { FileIcon } from "../common/FileIcon";
 import { toast } from "../common/Toast";
 import { type ContextMenuState, ObjectContextMenu } from "./ObjectContextMenu";
@@ -307,23 +317,19 @@ export function ObjectTable({
       tabIndex={0}
       onKeyDown={handleTableKeyDown}
     >
-      <table
-        className="table-pin-rows table-sm table"
-        aria-label="Object table"
-      >
-        <thead>
-          <tr className="bg-base-200">
-            <th className="w-8">
-              <input
-                type="checkbox"
-                className="checkbox checkbox-xs"
+      <Table aria-label="Object table" className="table-fixed">
+        <TableHeader className="sticky top-0 z-10 bg-muted/80 backdrop-blur-sm">
+          <TableRow className="hover:bg-transparent border-b">
+            <TableHead className="w-8 px-2">
+              <Checkbox
                 checked={allSelected}
-                onChange={() =>
+                onCheckedChange={() =>
                   allSelected ? onClearSelection() : onSelectAll()
                 }
+                aria-label="Select all"
               />
-            </th>
-            <th
+            </TableHead>
+            <TableHead
               className="select-none"
               scope="col"
               aria-sort={
@@ -342,8 +348,8 @@ export function ObjectTable({
                 Name
                 <span aria-hidden>{sortIcon("key")}</span>
               </button>
-            </th>
-            <th
+            </TableHead>
+            <TableHead
               className="w-24 select-none text-right"
               scope="col"
               aria-sort={
@@ -362,8 +368,8 @@ export function ObjectTable({
                 Size
                 <span aria-hidden>{sortIcon("size")}</span>
               </button>
-            </th>
-            <th
+            </TableHead>
+            <TableHead
               className="w-36 select-none text-right"
               scope="col"
               aria-sort={
@@ -382,34 +388,33 @@ export function ObjectTable({
                 Modified
                 <span aria-hidden>{sortIcon("lastModified")}</span>
               </button>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {/* Prefixes (folders) */}
           {prefixes.map((p, i) => (
-            <tr
+            <TableRow
               key={p.prefix}
               data-row-index={i}
               aria-selected={selectedKeys.has(p.prefix)}
-              className={`cursor-pointer transition-colors duration-150 hover:bg-base-200/50 ${
+              className={`cursor-pointer transition-colors duration-150 ${
                 selectedKeys.has(p.prefix)
-                  ? "border-primary border-l-2 bg-primary/10"
-                  : "border-transparent border-l-2"
-              } ${focusedIndex === i ? "outline-1 outline-primary/60" : ""}`}
+                  ? "border-l-2 border-l-primary bg-primary/10"
+                  : "border-l-2 border-l-transparent"
+              } ${focusedIndex === i ? "outline outline-1 outline-primary/60" : ""}`}
               onDoubleClick={() => onNavigate(p.prefix)}
               onClick={() => setFocusedIndex(i)}
               onContextMenu={(e) => handleContextMenu(e, p.prefix, true)}
             >
-              <td>
-                <input
-                  type="checkbox"
-                  className="checkbox checkbox-xs"
+              <TableCell className="px-2">
+                <Checkbox
                   checked={selectedKeys.has(p.prefix)}
-                  onChange={() => onToggleSelect(p.prefix)}
+                  onCheckedChange={() => onToggleSelect(p.prefix)}
+                  aria-label={`Select ${p.prefix}`}
                 />
-              </td>
-              <td>
+              </TableCell>
+              <TableCell>
                 <div className="flex items-center gap-2">
                   <FileIcon name="" isFolder />
                   <button
@@ -420,49 +425,48 @@ export function ObjectTable({
                     {p.prefix.split("/").filter(Boolean).pop()}/
                   </button>
                 </div>
-              </td>
-              <td className="text-right text-base-content/40">—</td>
-              <td className="text-right text-base-content/40">—</td>
-            </tr>
+              </TableCell>
+              <TableCell className="text-right text-foreground/40">—</TableCell>
+              <TableCell className="text-right text-foreground/40">—</TableCell>
+            </TableRow>
           ))}
 
           {/* Objects (files) */}
           {sorted.map((obj, i) => {
             const rowIdx = prefixes.length + i;
             return (
-              <tr
+              <TableRow
                 key={obj.key}
                 data-row-index={rowIdx}
                 aria-selected={selectedKeys.has(obj.key)}
-                className={`transition-colors duration-150 hover:bg-base-200/50 ${
+                className={`transition-colors duration-150 ${
                   selectedKeys.has(obj.key)
-                    ? "border-primary border-l-2 bg-primary/10"
-                    : "border-transparent border-l-2"
-                } ${focusedIndex === rowIdx ? "outline-1 outline-primary/60" : ""}`}
+                    ? "border-l-2 border-l-primary bg-primary/10"
+                    : "border-l-2 border-l-transparent"
+                } ${focusedIndex === rowIdx ? "outline outline-1 outline-primary/60" : ""}`}
                 onClick={() => setFocusedIndex(rowIdx)}
                 onContextMenu={(e) => handleContextMenu(e, obj.key, false)}
               >
-                <td>
-                  <input
-                    type="checkbox"
-                    className="checkbox checkbox-xs"
+                <TableCell className="px-2">
+                  <Checkbox
                     checked={selectedKeys.has(obj.key)}
-                    onChange={() => onToggleSelect(obj.key)}
+                    onCheckedChange={() => onToggleSelect(obj.key)}
+                    aria-label={`Select ${getFileName(obj.key)}`}
                   />
-                </td>
-                <td>
+                </TableCell>
+                <TableCell>
                   <div className="flex items-center gap-2">
                     <FileIcon name={obj.key} />
                     {renamingKey === obj.key ? (
-                      <input
+                      <Input
                         ref={renameRef}
                         type="text"
-                        className="input input-sm max-w-md font-mono text-xs"
+                        className="h-6 max-w-md font-mono text-xs"
                         value={renameValue}
                         onChange={(e) => setRenameValue(e.target.value)}
-                        onBlur={commitRename}
+                        onBlur={() => void commitRename()}
                         onKeyDown={(e) => {
-                          if (e.key === "Enter") commitRename();
+                          if (e.key === "Enter") void commitRename();
                           if (e.key === "Escape") setRenamingKey(null);
                         }}
                       />
@@ -480,22 +484,22 @@ export function ObjectTable({
                       </button>
                     )}
                   </div>
-                </td>
-                <td className="text-right font-mono text-base-content/60">
+                </TableCell>
+                <TableCell className="text-right font-mono text-foreground/60">
                   {formatBytes(obj.size)}
-                </td>
-                <td className="text-right text-base-content/60">
+                </TableCell>
+                <TableCell className="text-right text-foreground/60">
                   {formatRelativeDate(obj.lastModified)}
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             );
           })}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
 
       {loading && (
         <div className="flex justify-center py-3">
-          <span className="loading loading-spinner loading-sm text-primary" />
+          <div className="size-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
         </div>
       )}
 

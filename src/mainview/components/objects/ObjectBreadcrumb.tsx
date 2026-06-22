@@ -1,8 +1,13 @@
-import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
-import { transitions } from "../../lib/animations";
 import { useObjectStore } from "../../stores/useObjectStore";
 import { useProfileStore } from "../../stores/useProfileStore";
+import { Button } from "@/components/ui/button";
+import {
+  IconCloud,
+  IconBucket,
+  IconCheck,
+  IconCopy,
+} from "@/lib/icons";
 
 interface ObjectBreadcrumbProps {
   profileName: string;
@@ -42,96 +47,96 @@ export function ObjectBreadcrumb({
     }
   };
 
-  // For very deep paths, collapse middle segments
+  // For very deep paths, collapse middle segments — build a flat render list
+  // Each element is either a separator "/" or a real part/ellipsis.
   const MAX_VISIBLE = 4;
   const shouldCollapse = parts.length > MAX_VISIBLE;
-  const visibleParts = shouldCollapse
+
+  // Build the visible parts with their real indices
+  type PartItem = { label: string; realIndex: number; isLast: boolean };
+  const visibleParts: (PartItem | null)[] = shouldCollapse
     ? [
-        ...parts.slice(0, 1),
-        null, // represents collapsed segment
-        ...parts.slice(parts.length - (MAX_VISIBLE - 2)),
+        { label: parts[0], realIndex: 0, isLast: false },
+        null, // ellipsis placeholder
+        ...parts
+          .slice(parts.length - (MAX_VISIBLE - 2))
+          .map((label, j) => {
+            const realIndex = parts.length - (MAX_VISIBLE - 2) + j;
+            return { label, realIndex, isLast: realIndex === parts.length - 1 };
+          }),
       ]
-    : parts;
+    : parts.map((label, i) => ({
+        label,
+        realIndex: i,
+        isLast: i === parts.length - 1,
+      }));
 
   return (
     <div className="flex items-center gap-1">
-      <div className="breadcrumbs text-xs">
-        <ul>
+      <nav aria-label="Breadcrumb" className="text-xs">
+        <ol className="flex flex-wrap items-center gap-1">
           <li>
-            <span className="text-base-content/50">
-              <i className="fa-solid fa-cloud fa-xs mr-1" />
+            <span className="flex items-center gap-1 text-foreground/50">
+              <IconCloud className="size-3 shrink-0" />
               {profileName}
             </span>
           </li>
+          <li aria-hidden className="text-foreground/30">/</li>
           <li>
             <button
               type="button"
-              className="link link-hover font-medium"
+              className="flex items-center gap-1 font-medium hover:underline focus-visible:outline-none focus-visible:underline"
               onClick={() => handleNavigate(-1)}
             >
-              <i className="fa-solid fa-bucket fa-xs mr-1" />
+              <IconBucket className="size-3 shrink-0" />
               {bucket}
             </button>
           </li>
-          <AnimatePresence mode="popLayout">
-            {visibleParts.map((part, i) => {
-              if (part === null) {
-                return (
-                  // biome-ignore lint/suspicious/noArrayIndexKey: collapsed indicator
-                  <li key={`ellipsis-${i}`}>
-                    <span className="text-base-content/40">…</span>
-                  </li>
-                );
-              }
-
-              // Map visual index back to real parts index
-              const realIndex = shouldCollapse
-                ? i === 0
-                  ? 0
-                  : parts.length - (MAX_VISIBLE - 2) + (i - 2)
-                : i;
-              const isLast = realIndex === parts.length - 1;
-
-              return (
-                <motion.li
-                  key={parts.slice(0, realIndex + 1).join("/")}
-                  layout
-                  initial={{ opacity: 0, x: 8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -8 }}
-                  transition={transitions.fast}
-                >
-                  {isLast ? (
-                    <span className="font-medium">{part}</span>
-                  ) : (
-                    <button
-                      type="button"
-                      className="link link-hover"
-                      onClick={() => handleNavigate(realIndex)}
-                    >
-                      {part}
-                    </button>
-                  )}
-                </motion.li>
-              );
-            })}
-          </AnimatePresence>
-        </ul>
-      </div>
+          {visibleParts.flatMap((item) => {
+            if (item === null) {
+              return [
+                <li key="sep-ellipsis" aria-hidden className="text-foreground/30">/</li>,
+                <li key="ellipsis">
+                  <span className="text-foreground/40">…</span>
+                </li>,
+              ];
+            }
+            return [
+              <li key={`sep-${item.realIndex}`} aria-hidden className="text-foreground/30">/</li>,
+              <li key={`part-${item.realIndex}`}>
+                {item.isLast ? (
+                  <span className="font-medium">{item.label}</span>
+                ) : (
+                  <button
+                    type="button"
+                    className="hover:underline focus-visible:outline-none focus-visible:underline"
+                    onClick={() => handleNavigate(item.realIndex)}
+                  >
+                    {item.label}
+                  </button>
+                )}
+              </li>,
+            ];
+          })}
+        </ol>
+      </nav>
 
       {/* Copy path button */}
       {currentPrefix && (
-        <button
-          type="button"
-          className="btn btn-ghost btn-xs opacity-70 transition-opacity hover:opacity-100"
-          onClick={handleCopyPath}
+        <Button
+          variant="ghost"
+          size="icon-xs"
+          className="opacity-70 hover:opacity-100"
+          onClick={() => void handleCopyPath()}
           title={`Copy path: ${fullPath}`}
           aria-label="Copy current path"
         >
-          <i
-            className={`fa-solid ${copied ? "fa-check text-success" : "fa-copy"} fa-xs`}
-          />
-        </button>
+          {copied ? (
+            <IconCheck className="size-3 text-success" />
+          ) : (
+            <IconCopy className="size-3" />
+          )}
+        </Button>
       )}
     </div>
   );

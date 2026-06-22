@@ -1,15 +1,16 @@
-import { motion } from "framer-motion";
 import { useCallback, useState } from "react";
 import type { S3Object, S3Prefix } from "../../../shared/s3.types";
-import { staggerItemVariants, transitions } from "../../lib/animations";
 import { formatBytes, getFileName } from "../../lib/formatters";
 import { rpcCall } from "../../lib/rpc-client";
 import { useBucketStore } from "../../stores/useBucketStore";
 import { useObjectStore } from "../../stores/useObjectStore";
 import { useProfileStore } from "../../stores/useProfileStore";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { FileIcon } from "../common/FileIcon";
 import { Modal } from "../common/Modal";
 import { toast } from "../common/Toast";
+import { IconArrowUpRightFromSquare } from "@/lib/icons";
 import { type ContextMenuState, ObjectContextMenu } from "./ObjectContextMenu";
 
 interface ObjectGridProps {
@@ -99,81 +100,73 @@ export function ObjectGrid({
 
   return (
     <>
-      <motion.div
-        className="grid grid-cols-[repeat(auto-fill,minmax(120px,140px))] gap-2 p-3"
-        initial="initial"
-        animate="animate"
-        transition={{ staggerChildren: 0.03 }}
-      >
-        {prefixes.map((p, i) => {
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,140px))] gap-2 p-3">
+        {prefixes.map((p) => {
           const folderName =
             p.prefix.split("/").filter(Boolean).pop() ?? p.prefix;
+          const isSelected = selectedKeys.has(p.prefix);
           return (
-            <motion.div
-              key={p.prefix}
-              variants={staggerItemVariants}
-              transition={{ ...transitions.spring, delay: i * 0.03 }}
-              className={`group/folder relative rounded-lg p-2 transition-all duration-150 ${
-                selectedKeys.has(p.prefix)
-                  ? "scale-[1.02] bg-primary/20 shadow-sm ring-2 ring-primary"
-                  : "bg-base-200 ring-1 ring-transparent hover:bg-base-300"
-              }`}
-            >
-              <button
-                type="button"
-                className="btn btn-ghost btn-sm btn-square absolute top-1 right-1 opacity-80 transition-opacity group-hover/folder:opacity-100"
-                onClick={() => onNavigate(p.prefix)}
-                title={`Open ${folderName}`}
-                aria-label={`Open folder ${folderName}`}
+            <div key={p.prefix} className="group/folder relative">
+              <Card
+                className={`cursor-pointer p-2 transition-all duration-150 rounded-lg ring-1 ${
+                  isSelected
+                    ? "ring-2 ring-primary bg-primary/20 scale-[1.02] shadow-sm"
+                    : "ring-transparent hover:ring-border"
+                }`}
               >
-                <i className="fa-solid fa-arrow-up-right-from-square" />
-              </button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className="absolute top-1 right-1 opacity-80 transition-opacity group-hover/folder:opacity-100"
+                  onClick={() => onNavigate(p.prefix)}
+                  title={`Open ${folderName}`}
+                  aria-label={`Open folder ${folderName}`}
+                >
+                  <IconArrowUpRightFromSquare />
+                </Button>
 
-              <button
-                type="button"
-                className="flex w-full cursor-pointer flex-col items-center gap-1 pt-4 text-center"
-                onDoubleClick={() => onNavigate(p.prefix)}
-                onClick={() => onToggleSelect(p.prefix)}
-                onContextMenu={(e) => handleContextMenu(e, p.prefix, true)}
-              >
-                <FileIcon name="" isFolder className="text-2xl" />
-                <span className="w-full truncate text-xs">{folderName}/</span>
-              </button>
-            </motion.div>
+                <button
+                  type="button"
+                  className="flex w-full cursor-pointer flex-col items-center gap-1 pt-4 text-center"
+                  onDoubleClick={() => onNavigate(p.prefix)}
+                  onClick={() => onToggleSelect(p.prefix)}
+                  onContextMenu={(e) => handleContextMenu(e, p.prefix, true)}
+                >
+                  <FileIcon name="" isFolder className="text-2xl" />
+                  <span className="w-full truncate text-xs">{folderName}/</span>
+                </button>
+              </Card>
+            </div>
           );
         })}
 
-        {objects.map((obj, i) => (
-          <motion.button
-            type="button"
-            key={obj.key}
-            variants={staggerItemVariants}
-            transition={{
-              ...transitions.spring,
-              delay: (prefixes.length + i) * 0.03,
-            }}
-            className={`cursor-pointer rounded-lg p-2 text-left transition-all duration-150 ${
-              selectedKeys.has(obj.key)
-                ? "scale-[1.02] bg-primary/20 shadow-sm ring-2 ring-primary"
-                : "bg-base-200 ring-1 ring-transparent hover:bg-base-300"
-            }`}
-            onClick={() => onToggleSelect(obj.key)}
-            onContextMenu={(e) => handleContextMenu(e, obj.key, false)}
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <div className="flex flex-col items-center gap-1 text-center">
-              <FileIcon name={obj.key} className="text-2xl" />
-              <span className="w-full truncate text-xs">
-                {getFileName(obj.key)}
-              </span>
-              <span className="text-[11px] text-base-content/40">
-                {formatBytes(obj.size)}
-              </span>
-            </div>
-          </motion.button>
-        ))}
-      </motion.div>
+        {objects.map((obj) => {
+          const isSelected = selectedKeys.has(obj.key);
+          return (
+            <button
+              type="button"
+              key={obj.key}
+              className={`cursor-pointer rounded-lg p-2 text-left transition-all duration-150 ring-1 ${
+                isSelected
+                  ? "ring-2 ring-primary bg-primary/20 scale-[1.02] shadow-sm"
+                  : "bg-card ring-transparent hover:ring-border"
+              }`}
+              onClick={() => onToggleSelect(obj.key)}
+              onContextMenu={(e) => handleContextMenu(e, obj.key, false)}
+            >
+              <div className="flex flex-col items-center gap-1 text-center">
+                <FileIcon name={obj.key} className="text-2xl" />
+                <span className="w-full truncate text-xs">
+                  {getFileName(obj.key)}
+                </span>
+                <span className="text-[11px] text-foreground/40">
+                  {formatBytes(obj.size)}
+                </span>
+              </div>
+            </button>
+          );
+        })}
+      </div>
 
       <ObjectContextMenu
         menu={contextMenu}
@@ -187,27 +180,25 @@ export function ObjectGrid({
         title="Rename Object"
         actions={
           <>
-            <button type="button" className="btn" onClick={closeRename}>
+            <Button variant="outline" onClick={closeRename}>
               Cancel
-            </button>
-            <button
-              type="button"
-              className="btn btn-primary"
+            </Button>
+            <Button
               onClick={() => void commitRename()}
               disabled={!renameValue.trim() || renaming}
             >
               {renaming ? (
-                <span className="loading loading-spinner loading-xs" />
+                <div className="size-3.5 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
               ) : (
                 "Rename"
               )}
-            </button>
+            </Button>
           </>
         }
       >
         <input
           type="text"
-          className="input input-bordered w-full"
+          className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
           value={renameValue}
           onChange={(e) => setRenameValue(e.target.value)}
           onKeyDown={(e) => {

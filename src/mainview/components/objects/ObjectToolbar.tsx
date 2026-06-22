@@ -6,6 +6,33 @@ import { useBucketStore } from "../../stores/useBucketStore";
 import { useObjectStore } from "../../stores/useObjectStore";
 import { useProfileStore } from "../../stores/useProfileStore";
 import { useUIStore } from "../../stores/useUIStore";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import {
+  IconCloudArrowUp,
+  IconFolder,
+  IconCloudArrowDown,
+  IconArrowsRotate,
+  IconTrashCan,
+  IconChevronDown,
+  IconFolderPlus,
+  IconFileZipper,
+  IconArrowRightArrowLeft,
+  IconShareNodes,
+  IconMagnifyingGlass,
+  IconXmark,
+  IconTableList,
+  IconGrip,
+  IconFolderOpen,
+  IconRotate,
+} from "@/lib/icons";
 import { ConfirmDialog } from "../common/ConfirmDialog";
 import { toast } from "../common/Toast";
 import { CreateFolderDialog } from "./CreateFolderDialog";
@@ -48,10 +75,8 @@ export function ObjectToolbar() {
       : syncEntryPreference === "live-folder-sync"
         ? "Live Sync"
         : "Sync";
-  const syncButtonIcon =
-    syncEntryPreference === "live-folder-sync"
-      ? "fa-solid fa-folder-open"
-      : "fa-solid fa-rotate";
+  const SyncButtonIcon =
+    syncEntryPreference === "live-folder-sync" ? IconFolderOpen : IconRotate;
   const syncButtonTitle =
     syncEntryPreference === null
       ? "Choose Object Sync (one-time) or Live Folder Sync"
@@ -309,110 +334,102 @@ export function ObjectToolbar() {
   }, []);
 
   return (
-    <div className="no-drag flex items-center gap-2 border-base-300 border-t px-3 py-2">
+    <div className="no-drag flex items-center gap-2 border-t border-border px-3 py-2">
       <div className="flex items-center gap-1.5">
-        <button
-          type="button"
-          className="btn btn-primary btn-sm"
+        <Button
+          size="sm"
           onClick={() => void handleUpload()}
           title="Upload Files"
         >
-          <i className="fa-solid fa-cloud-arrow-up" /> Upload
-        </button>
+          <IconCloudArrowUp /> Upload
+        </Button>
 
-        <button
-          type="button"
-          className="btn btn-ghost btn-sm"
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={() => setCreateFolderOpen(true)}
           title="Create Folder"
         >
-          <i className="fa-regular fa-folder" /> New Folder
-        </button>
+          <IconFolder /> New Folder
+        </Button>
 
-        <button
-          type="button"
-          className="btn btn-ghost btn-sm"
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={() => void handleDownload()}
           disabled={!hasSelection}
           title="Download selected"
         >
-          <i className="fa-solid fa-cloud-arrow-down" /> Download
-        </button>
+          <IconCloudArrowDown /> Download
+        </Button>
 
-        <button
-          type="button"
-          className="btn btn-ghost btn-sm"
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={openSyncEntry}
           title={syncButtonTitle}
         >
-          <i className={syncButtonIcon} /> {syncButtonLabel}
-        </button>
+          <SyncButtonIcon /> {syncButtonLabel}
+        </Button>
 
-        <button
-          type="button"
-          className={`btn btn-ghost btn-sm ${
+        <Button
+          variant="ghost"
+          size="sm"
+          className={
             hasSelection
-              ? "text-error hover:bg-error/10"
-              : "text-base-content/35 opacity-60"
-          }`}
+              ? "text-destructive hover:bg-destructive/10 hover:text-destructive"
+              : "text-foreground/35 opacity-60"
+          }
           onClick={openDeleteConfirm}
           disabled={!hasSelection}
           title={
             hasSelection ? "Delete selected" : "Select object(s) to delete"
           }
         >
-          <i className="fa-regular fa-trash-can" /> Delete
-        </button>
+          <IconTrashCan /> Delete
+        </Button>
 
-        <div className="dropdown dropdown-bottom">
-          <button type="button" tabIndex={0} className="btn btn-ghost btn-sm">
-            More <i className="fa-solid fa-chevron-down text-[11px]" />
-          </button>
-          <ul className="dropdown-content menu z-30 mt-1 w-52 rounded-box border border-base-300 bg-base-100 p-1 shadow-xl">
-            <li>
-              <button type="button" onClick={() => void handleUploadFolder()}>
-                <i className="fa-solid fa-folder-plus w-4 text-center" /> Upload
-                Folder
-              </button>
-            </li>
-            <li>
-              <button
-                type="button"
-                onClick={() => void handleDownloadArchive()}
-                disabled={!hasSelection}
-              >
-                <i className="fa-solid fa-file-zipper w-4 text-center" />
-                Download as Archive
-              </button>
-            </li>
-            <li>
-              <button
-                type="button"
-                onClick={handleTransfer}
-                disabled={!hasSelection}
-              >
-                <i className="fa-solid fa-arrow-right-arrow-left w-4 text-center" />
-                Transfer
-              </button>
-            </li>
-            <li>
-              <button type="button" onClick={handleShare} disabled={!canShare}>
-                <i className="fa-solid fa-share-nodes w-4 text-center" /> Share
-              </button>
-            </li>
-          </ul>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button variant="ghost" size="sm">
+                More <IconChevronDown className="size-3" />
+              </Button>
+            }
+          />
+          <DropdownMenuContent align="start" className="w-52">
+            <DropdownMenuItem onClick={() => void handleUploadFolder()}>
+              <IconFolderPlus /> Upload Folder
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => void handleDownloadArchive()}
+              disabled={!hasSelection}
+            >
+              <IconFileZipper /> Download as Archive
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={handleTransfer}
+              disabled={!hasSelection}
+            >
+              <IconArrowRightArrowLeft /> Transfer
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleShare} disabled={!canShare}>
+              <IconShareNodes /> Share
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <div className="ml-auto flex items-center gap-1.5">
         {searchOpen ? (
           <div className="flex items-center gap-1">
             <div className="relative">
-              <i className="fa-solid fa-magnifying-glass absolute top-1/2 left-2 -translate-y-1/2 text-[11px] text-base-content/40" />
-              <input
+              <IconMagnifyingGlass className="absolute top-1/2 left-2 size-3 -translate-y-1/2 text-foreground/40" />
+              <Input
                 ref={searchRef}
                 type="text"
-                className="input input-sm w-56 pl-7 font-mono text-xs"
+                className="h-7 w-56 pl-7 font-mono text-xs"
                 placeholder="Filter by name..."
                 value={filters.search}
                 onChange={(e) => setFilters({ search: e.target.value })}
@@ -426,20 +443,20 @@ export function ObjectToolbar() {
               {filters.search && (
                 <button
                   type="button"
-                  className="absolute top-1/2 right-1.5 -translate-y-1/2 text-base-content/40 hover:text-base-content"
+                  className="absolute top-1/2 right-1.5 -translate-y-1/2 text-foreground/40 hover:text-foreground"
                   onClick={() => {
                     setFilters({ search: "" });
                     searchRef.current?.focus();
                   }}
                   aria-label="Clear search"
                 >
-                  <i className="fa-solid fa-xmark text-[11px]" />
+                  <IconXmark className="size-3" />
                 </button>
               )}
             </div>
-            <button
-              type="button"
-              className="btn btn-ghost btn-sm btn-square"
+            <Button
+              variant="ghost"
+              size="icon-sm"
               onClick={() => {
                 setFilters({ search: "" });
                 setSearchOpen(false);
@@ -447,54 +464,52 @@ export function ObjectToolbar() {
               title="Close search"
               aria-label="Close search"
             >
-              <i className="fa-solid fa-xmark" />
-            </button>
+              <IconXmark />
+            </Button>
           </div>
         ) : (
-          <button
-            type="button"
-            className="btn btn-ghost btn-sm btn-square"
+          <Button
+            variant="ghost"
+            size="icon-sm"
             onClick={openSearch}
             title="Search objects (Ctrl+F)"
             aria-label="Search objects"
           >
-            <i className="fa-solid fa-magnifying-glass" />
-          </button>
+            <IconMagnifyingGlass />
+          </Button>
         )}
 
-        <button
-          type="button"
-          className="btn btn-ghost btn-sm btn-square"
+        <Button
+          variant="ghost"
+          size="icon-sm"
           onClick={refresh}
           title="Refresh"
           aria-label="Refresh objects"
         >
-          <i className="fa-solid fa-arrows-rotate" />
-        </button>
+          <IconArrowsRotate />
+        </Button>
 
-        <div className="join">
-          <button
-            type="button"
-            className={`btn join-item btn-sm ${
-              viewMode === "table" ? "btn-active" : "btn-ghost"
-            }`}
+        <div className="flex rounded-lg border border-border overflow-hidden">
+          <Button
+            variant={viewMode === "table" ? "secondary" : "ghost"}
+            size="icon-sm"
+            className="rounded-none border-0"
             onClick={() => setViewMode("table")}
             title="Table view"
             aria-label="Switch to table view"
           >
-            <i className="fa-solid fa-table-list" />
-          </button>
-          <button
-            type="button"
-            className={`btn join-item btn-sm ${
-              viewMode === "grid" ? "btn-active" : "btn-ghost"
-            }`}
+            <IconTableList />
+          </Button>
+          <Button
+            variant={viewMode === "grid" ? "secondary" : "ghost"}
+            size="icon-sm"
+            className="rounded-none border-0 border-l border-border"
             onClick={() => setViewMode("grid")}
             title="Grid view"
             aria-label="Switch to grid view"
           >
-            <i className="fa-solid fa-grip" />
-          </button>
+            <IconGrip />
+          </Button>
         </div>
       </div>
 
