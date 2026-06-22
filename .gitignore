@@ -35,3 +35,6 @@ coverage
 *.njsproj
 *.sln
 *.sw?
+
+# Superpowers planning docs (spec/plan) — keep local, never commit
+docs/superpowers/
