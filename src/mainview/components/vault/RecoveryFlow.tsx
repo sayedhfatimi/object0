@@ -77,10 +77,7 @@ export function RecoveryFlow({ onBack }: RecoveryFlowProps) {
 
         <CardContent className="space-y-4">
           {/* Tab selector */}
-          <Tabs
-            value={tab}
-            onValueChange={(v) => switchTab(v as RecoveryTab)}
-          >
+          <Tabs value={tab} onValueChange={(v) => switchTab(v as RecoveryTab)}>
             <TabsList className="w-full">
               <TabsTrigger value="recovery-key" className="flex-1">
                 <IconKey className="size-4 mr-1.5" />
@@ -129,9 +126,7 @@ export function RecoveryFlow({ onBack }: RecoveryFlowProps) {
                   />
                 </div>
 
-                {error && (
-                  <p className="text-sm text-destructive">{error}</p>
-                )}
+                {error && <p className="text-sm text-destructive">{error}</p>}
 
                 <Button
                   type="submit"
@@ -177,9 +172,7 @@ export function RecoveryFlow({ onBack }: RecoveryFlowProps) {
                 />
               </div>
 
-              {error && (
-                <p className="text-sm text-destructive">{error}</p>
-              )}
+              {error && <p className="text-sm text-destructive">{error}</p>}
 
               <Button
                 type="button"

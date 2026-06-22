@@ -53,7 +53,9 @@ export function TabBar() {
                   variant="ghost"
                   size="icon-xs"
                   className={`mr-1.5 shrink-0 transition-opacity ${
-                    isActive ? "opacity-75" : "opacity-55 group-hover/tab:opacity-100"
+                    isActive
+                      ? "opacity-75"
+                      : "opacity-55 group-hover/tab:opacity-100"
                   }`}
                   onClick={(e) => {
                     e.stopPropagation();

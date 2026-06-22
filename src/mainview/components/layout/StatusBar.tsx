@@ -92,10 +92,7 @@ export function StatusBar() {
     <div className="flex h-7 shrink-0 items-center justify-between border-border border-t bg-card px-3 text-[11px] text-foreground/55">
       <div className="flex items-center gap-3">
         {!online && (
-          <span
-            className="flex items-center gap-1 text-warning"
-            role="status"
-          >
+          <span className="flex items-center gap-1 text-warning" role="status">
             <IconWifi className="size-3" />
             Offline
           </span>
@@ -130,11 +127,7 @@ export function StatusBar() {
 
       <div className="flex items-center gap-3">
         {selectedKeys.size > 0 && (
-          <span
-            className="text-primary/70"
-            role="status"
-            aria-live="polite"
-          >
+          <span className="text-primary/70" role="status" aria-live="polite">
             <IconCheckDouble className="mr-0.5 inline size-3" />
             {selectedKeys.size} selected ({formatBytes(selectedSize)})
           </span>
@@ -170,10 +163,7 @@ export function StatusBar() {
             </span>
             {runningJobs.length > 0 && totalBytes > 0 && (
               <>
-                <Progress
-                  value={aggregatePercent}
-                  className="h-1.5 w-20"
-                />
+                <Progress value={aggregatePercent} className="h-1.5 w-20" />
                 <span className="tabular-nums">{aggregatePercent}%</span>
                 {aggregateSpeed > 0 && (
                   <span>{formatSpeed(aggregateSpeed)}</span>

@@ -408,10 +408,7 @@ export function ObjectToolbar() {
               <IconFileZipper /> Download as Archive
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={handleTransfer}
-              disabled={!hasSelection}
-            >
+            <DropdownMenuItem onClick={handleTransfer} disabled={!hasSelection}>
               <IconArrowRightArrowLeft /> Transfer
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleShare} disabled={!canShare}>

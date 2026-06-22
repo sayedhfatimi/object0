@@ -102,7 +102,10 @@ export function RecoveryKeyDisplay({
               checked={confirmed}
               onCheckedChange={(v) => setConfirmed(!!v)}
             />
-            <Label htmlFor="recovery-confirmed" className="text-sm font-normal cursor-pointer">
+            <Label
+              htmlFor="recovery-confirmed"
+              className="text-sm font-normal cursor-pointer"
+            >
               I've saved this recovery key in a safe place
             </Label>
           </div>

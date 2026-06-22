@@ -216,7 +216,9 @@ export function ProfileForm({ onDone, editProfile }: ProfileFormProps) {
     <div className="space-y-3">
       {/* Provider */}
       <div className="space-y-1.5">
-        <Label htmlFor="pf-provider" className="text-xs">Provider</Label>
+        <Label htmlFor="pf-provider" className="text-xs">
+          Provider
+        </Label>
         <Select
           value={provider}
           onValueChange={(v) => handleProviderChange(v as Provider)}
@@ -236,7 +238,9 @@ export function ProfileForm({ onDone, editProfile }: ProfileFormProps) {
 
       {/* Name */}
       <div className="space-y-1.5">
-        <Label htmlFor="pf-name" className="text-xs">Profile Name</Label>
+        <Label htmlFor="pf-name" className="text-xs">
+          Profile Name
+        </Label>
         <Input
           id="pf-name"
           className="h-8 text-sm"
@@ -251,7 +255,9 @@ export function ProfileForm({ onDone, editProfile }: ProfileFormProps) {
 
       {/* Access Key */}
       <div className="space-y-1.5">
-        <Label htmlFor="pf-access-key" className="text-xs">Access Key ID</Label>
+        <Label htmlFor="pf-access-key" className="text-xs">
+          Access Key ID
+        </Label>
         <Input
           id="pf-access-key"
           className="h-8 text-sm font-mono"
@@ -271,7 +277,9 @@ export function ProfileForm({ onDone, editProfile }: ProfileFormProps) {
 
       {/* Secret Key */}
       <div className="space-y-1.5">
-        <Label htmlFor="pf-secret-key" className="text-xs">Secret Access Key</Label>
+        <Label htmlFor="pf-secret-key" className="text-xs">
+          Secret Access Key
+        </Label>
         <Input
           id="pf-secret-key"
           type="password"
@@ -293,7 +301,9 @@ export function ProfileForm({ onDone, editProfile }: ProfileFormProps) {
       {/* Endpoint (conditional) */}
       {needsEndpoint && (
         <div className="space-y-1.5">
-          <Label htmlFor="pf-endpoint" className="text-xs">Endpoint URL</Label>
+          <Label htmlFor="pf-endpoint" className="text-xs">
+            Endpoint URL
+          </Label>
           <Input
             id="pf-endpoint"
             className="h-8 text-sm font-mono"
@@ -302,16 +312,16 @@ export function ProfileForm({ onDone, editProfile }: ProfileFormProps) {
             onChange={(e) => setEndpoint(e.target.value)}
           />
           {hints?.endpoint && (
-            <p className="text-xs text-muted-foreground/50">
-              {hints.endpoint}
-            </p>
+            <p className="text-xs text-muted-foreground/50">{hints.endpoint}</p>
           )}
         </div>
       )}
 
       {/* Region */}
       <div className="space-y-1.5">
-        <Label htmlFor="pf-region" className="text-xs">Region</Label>
+        <Label htmlFor="pf-region" className="text-xs">
+          Region
+        </Label>
         <Input
           id="pf-region"
           className="h-8 text-sm"

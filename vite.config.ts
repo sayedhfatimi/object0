@@ -29,11 +29,8 @@ export default defineConfig(async () => ({
           if (id.includes("@tauri-apps")) {
             return "vendor-tauri";
           }
-          if (id.includes("framer-motion") || id.includes("motion-")) {
-            return "vendor-motion";
-          }
-          if (id.includes("@fortawesome")) {
-            return "vendor-icons";
+          if (id.includes("lucide-react")) {
+            return "vendor-lucide";
           }
           if (id.includes("qrcode.react")) {
             return "vendor-qrcode";

@@ -77,8 +77,15 @@ export function DetailPanel() {
   const isImage = PREVIEWABLE_IMAGES.has(ext);
 
   return (
-    <Sheet open={!!detailKey} onOpenChange={(open) => !open && setDetailKey(null)}>
-      <SheetContent side="right" showCloseButton className="flex flex-col gap-0 p-0 w-72 sm:max-w-xs">
+    <Sheet
+      open={!!detailKey}
+      onOpenChange={(open) => !open && setDetailKey(null)}
+    >
+      <SheetContent
+        side="right"
+        showCloseButton
+        className="flex flex-col gap-0 p-0 w-72 sm:max-w-xs"
+      >
         <SheetHeader className="border-b border-border px-3 py-2">
           <SheetTitle className="text-xs font-semibold text-foreground/50 uppercase tracking-wider">
             Details
@@ -102,7 +109,9 @@ export function DetailPanel() {
               ))}
             </div>
           ) : error ? (
-            <div className="py-4 text-center text-destructive text-xs">{error}</div>
+            <div className="py-4 text-center text-destructive text-xs">
+              {error}
+            </div>
           ) : stat && detailKey ? (
             <div className="space-y-4">
               {/* File icon + name */}

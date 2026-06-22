@@ -11,12 +11,7 @@ import {
   BreadcrumbEllipsis,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import {
-  IconCloud,
-  IconBucket,
-  IconCheck,
-  IconCopy,
-} from "@/lib/icons";
+import { IconCloud, IconBucket, IconCheck, IconCopy } from "@/lib/icons";
 
 interface ObjectBreadcrumbProps {
   profileName: string;
@@ -67,12 +62,10 @@ export function ObjectBreadcrumb({
     ? [
         { label: parts[0], realIndex: 0, isLast: false },
         null, // ellipsis placeholder
-        ...parts
-          .slice(parts.length - (MAX_VISIBLE - 2))
-          .map((label, j) => {
-            const realIndex = parts.length - (MAX_VISIBLE - 2) + j;
-            return { label, realIndex, isLast: realIndex === parts.length - 1 };
-          }),
+        ...parts.slice(parts.length - (MAX_VISIBLE - 2)).map((label, j) => {
+          const realIndex = parts.length - (MAX_VISIBLE - 2) + j;
+          return { label, realIndex, isLast: realIndex === parts.length - 1 };
+        }),
       ]
     : parts.map((label, i) => ({
         label,

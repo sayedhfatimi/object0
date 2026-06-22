@@ -684,7 +684,7 @@ export function FolderSyncPanel() {
         title="Remove Live Sync Rule"
         message={`Remove live sync rule for "${deletingRule?.localPath.split("/").pop()}"? This will stop syncing but won't delete any files.`}
         confirmLabel="Remove"
-        confirmClass="btn-error"
+        destructive
         onConfirm={handleDelete}
         onClose={() => setDeletingRule(null)}
       />

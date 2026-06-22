@@ -96,14 +96,15 @@ export function SetupScreen() {
                 checked={remember}
                 onCheckedChange={(v) => setRemember(!!v)}
               />
-              <Label htmlFor="setup-remember" className="text-sm font-normal cursor-pointer">
+              <Label
+                htmlFor="setup-remember"
+                className="text-sm font-normal cursor-pointer"
+              >
                 Remember in OS keychain
               </Label>
             </div>
 
-            {error && (
-              <p className="text-sm text-destructive">{error}</p>
-            )}
+            {error && <p className="text-sm text-destructive">{error}</p>}
 
             <Button
               type="submit"

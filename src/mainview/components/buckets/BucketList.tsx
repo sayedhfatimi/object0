@@ -82,9 +82,7 @@ export function BucketList({
             }}
             title={showStar ? "Unpin bucket" : "Pin bucket"}
           >
-            <IconStar
-              className={`size-3 ${showStar ? "fill-current" : ""}`}
-            />
+            <IconStar className={`size-3 ${showStar ? "fill-current" : ""}`} />
           </Button>
         )}
       </div>

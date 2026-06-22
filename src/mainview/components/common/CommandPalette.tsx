@@ -277,13 +277,10 @@ export function CommandPalette() {
     shareableSelection,
   ]);
 
-  const execute = useCallback(
-    (cmd: PaletteCommand) => {
-      setOpen(false);
-      cmd.action();
-    },
-    [],
-  );
+  const execute = useCallback((cmd: PaletteCommand) => {
+    setOpen(false);
+    cmd.action();
+  }, []);
 
   // Global shortcut to open
   useEffect(() => {

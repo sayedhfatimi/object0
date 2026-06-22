@@ -144,7 +144,9 @@ export function ObjectGrid({
                     onClick={() => onToggleSelect(p.prefix)}
                   >
                     <FileIcon name="" isFolder className="text-2xl" />
-                    <span className="w-full truncate text-xs">{folderName}/</span>
+                    <span className="w-full truncate text-xs">
+                      {folderName}/
+                    </span>
                   </button>
                 </Card>
               </div>

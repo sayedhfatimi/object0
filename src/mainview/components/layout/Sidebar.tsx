@@ -342,7 +342,7 @@ export function Sidebar() {
         title="Delete Profile"
         message={`Are you sure you want to delete "${deletingProfile?.name}"? This cannot be undone.`}
         confirmLabel="Delete"
-        confirmClass="btn-error"
+        destructive
         onConfirm={handleDeleteProfile}
         onClose={() => setDeletingProfile(null)}
       />

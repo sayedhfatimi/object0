@@ -16,7 +16,7 @@ interface ConfirmDialogProps {
   title: string;
   message: string;
   confirmLabel?: string;
-  confirmClass?: string;
+  destructive?: boolean;
 }
 
 export function ConfirmDialog({
@@ -26,10 +26,9 @@ export function ConfirmDialog({
   title,
   message,
   confirmLabel = "Confirm",
-  confirmClass,
+  destructive = false,
 }: ConfirmDialogProps) {
-  const isDestructive =
-    !confirmClass || confirmClass === "btn-error" || confirmClass === "btn-danger";
+  const isDestructive = destructive;
 
   return (
     <AlertDialog open={open} onOpenChange={(o) => !o && onClose()}>

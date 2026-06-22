@@ -126,7 +126,7 @@ export function ObjectBrowser() {
                     <div className="size-3.5 animate-pulse rounded bg-muted-foreground/20" />
                     <div
                       className="h-3 animate-pulse rounded bg-muted-foreground/20"
-                      style={{ width: `${100 + (i * 17) % 160}px` }}
+                      style={{ width: `${100 + ((i * 17) % 160)}px` }}
                     />
                   </div>
                 </td>
@@ -207,7 +207,12 @@ export function ObjectBrowser() {
       {/* Load more */}
       {isTruncated && (
         <div className="flex justify-center border-t border-border py-2">
-          <Button variant="ghost" size="sm" onClick={nextPage} disabled={loading}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={nextPage}
+            disabled={loading}
+          >
             {loading ? (
               <div className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
             ) : (

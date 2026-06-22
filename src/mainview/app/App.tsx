@@ -82,13 +82,7 @@ export default function App() {
       "ctrl+f": () =>
         dispatchObjectToolbarEvent(OBJECT_TOOLBAR_EVENTS.OPEN_SEARCH),
     }),
-    [
-      toggleTheme,
-      setJobPanelOpen,
-      jobPanelOpen,
-      setSettingsOpen,
-      settingsOpen,
-    ],
+    [toggleTheme, setJobPanelOpen, jobPanelOpen, setSettingsOpen, settingsOpen],
   );
   useKeyboardShortcuts(shortcuts);
 
