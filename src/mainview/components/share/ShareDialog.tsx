@@ -4,8 +4,33 @@ import type { ShareRes } from "../../../shared/s3.types";
 import { rpcCall } from "../../lib/rpc-client";
 import { useShareHistoryStore } from "../../stores/useShareHistoryStore";
 import { useUIStore } from "../../stores/useUIStore";
-import { Modal } from "../common/Modal";
 import { toast } from "../common/Toast";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  IconChevronDown,
+  IconCircleInfo,
+  IconClock,
+  IconCopy,
+  IconFile,
+  IconLink,
+  IconQrcode,
+  IconSpinner,
+} from "@/lib/icons";
 
 type ExpirationUnit = "minutes" | "hours" | "days";
 
@@ -126,184 +151,200 @@ export function ShareDialog() {
   const fileName = target?.key.split("/").pop() || target?.key || "";
 
   return (
-    <Modal
-      open={open}
-      onClose={closeDialog}
-      title="Share File"
-      className="max-w-lg"
-      actions={
-        <div className="flex gap-2">
-          <button type="button" className="btn btn-sm" onClick={closeDialog}>
+    <Dialog open={open} onOpenChange={(o) => !o && closeDialog()}>
+      <DialogContent showCloseButton={false} className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Share File</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          {/* File info */}
+          <div className="rounded bg-muted p-3">
+            <div className="flex items-center gap-2">
+              <IconFile className="size-4 text-foreground/60" />
+              <span className="truncate font-medium">{fileName}</span>
+            </div>
+            <div className="mt-1 truncate text-foreground/60 text-xs">
+              {target?.bucket}/{target?.key}
+            </div>
+          </div>
+
+          {!shareResult ? (
+            <>
+              {/* Expiration mode selector */}
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={expirationMode === "preset" ? "default" : "outline"}
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => setExpirationMode("preset")}
+                >
+                  Presets
+                </Button>
+                <Button
+                  type="button"
+                  variant={expirationMode === "custom" ? "default" : "outline"}
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => setExpirationMode("custom")}
+                >
+                  Custom
+                </Button>
+              </div>
+
+              {/* Preset options */}
+              {expirationMode === "preset" && (
+                <div className="grid grid-cols-2 gap-2">
+                  {EXPIRATION_PRESETS.map((preset, idx) => (
+                    <Button
+                      key={preset.label}
+                      type="button"
+                      variant={selectedPreset === idx ? "secondary" : "outline"}
+                      size="sm"
+                      onClick={() => setSelectedPreset(idx)}
+                    >
+                      {preset.label}
+                    </Button>
+                  ))}
+                </div>
+              )}
+
+              {/* Custom expiration */}
+              {expirationMode === "custom" && (
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    min={1}
+                    max={
+                      customUnit === "days"
+                        ? 7
+                        : customUnit === "hours"
+                          ? 168
+                          : 10080
+                    }
+                    value={customValue}
+                    onChange={(e) =>
+                      setCustomValue(
+                        Math.max(1, Number.parseInt(e.target.value, 10) || 1),
+                      )
+                    }
+                    className="h-7 w-24 text-xs"
+                  />
+                  <Select
+                    value={customUnit}
+                    onValueChange={(v) => {
+                      if (v != null) setCustomUnit(v as ExpirationUnit);
+                    }}
+                  >
+                    <SelectTrigger size="sm" className="flex-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="minutes">Minutes</SelectItem>
+                      <SelectItem value="hours">Hours</SelectItem>
+                      <SelectItem value="days">Days</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Max expiration note */}
+              <p className="text-foreground/50 text-xs">
+                <IconCircleInfo className="mr-1 inline size-3" />
+                Maximum expiration: 7 days
+              </p>
+            </>
+          ) : (
+            <>
+              {/* Generated URL */}
+              <div className="space-y-2">
+                <span className="font-semibold text-foreground/70 text-xs">
+                  Shareable Link
+                </span>
+                <div className="flex gap-2">
+                  <Input
+                    type="text"
+                    readOnly
+                    value={shareResult.url}
+                    className="h-7 flex-1 font-mono text-xs"
+                    onClick={(e) => (e.target as HTMLInputElement).select()}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon-sm"
+                    onClick={handleCopy}
+                    title="Copy to clipboard"
+                  >
+                    <IconCopy className="size-3.5" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Expiration info */}
+              <div className="flex items-center gap-2 text-foreground/70 text-sm">
+                <IconClock className="size-4" />
+                <span>
+                  Expires in {formatExpiration(shareResult.expiresAt)}
+                </span>
+              </div>
+
+              {/* QR Code toggle */}
+              <div className="space-y-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => setShowQR(!showQR)}
+                >
+                  {showQR ? (
+                    <>
+                      <IconChevronDown className="size-3.5 mr-1" />
+                      Hide QR Code
+                    </>
+                  ) : (
+                    <>
+                      <IconQrcode className="size-3.5 mr-1" />
+                      Show QR Code
+                    </>
+                  )}
+                </Button>
+
+                {showQR && (
+                  <div className="flex justify-center rounded bg-white p-4">
+                    <QRCodeSVG
+                      value={shareResult.url}
+                      size={200}
+                      level="M"
+                      includeMargin
+                    />
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" size="sm" onClick={closeDialog}>
             Close
-          </button>
+          </Button>
           {!shareResult && (
-            <button
-              type="button"
-              className="btn btn-primary btn-sm"
-              onClick={handleGenerate}
-              disabled={generating}
-            >
+            <Button size="sm" onClick={handleGenerate} disabled={generating}>
               {generating ? (
-                <span className="loading loading-spinner loading-xs" />
+                <IconSpinner className="size-3.5 animate-spin" />
               ) : (
                 <>
-                  <i className="fa-solid fa-link mr-1" />
+                  <IconLink className="size-3.5 mr-1" />
                   Generate Link
                 </>
               )}
-            </button>
+            </Button>
           )}
-        </div>
-      }
-    >
-      <div className="space-y-4">
-        {/* File info */}
-        <div className="rounded bg-base-300 p-3">
-          <div className="flex items-center gap-2">
-            <i className="fa-solid fa-file text-base-content/60" />
-            <span className="truncate font-medium">{fileName}</span>
-          </div>
-          <div className="mt-1 truncate text-base-content/60 text-xs">
-            {target?.bucket}/{target?.key}
-          </div>
-        </div>
-
-        {!shareResult ? (
-          <>
-            {/* Expiration mode selector */}
-            <div className="flex gap-2">
-              <button
-                type="button"
-                className={`btn btn-sm flex-1 ${expirationMode === "preset" ? "btn-primary" : "btn-outline"}`}
-                onClick={() => setExpirationMode("preset")}
-              >
-                Presets
-              </button>
-              <button
-                type="button"
-                className={`btn btn-sm flex-1 ${expirationMode === "custom" ? "btn-primary" : "btn-outline"}`}
-                onClick={() => setExpirationMode("custom")}
-              >
-                Custom
-              </button>
-            </div>
-
-            {/* Preset options */}
-            {expirationMode === "preset" && (
-              <div className="grid grid-cols-2 gap-2">
-                {EXPIRATION_PRESETS.map((preset, idx) => (
-                  <button
-                    key={preset.label}
-                    type="button"
-                    className={`btn btn-sm ${selectedPreset === idx ? "btn-secondary" : "btn-outline"}`}
-                    onClick={() => setSelectedPreset(idx)}
-                  >
-                    {preset.label}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* Custom expiration */}
-            {expirationMode === "custom" && (
-              <div className="flex gap-2">
-                <input
-                  type="number"
-                  min={1}
-                  max={
-                    customUnit === "days"
-                      ? 7
-                      : customUnit === "hours"
-                        ? 168
-                        : 10080
-                  }
-                  value={customValue}
-                  onChange={(e) =>
-                    setCustomValue(
-                      Math.max(1, Number.parseInt(e.target.value, 10) || 1),
-                    )
-                  }
-                  className="input input-sm w-24"
-                />
-                <select
-                  value={customUnit}
-                  onChange={(e) =>
-                    setCustomUnit(e.target.value as ExpirationUnit)
-                  }
-                  className="select select-sm flex-1"
-                >
-                  <option value="minutes">Minutes</option>
-                  <option value="hours">Hours</option>
-                  <option value="days">Days</option>
-                </select>
-              </div>
-            )}
-
-            {/* Max expiration note */}
-            <p className="text-base-content/50 text-xs">
-              <i className="fa-solid fa-circle-info mr-1" />
-              Maximum expiration: 7 days
-            </p>
-          </>
-        ) : (
-          <>
-            {/* Generated URL */}
-            <div className="space-y-2">
-              <span className="font-semibold text-base-content/70 text-xs">
-                Shareable Link
-              </span>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  readOnly
-                  value={shareResult.url}
-                  className="input input-sm flex-1 font-mono text-xs"
-                  onClick={(e) => (e.target as HTMLInputElement).select()}
-                />
-                <button
-                  type="button"
-                  className="btn btn-sm btn-outline"
-                  onClick={handleCopy}
-                  title="Copy to clipboard"
-                >
-                  <i className="fa-solid fa-copy" />
-                </button>
-              </div>
-            </div>
-
-            {/* Expiration info */}
-            <div className="flex items-center gap-2 text-base-content/70 text-sm">
-              <i className="fa-solid fa-clock" />
-              <span>Expires in {formatExpiration(shareResult.expiresAt)}</span>
-            </div>
-
-            {/* QR Code toggle */}
-            <div className="space-y-2">
-              <button
-                type="button"
-                className="btn btn-sm btn-outline w-full"
-                onClick={() => setShowQR(!showQR)}
-              >
-                <i
-                  className={`fa-solid ${showQR ? "fa-chevron-up" : "fa-qrcode"} mr-1`}
-                />
-                {showQR ? "Hide QR Code" : "Show QR Code"}
-              </button>
-
-              {showQR && (
-                <div className="flex justify-center rounded bg-white p-4">
-                  <QRCodeSVG
-                    value={shareResult.url}
-                    size={200}
-                    level="M"
-                    includeMargin
-                  />
-                </div>
-              )}
-            </div>
-          </>
-        )}
-      </div>
-    </Modal>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

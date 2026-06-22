@@ -1,74 +1,116 @@
-import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type {
   FolderSyncRule,
   FolderSyncRuleStatus,
 } from "../../../shared/folder-sync.types";
-import { transitions } from "../../lib/animations";
 import { formatBytes } from "../../lib/formatters";
 import { useFolderSyncStore } from "../../stores/useFolderSyncStore";
 import { useUIStore } from "../../stores/useUIStore";
 import { ConfirmDialog } from "../common/ConfirmDialog";
-import { Modal } from "../common/Modal";
 import { toast } from "../common/Toast";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
+import {
+  IconArrowDown,
+  IconArrowsLeftRight,
+  IconArrowsRotate,
+  IconArrowUp,
+  IconBroom,
+  IconBucket,
+  IconExclamationCircle,
+  IconEye,
+  IconFolder,
+  IconFolderOpen,
+  IconPause,
+  IconPen,
+  IconPlay,
+  IconPlus,
+  IconSpinner,
+  IconTrash,
+  IconTriangleExclamation,
+  IconXmark,
+  IconCheck,
+  IconExclamationTriangle,
+} from "@/lib/icons";
 import { FolderSyncRuleEditor } from "./FolderSyncRuleEditor";
 
-function statusIcon(status: FolderSyncRuleStatus): {
-  icon: string;
-  color: string;
-  chip: string;
-  label: string;
-} {
+function StatusIconDisplay({ status }: { status: FolderSyncRuleStatus }) {
+  const cls = "text-xs";
   switch (status) {
     case "syncing":
-      return {
-        icon: "fa-solid fa-arrows-rotate fa-spin",
-        color: "text-info",
-        chip: "bg-info/15 text-info",
-        label: "Syncing",
-      };
+      return <IconArrowsRotate className={`${cls} text-info animate-spin`} />;
     case "watching":
-      return {
-        icon: "fa-solid fa-eye",
-        color: "text-success",
-        chip: "bg-success/15 text-success",
-        label: "Watching",
-      };
+      return <IconEye className={`${cls} text-success`} />;
     case "error":
-      return {
-        icon: "fa-solid fa-exclamation-triangle",
-        color: "text-error",
-        chip: "bg-error/15 text-error",
-        label: "Error",
-      };
+      return <IconExclamationTriangle className={`${cls} text-destructive`} />;
     case "paused":
-      return {
-        icon: "fa-solid fa-pause",
-        color: "text-warning",
-        chip: "bg-warning/15 text-warning",
-        label: "Paused",
-      };
+      return <IconPause className={`${cls} text-warning`} />;
     default:
-      return {
-        icon: "fa-solid fa-circle",
-        color: "text-base-content/30",
-        chip: "bg-base-300 text-base-content/55",
-        label: "Idle",
-      };
+      return (
+        <span className="size-3 rounded-full bg-foreground/30 inline-block" />
+      );
   }
 }
 
-function directionLabel(direction: FolderSyncRule["direction"]): {
-  icon: string;
-  label: string;
-} {
+function statusChipClass(status: FolderSyncRuleStatus): string {
+  switch (status) {
+    case "syncing":
+      return "bg-info/15 text-info";
+    case "watching":
+      return "bg-success/15 text-success";
+    case "error":
+      return "bg-destructive/15 text-destructive";
+    case "paused":
+      return "bg-warning/15 text-warning";
+    default:
+      return "bg-muted text-foreground/55";
+  }
+}
+
+function statusLabel(status: FolderSyncRuleStatus): string {
+  switch (status) {
+    case "syncing":
+      return "Syncing";
+    case "watching":
+      return "Watching";
+    case "error":
+      return "Error";
+    case "paused":
+      return "Paused";
+    default:
+      return "Idle";
+  }
+}
+
+function DirectionIcon({
+  direction,
+}: {
+  direction: FolderSyncRule["direction"];
+}) {
   switch (direction) {
     case "bidirectional":
-      return { icon: "fa-solid fa-arrows-left-right", label: "Bidirectional" };
+      return <IconArrowsLeftRight className="size-[8px]" />;
     case "local-to-remote":
-      return { icon: "fa-solid fa-arrow-up", label: "Upload only" };
+      return <IconArrowUp className="size-[8px]" />;
     case "remote-to-local":
-      return { icon: "fa-solid fa-arrow-down", label: "Download only" };
+      return <IconArrowDown className="size-[8px]" />;
+  }
+}
+
+function directionLabel(direction: FolderSyncRule["direction"]): string {
+  switch (direction) {
+    case "bidirectional":
+      return "Bidirectional";
+    case "local-to-remote":
+      return "Upload only";
+    case "remote-to-local":
+      return "Download only";
   }
 }
 
@@ -153,28 +195,29 @@ export function FolderSyncPanel({ onClose }: { onClose: () => void }) {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="border-base-300 border-b">
+      <div className="border-border border-b">
         <div className="space-y-2 px-3 py-2">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <i className="fa-solid fa-folder-open text-primary text-xs" />
+                <IconFolderOpen className="size-3.5 text-primary" />
                 <span className="font-semibold text-sm leading-tight">
                   Live Folder Sync
                 </span>
               </div>
-              <p className="mt-0.5 pl-5 text-[10px] text-base-content/50">
+              <p className="mt-0.5 pl-5 text-[10px] text-foreground/50">
                 Continuous local folder &lt;-&gt; bucket sync in the background
               </p>
             </div>
-            <button
-              type="button"
-              className="btn btn-ghost btn-xs btn-square h-6 min-h-6 w-6 text-base-content/40 hover:text-base-content"
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              className="text-foreground/40 hover:text-foreground"
               onClick={onClose}
               title="Close"
             >
-              <i className="fa-solid fa-xmark text-xs" />
-            </button>
+              <IconXmark className="size-3.5" />
+            </Button>
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5 pl-5">
@@ -189,81 +232,82 @@ export function FolderSyncPanel({ onClose }: { onClose: () => void }) {
                 {conflicts.length === 1 ? "" : "s"}
               </span>
             )}
-            <button
-              type="button"
-              className="btn btn-ghost btn-xs h-5 min-h-5 gap-1 px-1.5 text-[10px] text-base-content/55 hover:text-primary"
+            <Button
+              variant="ghost"
+              size="xs"
+              className="h-5 min-h-5 gap-1 px-1.5 text-[10px] text-foreground/55 hover:text-primary"
               onClick={() => setAddDialogOpen(true)}
               title="Add Live Sync Rule"
             >
-              <i className="fa-solid fa-plus text-[9px]" />
+              <IconPlus className="size-[9px]" />
               Add rule
-            </button>
-            <div className="join ml-auto">
-              <button
-                type="button"
-                className={`btn join-item btn-xs h-5 min-h-5 px-1.5 text-[10px] ${
-                  isCompact ? "btn-ghost text-base-content/40" : "btn-active"
-                }`}
+            </Button>
+            <div className="flex ml-auto">
+              <Button
+                variant={!isCompact ? "default" : "ghost"}
+                size="xs"
+                className="h-5 min-h-5 rounded-r-none px-1.5 text-[10px]"
                 onClick={() => setFolderSyncListDensity("comfortable")}
-                title="Comfortable density"
               >
                 Cozy
-              </button>
-              <button
-                type="button"
-                className={`btn join-item btn-xs h-5 min-h-5 px-1.5 text-[10px] ${
-                  isCompact ? "btn-active" : "btn-ghost text-base-content/40"
-                }`}
+              </Button>
+              <Button
+                variant={isCompact ? "default" : "ghost"}
+                size="xs"
+                className="h-5 min-h-5 rounded-l-none px-1.5 text-[10px]"
                 onClick={() => setFolderSyncListDensity("compact")}
-                title="Compact density"
               >
                 Dense
-              </button>
+              </Button>
             </div>
             {rules.length > 0 && (
               <>
                 {conflicts.length > 0 && (
-                  <button
-                    type="button"
-                    className="btn btn-ghost btn-xs h-5 min-h-5 gap-1 px-1.5 text-[10px] text-warning/70 hover:text-warning"
+                  <Button
+                    variant="ghost"
+                    size="xs"
+                    className="h-5 min-h-5 gap-1 px-1.5 text-[10px] text-warning/70 hover:text-warning"
                     onClick={() => clearConflicts()}
                     title="Clear conflict notifications"
                   >
-                    <i className="fa-solid fa-broom text-[9px]" />
+                    <IconBroom className="size-[9px]" />
                     Clear conflicts
-                  </button>
+                  </Button>
                 )}
-                <button
-                  type="button"
-                  className="btn btn-ghost btn-xs btn-square h-5 min-h-5 w-5 text-base-content/40 hover:text-success"
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  className="size-5 min-h-5 text-foreground/40 hover:text-success"
                   onClick={resumeAll}
                   title="Resume All"
                 >
-                  <i className="fa-solid fa-play text-[9px]" />
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-ghost btn-xs btn-square h-5 min-h-5 w-5 text-base-content/40 hover:text-warning"
+                  <IconPlay className="size-[9px]" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  className="size-5 min-h-5 text-foreground/40 hover:text-warning"
                   onClick={pauseAll}
                   title="Pause All"
                 >
-                  <i className="fa-solid fa-pause text-[9px]" />
-                </button>
+                  <IconPause className="size-[9px]" />
+                </Button>
               </>
             )}
           </div>
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-1.5 border-base-300 border-t bg-base-200/50 px-3 py-1.5 text-[10px] text-base-content/55">
+        <div className="flex flex-wrap items-center justify-between gap-1.5 border-border border-t bg-card/50 px-3 py-1.5 text-[10px] text-foreground/55">
           <span className="min-w-0 flex-1">
             For one-time bucket copies, use Object Sync.
           </span>
-          <button
-            type="button"
-            className="btn btn-ghost btn-xs h-5 min-h-5 px-1.5 text-[10px] text-info hover:text-info"
+          <Button
+            variant="ghost"
+            size="xs"
+            className="h-5 min-h-5 px-1.5 text-[10px] text-info hover:text-info"
             onClick={() => setSyncDialogOpen(true)}
           >
             Open Object Sync
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -271,46 +315,48 @@ export function FolderSyncPanel({ onClose }: { onClose: () => void }) {
       <div className="flex-1 overflow-y-auto">
         {loading && (
           <div className="flex items-center justify-center p-8">
-            <span className="loading loading-spinner loading-sm" />
+            <IconSpinner className="size-4 animate-spin text-muted-foreground" />
           </div>
         )}
 
         {!loading && rules.length === 0 && (
           <div className="flex flex-col items-center justify-center gap-3 p-8">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
-              <i className="fa-solid fa-folder-open text-lg text-primary" />
+              <IconFolderOpen className="size-6 text-primary" />
             </div>
             <div className="text-center">
               <p className="font-medium text-sm">No live sync rules</p>
-              <p className="mt-0.5 text-base-content/50 text-xs">
+              <p className="mt-0.5 text-foreground/50 text-xs">
                 Add a live folder sync rule to continuously mirror a local
                 folder and an S3 bucket path
               </p>
             </div>
-            <button
-              type="button"
-              className="btn btn-primary btn-sm btn-outline mt-1"
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-1"
               onClick={() => setAddDialogOpen(true)}
             >
-              <i className="fa-solid fa-plus" /> Add Live Sync Rule
-            </button>
+              <IconPlus className="size-3.5" /> Add Live Sync Rule
+            </Button>
           </div>
         )}
 
         {!loading && recentConflicts.length > 0 && (
-          <div className="border-base-300 border-b bg-warning/5 px-2.5 py-2">
+          <div className="border-border border-b bg-warning/5 px-2.5 py-2">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1 text-[10px] text-warning/80">
-                <i className="fa-solid fa-triangle-exclamation text-[9px]" />
+                <IconTriangleExclamation className="size-[9px]" />
                 Recent conflicts
               </div>
-              <button
-                type="button"
-                className="btn btn-ghost btn-xs h-5 min-h-5 px-1.5 text-[10px] text-warning/70 hover:text-warning"
+              <Button
+                variant="ghost"
+                size="xs"
+                className="h-5 min-h-5 px-1.5 text-[10px] text-warning/70 hover:text-warning"
                 onClick={() => clearConflicts()}
               >
                 Clear
-              </button>
+              </Button>
             </div>
             <ul className="mt-1 space-y-1">
               {recentConflicts.map((conflict) => {
@@ -321,12 +367,12 @@ export function FolderSyncPanel({ onClose }: { onClose: () => void }) {
                 return (
                   <li
                     key={key}
-                    className="truncate text-[10px] text-base-content/65"
+                    className="truncate text-[10px] text-foreground/65"
                     title={`${ruleName}: ${conflict.relativePath}`}
                   >
-                    <i className="fa-solid fa-folder-open mr-1 text-[8px] text-warning/70" />
+                    <IconFolderOpen className="mr-1 inline size-[8px] text-warning/70" />
                     {ruleName}
-                    <span className="mx-1 text-base-content/30">·</span>
+                    <span className="mx-1 text-foreground/30">·</span>
                     {conflict.relativePath}
                   </li>
                 );
@@ -335,271 +381,279 @@ export function FolderSyncPanel({ onClose }: { onClose: () => void }) {
           </div>
         )}
 
-        <AnimatePresence>
-          {rules.map((rule) => {
-            const state = statuses.get(rule.id);
-            const status = state?.status ?? "idle";
-            const si = statusIcon(status);
-            const dir = directionLabel(rule.direction);
-            const error = errors.get(rule.id);
-            const progress = state?.progress;
-            const ruleName = rule.localPath.split("/").pop() || rule.localPath;
-            const ruleConflictCount = conflictCountByRule.get(rule.id) ?? 0;
+        {rules.map((rule) => {
+          const state = statuses.get(rule.id);
+          const status = state?.status ?? "idle";
+          const error = errors.get(rule.id);
+          const progress = state?.progress;
+          const ruleName = rule.localPath.split("/").pop() || rule.localPath;
+          const ruleConflictCount = conflictCountByRule.get(rule.id) ?? 0;
 
-            return (
-              <motion.div
-                key={rule.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={transitions.fast}
-                className={`border-base-300 border-b ${
-                  isCompact ? "px-2 py-1.5" : "px-2.5 py-2"
+          return (
+            <div
+              key={rule.id}
+              className={`border-border border-b ${
+                isCompact ? "px-2 py-1.5" : "px-2.5 py-2"
+              }`}
+            >
+              <div
+                className={`border border-border/70 bg-card/35 ${
+                  isCompact
+                    ? "space-y-1.5 rounded-md px-2 py-1.5"
+                    : "space-y-2 rounded-lg px-2.5 py-2"
                 }`}
               >
-                <div
-                  className={`border border-base-300/70 bg-base-200/35 ${
-                    isCompact
-                      ? "space-y-1.5 rounded-md px-2 py-1.5"
-                      : "space-y-2 rounded-lg px-2.5 py-2"
-                  }`}
-                >
-                  {/* Header */}
-                  <div className="flex items-start gap-2">
-                    <div className="mt-0.5 shrink-0">
-                      <i className={`${si.icon} text-xs ${si.color}`} />
+                {/* Header */}
+                <div className="flex items-start gap-2">
+                  <div className="mt-0.5 shrink-0">
+                    <StatusIconDisplay status={status} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div
+                      className={`truncate font-medium leading-tight ${
+                        isCompact ? "text-[11px]" : "text-[12px]"
+                      }`}
+                    >
+                      {ruleName}
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <div
-                        className={`truncate font-medium leading-tight ${
-                          isCompact ? "text-[11px]" : "text-[12px]"
+                    <span
+                      className={`inline-flex rounded-full px-1.5 py-px text-[9px] ${
+                        isCompact ? "mt-0.5" : "mt-1"
+                      } ${statusChipClass(status)}`}
+                    >
+                      {statusLabel(status)}
+                    </span>
+                    {ruleConflictCount > 0 && (
+                      <span
+                        className={`ml-1 inline-flex rounded-full bg-warning/20 px-1.5 py-px text-[9px] text-warning ${
+                          isCompact ? "mt-0.5" : "mt-1"
                         }`}
                       >
-                        {ruleName}
-                      </div>
-                      <span
-                        className={`inline-flex rounded-full px-1.5 py-px text-[9px] ${
-                          isCompact ? "mt-0.5" : "mt-1"
-                        } ${si.chip}`}
-                      >
-                        {si.label}
+                        {ruleConflictCount} conflict
+                        {ruleConflictCount === 1 ? "" : "s"}
                       </span>
-                      {ruleConflictCount > 0 && (
-                        <span
-                          className={`ml-1 inline-flex rounded-full bg-warning/20 px-1.5 py-px text-[9px] text-warning ${
-                            isCompact ? "mt-0.5" : "mt-1"
-                          }`}
-                        >
-                          {ruleConflictCount} conflict
-                          {ruleConflictCount === 1 ? "" : "s"}
-                        </span>
-                      )}
+                    )}
+                  </div>
+                </div>
+
+                {/* Metadata chips */}
+                <div
+                  className={`flex flex-wrap items-center gap-1 text-foreground/55 ${
+                    isCompact ? "text-[9px]" : "text-[10px]"
+                  }`}
+                >
+                  <span className="inline-flex items-center gap-1 rounded bg-muted/70 px-1.5 py-px">
+                    <DirectionIcon direction={rule.direction} />
+                    {directionLabel(rule.direction)}
+                  </span>
+                  <span className="inline-flex min-w-0 max-w-full items-center gap-1 rounded bg-muted/70 px-1.5 py-px">
+                    <IconBucket className="size-[8px]" />
+                    <span className="truncate">
+                      {rule.bucket}
+                      {rule.bucketPrefix ? `/${rule.bucketPrefix}` : ""}
+                    </span>
+                  </span>
+                </div>
+
+                <div
+                  className={`truncate rounded bg-muted/45 px-1.5 text-foreground/45 ${
+                    isCompact ? "py-0.5 text-[9px]" : "py-1 text-[10px]"
+                  }`}
+                >
+                  <IconFolder className="mr-1 inline size-[8px]" />
+                  {rule.localPath}
+                </div>
+
+                {/* Progress bar when syncing */}
+                {status === "syncing" && progress && progress.total > 0 && (
+                  <div className="space-y-0.5">
+                    <div
+                      className={`flex items-center justify-between text-foreground/50 ${
+                        isCompact ? "text-[9px]" : "text-[10px]"
+                      }`}
+                    >
+                      <span>
+                        {progress.completed}/{progress.total} files
+                      </span>
+                      <span>
+                        {formatBytes(progress.bytesTransferred)} /{" "}
+                        {formatBytes(progress.bytesTotal)}
+                      </span>
                     </div>
+                    <Progress
+                      value={
+                        progress.total > 0
+                          ? (progress.completed / progress.total) * 100
+                          : 0
+                      }
+                      className="h-1"
+                    />
+                    {state?.currentFile && (
+                      <div
+                        className={`truncate text-foreground/30 ${
+                          isCompact ? "text-[8px]" : "text-[9px]"
+                        }`}
+                      >
+                        {state.currentFile}
+                      </div>
+                    )}
                   </div>
+                )}
 
-                  {/* Metadata chips */}
+                {/* Error message */}
+                {error && (
                   <div
-                    className={`flex flex-wrap items-center gap-1 text-base-content/55 ${
-                      isCompact ? "text-[9px]" : "text-[10px]"
-                    }`}
-                  >
-                    <span className="inline-flex items-center gap-1 rounded bg-base-300/70 px-1.5 py-px">
-                      <i className={`${dir.icon} text-[8px]`} />
-                      {dir.label}
-                    </span>
-                    <span className="inline-flex min-w-0 max-w-full items-center gap-1 rounded bg-base-300/70 px-1.5 py-px">
-                      <i className="fa-solid fa-bucket text-[8px]" />
-                      <span className="truncate">
-                        {rule.bucket}
-                        {rule.bucketPrefix ? `/${rule.bucketPrefix}` : ""}
-                      </span>
-                    </span>
-                  </div>
-
-                  <div
-                    className={`truncate rounded bg-base-300/45 px-1.5 text-base-content/45 ${
+                    className={`rounded bg-destructive/10 px-2 text-destructive ${
                       isCompact ? "py-0.5 text-[9px]" : "py-1 text-[10px]"
                     }`}
                   >
-                    <i className="fa-solid fa-folder mr-1 text-[8px]" />
-                    {rule.localPath}
+                    <IconExclamationCircle className="mr-1 inline size-[9px]" />
+                    {error}
                   </div>
+                )}
 
-                  {/* Progress bar when syncing */}
-                  {status === "syncing" && progress && progress.total > 0 && (
-                    <div className="space-y-0.5">
-                      <div
-                        className={`flex items-center justify-between text-base-content/50 ${
-                          isCompact ? "text-[9px]" : "text-[10px]"
-                        }`}
-                      >
-                        <span>
-                          {progress.completed}/{progress.total} files
-                        </span>
-                        <span>
-                          {formatBytes(progress.bytesTransferred)} /{" "}
-                          {formatBytes(progress.bytesTotal)}
-                        </span>
-                      </div>
-                      <progress
-                        className="progress progress-info h-1 w-full"
-                        value={progress.completed}
-                        max={progress.total}
-                      />
-                      {state?.currentFile && (
-                        <div
-                          className={`truncate text-base-content/30 ${
-                            isCompact ? "text-[8px]" : "text-[9px]"
-                          }`}
-                        >
-                          {state.currentFile}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Error message */}
-                  {error && (
-                    <div
-                      className={`rounded bg-error/10 px-2 text-error ${
-                        isCompact ? "py-0.5 text-[9px]" : "py-1 text-[10px]"
-                      }`}
-                    >
-                      <i className="fa-solid fa-exclamation-circle mr-1" />
-                      {error}
-                    </div>
-                  )}
-
-                  {/* Last sync info */}
-                  {rule.lastSyncAt && (
-                    <div
-                      className={`truncate text-base-content/35 ${
-                        isCompact ? "text-[8px]" : "text-[9px]"
-                      }`}
-                    >
-                      Last sync {new Date(rule.lastSyncAt).toLocaleString()}
-                      {rule.lastSyncStatus === "success" && (
-                        <i className="fa-solid fa-check ml-1 text-success/80" />
-                      )}
-                      {rule.lastSyncStatus === "error" && (
-                        <i className="fa-solid fa-xmark ml-1 text-error/80" />
-                      )}
-                      {rule.lastSyncStatus === "partial" && (
-                        <i className="fa-solid fa-exclamation ml-1 text-warning/80" />
-                      )}
-                    </div>
-                  )}
-
-                  {/* Actions */}
+                {/* Last sync info */}
+                {rule.lastSyncAt && (
                   <div
-                    className={`flex flex-wrap items-center gap-1 border-base-300/70 border-t ${
-                      isCompact ? "pt-1" : "pt-1.5"
+                    className={`truncate text-foreground/35 ${
+                      isCompact ? "text-[8px]" : "text-[9px]"
                     }`}
                   >
-                    <button
-                      type="button"
-                      className={`btn btn-ghost btn-xs gap-1 px-2 ${
-                        isCompact
-                          ? "h-5 min-h-5 text-[9px]"
-                          : "h-6 min-h-6 text-[10px]"
-                      }`}
-                      onClick={() => handleSyncNow(rule.id)}
-                      title="Sync now"
-                      disabled={status === "syncing"}
-                    >
-                      <i className="fa-solid fa-arrows-rotate text-[9px]" />
-                      Sync
-                    </button>
-                    <button
-                      type="button"
-                      className={`btn btn-ghost btn-xs gap-1 px-2 ${
-                        isCompact
-                          ? "h-5 min-h-5 text-[9px]"
-                          : "h-6 min-h-6 text-[10px]"
-                      }`}
-                      onClick={() => handleToggle(rule.id, !rule.enabled)}
-                      title={rule.enabled ? "Pause rule" : "Enable rule"}
-                    >
-                      <i
-                        className={`fa-solid ${rule.enabled ? "fa-pause text-warning" : "fa-play text-success"} text-[9px]`}
-                      />
-                      {rule.enabled ? "Pause" : "Enable"}
-                    </button>
-                    {ruleConflictCount > 0 && (
-                      <button
-                        type="button"
-                        className={`btn btn-ghost btn-xs gap-1 px-2 text-warning/80 hover:text-warning ${
-                          isCompact
-                            ? "h-5 min-h-5 text-[9px]"
-                            : "h-6 min-h-6 text-[10px]"
-                        }`}
-                        onClick={() => clearConflicts(rule.id)}
-                        title="Clear conflicts for this rule"
-                      >
-                        <i className="fa-solid fa-broom text-[9px]" />
-                        Clear conflicts
-                      </button>
+                    Last sync {new Date(rule.lastSyncAt).toLocaleString()}
+                    {rule.lastSyncStatus === "success" && (
+                      <IconCheck className="ml-1 inline size-[9px] text-success/80" />
                     )}
-                    <div className="ml-auto flex items-center gap-0.5">
-                      <button
-                        type="button"
-                        className={`btn btn-ghost btn-xs btn-square ${
-                          isCompact ? "h-5 min-h-5 w-5" : "h-6 min-h-6 w-6"
-                        }`}
-                        onClick={() => setEditingRule(rule)}
-                        title="Edit"
-                      >
-                        <i className="fa-solid fa-pen text-[10px]" />
-                      </button>
-                      <button
-                        type="button"
-                        className={`btn btn-ghost btn-xs btn-square text-error/55 hover:text-error ${
-                          isCompact ? "h-5 min-h-5 w-5" : "h-6 min-h-6 w-6"
-                        }`}
-                        onClick={() => setDeletingRule(rule)}
-                        title="Remove"
-                      >
-                        <i className="fa-solid fa-trash text-[10px]" />
-                      </button>
-                    </div>
+                    {rule.lastSyncStatus === "error" && (
+                      <IconXmark className="ml-1 inline size-[9px] text-destructive/80" />
+                    )}
+                    {rule.lastSyncStatus === "partial" && (
+                      <IconTriangleExclamation className="ml-1 inline size-[9px] text-warning/80" />
+                    )}
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div
+                  className={`flex flex-wrap items-center gap-1 border-border/70 border-t ${
+                    isCompact ? "pt-1" : "pt-1.5"
+                  }`}
+                >
+                  <Button
+                    variant="ghost"
+                    size="xs"
+                    className={`gap-1 px-2 ${
+                      isCompact
+                        ? "h-5 min-h-5 text-[9px]"
+                        : "h-6 min-h-6 text-[10px]"
+                    }`}
+                    onClick={() => handleSyncNow(rule.id)}
+                    title="Sync now"
+                    disabled={status === "syncing"}
+                  >
+                    <IconArrowsRotate className="size-[9px]" />
+                    Sync
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="xs"
+                    className={`gap-1 px-2 ${
+                      isCompact
+                        ? "h-5 min-h-5 text-[9px]"
+                        : "h-6 min-h-6 text-[10px]"
+                    }`}
+                    onClick={() => handleToggle(rule.id, !rule.enabled)}
+                    title={rule.enabled ? "Pause rule" : "Enable rule"}
+                  >
+                    {rule.enabled ? (
+                      <IconPause className="size-[9px] text-warning" />
+                    ) : (
+                      <IconPlay className="size-[9px] text-success" />
+                    )}
+                    {rule.enabled ? "Pause" : "Enable"}
+                  </Button>
+                  {ruleConflictCount > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="xs"
+                      className={`gap-1 px-2 text-warning/80 hover:text-warning ${
+                        isCompact
+                          ? "h-5 min-h-5 text-[9px]"
+                          : "h-6 min-h-6 text-[10px]"
+                      }`}
+                      onClick={() => clearConflicts(rule.id)}
+                      title="Clear conflicts for this rule"
+                    >
+                      <IconBroom className="size-[9px]" />
+                      Clear conflicts
+                    </Button>
+                  )}
+                  <div className="ml-auto flex items-center gap-0.5">
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      className={
+                        isCompact ? "size-5 min-h-5" : "size-6 min-h-6"
+                      }
+                      onClick={() => setEditingRule(rule)}
+                      title="Edit"
+                    >
+                      <IconPen className="size-[10px]" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      className={`text-destructive/55 hover:text-destructive ${isCompact ? "size-5 min-h-5" : "size-6 min-h-6"}`}
+                      onClick={() => setDeletingRule(rule)}
+                      title="Remove"
+                    >
+                      <IconTrash className="size-[10px]" />
+                    </Button>
                   </div>
                 </div>
-              </motion.div>
-            );
-          })}
-        </AnimatePresence>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Add Rule Modal */}
-      <Modal
+      {/* Add Rule Dialog */}
+      <Dialog
         open={addDialogOpen}
-        onClose={() => setAddDialogOpen(false)}
-        title="Add Live Folder Sync Rule"
+        onOpenChange={(o) => !o && setAddDialogOpen(false)}
       >
-        <FolderSyncRuleEditor
-          onDone={() => {
-            setAddDialogOpen(false);
-            loadRules();
-          }}
-        />
-      </Modal>
-
-      {/* Edit Rule Modal */}
-      <Modal
-        open={!!editingRule}
-        onClose={() => setEditingRule(null)}
-        title="Edit Live Folder Sync Rule"
-      >
-        {editingRule && (
+        <DialogContent className="max-w-lg" showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>Add Live Folder Sync Rule</DialogTitle>
+          </DialogHeader>
           <FolderSyncRuleEditor
-            editRule={editingRule}
             onDone={() => {
-              setEditingRule(null);
+              setAddDialogOpen(false);
               loadRules();
             }}
           />
-        )}
-      </Modal>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Rule Dialog */}
+      <Dialog
+        open={!!editingRule}
+        onOpenChange={(o) => !o && setEditingRule(null)}
+      >
+        <DialogContent className="max-w-lg" showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>Edit Live Folder Sync Rule</DialogTitle>
+          </DialogHeader>
+          {editingRule && (
+            <FolderSyncRuleEditor
+              editRule={editingRule}
+              onDone={() => {
+                setEditingRule(null);
+                loadRules();
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation */}
       <ConfirmDialog

@@ -9,6 +9,18 @@ import { rpcCall } from "../../lib/rpc-client";
 import { useFolderSyncStore } from "../../stores/useFolderSyncStore";
 import { useVaultStore } from "../../stores/useVaultStore";
 import { toast } from "../common/Toast";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { IconFolderOpen, IconSpinner } from "@/lib/icons";
 
 interface FolderSyncRuleEditorProps {
   editRule?: FolderSyncRule;
@@ -109,172 +121,193 @@ export function FolderSyncRuleEditor({
     <div className="space-y-3">
       <div className="rounded border border-success/30 bg-success/10 p-2 text-xs">
         <p className="font-semibold text-success">Live sync rule</p>
-        <p className="text-base-content/70">
+        <p className="text-foreground/70">
           This runs continuously in the background between a local folder and an
           S3 path.
         </p>
       </div>
 
       {/* Profile */}
-      <fieldset className="fieldset">
-        <legend className="fieldset-legend text-xs">Profile</legend>
-        <select
-          className="select select-sm w-full"
+      <div className="space-y-1.5">
+        <Label className="text-xs">Profile</Label>
+        <Select
           value={profileId}
-          onChange={(e) => {
-            setProfileId(e.target.value);
+          onValueChange={(v) => {
+            if (v == null) return;
+            setProfileId(v);
             setBucket("");
           }}
         >
-          <option value="">Select profile...</option>
-          {profiles.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
-      </fieldset>
+          <SelectTrigger size="sm" className="w-full">
+            <SelectValue placeholder="Select profile..." />
+          </SelectTrigger>
+          <SelectContent>
+            {profiles.map((p) => (
+              <SelectItem key={p.id} value={p.id}>
+                {p.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       {/* Bucket */}
-      <fieldset className="fieldset">
-        <legend className="fieldset-legend text-xs">Bucket</legend>
-        <select
-          className="select select-sm w-full"
+      <div className="space-y-1.5">
+        <Label className="text-xs">Bucket</Label>
+        <Select
           value={bucket}
-          onChange={(e) => setBucket(e.target.value)}
+          onValueChange={(v) => {
+            if (v != null) setBucket(v);
+          }}
           disabled={!profileId || loadingBuckets}
         >
-          <option value="">
-            {loadingBuckets ? "Loading..." : "Select bucket..."}
-          </option>
-          {buckets.map((b) => (
-            <option key={b} value={b}>
-              {b}
-            </option>
-          ))}
-        </select>
-      </fieldset>
+          <SelectTrigger size="sm" className="w-full">
+            <SelectValue
+              placeholder={loadingBuckets ? "Loading..." : "Select bucket..."}
+            />
+          </SelectTrigger>
+          <SelectContent>
+            {buckets.map((b) => (
+              <SelectItem key={b} value={b}>
+                {b}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       {/* Bucket prefix */}
-      <fieldset className="fieldset">
-        <legend className="fieldset-legend text-xs">
-          Bucket Prefix (optional)
-        </legend>
-        <input
-          className="input input-sm w-full"
+      <div className="space-y-1.5">
+        <Label className="text-xs">Bucket Prefix (optional)</Label>
+        <Input
+          className="h-7 text-xs w-full"
           placeholder="e.g. photos/ (leave empty for entire bucket)"
           value={bucketPrefix}
           onChange={(e) => setBucketPrefix(e.target.value)}
         />
-      </fieldset>
+      </div>
 
       {/* Local folder */}
-      <fieldset className="fieldset">
-        <legend className="fieldset-legend text-xs">Local Folder</legend>
+      <div className="space-y-1.5">
+        <Label className="text-xs">Local Folder</Label>
         <div className="flex gap-2">
-          <input
-            className="input input-sm flex-1"
+          <Input
+            className="h-7 text-xs flex-1"
             placeholder="/path/to/folder"
             value={localPath}
             onChange={(e) => setLocalPath(e.target.value)}
           />
-          <button
-            type="button"
-            className="btn btn-sm btn-outline"
-            onClick={handlePickFolder}
-          >
-            <i className="fa-solid fa-folder-open" /> Browse
-          </button>
+          <Button variant="outline" size="sm" onClick={handlePickFolder}>
+            <IconFolderOpen className="size-3.5" />
+            Browse
+          </Button>
         </div>
-      </fieldset>
+      </div>
 
       {/* Direction */}
-      <fieldset className="fieldset">
-        <legend className="fieldset-legend text-xs">
-          Sync Direction (continuous rule)
-        </legend>
-        <select
-          className="select select-sm w-full"
+      <div className="space-y-1.5">
+        <Label className="text-xs">Sync Direction (continuous rule)</Label>
+        <Select
           value={direction}
-          onChange={(e) => setDirection(e.target.value as SyncDirection)}
+          onValueChange={(v) => {
+            if (v != null) setDirection(v as SyncDirection);
+          }}
         >
-          <option value="bidirectional">Bidirectional — sync both ways</option>
-          <option value="local-to-remote">Upload only — local → remote</option>
-          <option value="remote-to-local">
-            Download only — remote → local
-          </option>
-        </select>
-      </fieldset>
+          <SelectTrigger size="sm" className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="bidirectional">
+              Bidirectional — sync both ways
+            </SelectItem>
+            <SelectItem value="local-to-remote">
+              Upload only — local → remote
+            </SelectItem>
+            <SelectItem value="remote-to-local">
+              Download only — remote → local
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
       {/* Conflict resolution */}
-      <fieldset className="fieldset">
-        <legend className="fieldset-legend text-xs">Conflict Resolution</legend>
-        <select
-          className="select select-sm w-full"
+      <div className="space-y-1.5">
+        <Label className="text-xs">Conflict Resolution</Label>
+        <Select
           value={conflictResolution}
-          onChange={(e) =>
-            setConflictResolution(e.target.value as ConflictResolution)
-          }
+          onValueChange={(v) => {
+            if (v != null) setConflictResolution(v as ConflictResolution);
+          }}
         >
-          <option value="newer-wins">Newer wins (compare timestamps)</option>
-          <option value="local-wins">Local always wins</option>
-          <option value="remote-wins">Remote always wins</option>
-          <option value="keep-both">Keep both (mark as conflict)</option>
-        </select>
-      </fieldset>
+          <SelectTrigger size="sm" className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="newer-wins">
+              Newer wins (compare timestamps)
+            </SelectItem>
+            <SelectItem value="local-wins">Local always wins</SelectItem>
+            <SelectItem value="remote-wins">Remote always wins</SelectItem>
+            <SelectItem value="keep-both">
+              Keep both (mark as conflict)
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
       {/* Poll interval */}
-      <fieldset className="fieldset">
-        <legend className="fieldset-legend text-xs">
-          Poll Interval (for remote changes)
-        </legend>
-        <select
-          className="select select-sm w-full"
-          value={pollIntervalMs}
-          onChange={(e) => setPollIntervalMs(Number(e.target.value))}
+      <div className="space-y-1.5">
+        <Label className="text-xs">Poll Interval (for remote changes)</Label>
+        <Select
+          value={String(pollIntervalMs)}
+          onValueChange={(v) => {
+            if (v != null) setPollIntervalMs(Number(v));
+          }}
         >
-          <option value={15000}>15 seconds</option>
-          <option value={30000}>30 seconds</option>
-          <option value={60000}>1 minute</option>
-          <option value={300000}>5 minutes</option>
-          <option value={600000}>10 minutes</option>
-          <option value={1800000}>30 minutes</option>
-        </select>
-      </fieldset>
+          <SelectTrigger size="sm" className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="15000">15 seconds</SelectItem>
+            <SelectItem value="30000">30 seconds</SelectItem>
+            <SelectItem value="60000">1 minute</SelectItem>
+            <SelectItem value="300000">5 minutes</SelectItem>
+            <SelectItem value="600000">10 minutes</SelectItem>
+            <SelectItem value="1800000">30 minutes</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
       {/* Exclude patterns */}
-      <fieldset className="fieldset">
-        <legend className="fieldset-legend text-xs">
-          Exclude Patterns (one per line)
-        </legend>
-        <textarea
-          className="textarea textarea-sm w-full font-mono text-xs"
+      <div className="space-y-1.5">
+        <Label className="text-xs">Exclude Patterns (one per line)</Label>
+        <Textarea
+          className="font-mono text-xs w-full"
           rows={4}
           placeholder={".DS_Store\nThumbs.db\n.git/**\nnode_modules/**"}
           value={excludePatterns}
           onChange={(e) => setExcludePatterns(e.target.value)}
         />
-      </fieldset>
+      </div>
 
       {/* Actions */}
       <div className="flex justify-end gap-2 pt-2">
-        <button type="button" className="btn btn-sm" onClick={onDone}>
+        <Button variant="outline" size="sm" onClick={onDone}>
           Cancel
-        </button>
-        <button
-          type="button"
-          className="btn btn-primary btn-sm"
+        </Button>
+        <Button
+          size="sm"
           onClick={handleSave}
           disabled={saving || !profileId || !bucket || !localPath}
         >
           {saving ? (
-            <span className="loading loading-spinner loading-xs" />
+            <IconSpinner className="size-3.5 animate-spin" />
           ) : editRule ? (
             "Save Changes"
           ) : (
             "Create Rule"
           )}
-        </button>
+        </Button>
       </div>
     </div>
   );

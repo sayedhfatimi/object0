@@ -6,8 +6,25 @@ import { useObjectStore } from "../../stores/useObjectStore";
 import { useProfileStore } from "../../stores/useProfileStore";
 import { useUIStore } from "../../stores/useUIStore";
 import { useVaultStore } from "../../stores/useVaultStore";
-import { Modal } from "../common/Modal";
 import { toast } from "../common/Toast";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { IconSpinner, IconTriangleExclamation } from "@/lib/icons";
 
 export function SyncDialog() {
   const open = useUIStore((s) => s.syncDialogOpen);
@@ -100,189 +117,189 @@ export function SyncDialog() {
   };
 
   return (
-    <Modal
-      open={open}
-      onClose={() => setOpen(false)}
-      title="Object Sync (One-time)"
-      actions={
-        <div className="flex gap-2">
-          <button
-            type="button"
-            className="btn btn-sm"
-            onClick={() => setOpen(false)}
-          >
+    <Dialog open={open} onOpenChange={(o) => !o && setOpen(false)}>
+      <DialogContent showCloseButton={false} className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Object Sync (One-time)</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-3">
+          <div className="rounded border border-info/30 bg-info/10 p-2.5 text-xs">
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-0.5">
+                <p className="font-semibold text-info">Runs once, then stops</p>
+                <p className="text-foreground/70">
+                  Use this to copy one bucket/prefix to another profile or
+                  bucket.
+                </p>
+                <p className="text-foreground/50">
+                  Need continuous local folder sync? Use Live Folder Sync.
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="xs"
+                className="whitespace-nowrap"
+                onClick={handleOpenLiveFolderSync}
+              >
+                Open Live Sync
+              </Button>
+            </div>
+          </div>
+
+          {/* Source info */}
+          <div className="rounded bg-muted p-2 text-xs">
+            <span className="font-semibold">Source Bucket/Prefix:</span>{" "}
+            {currentBucket}
+            {currentPrefix ? `/${currentPrefix}` : ""}
+          </div>
+
+          {/* Destination profile */}
+          <div className="space-y-1.5">
+            <Label className="text-xs">Destination Profile</Label>
+            <Select
+              value={destProfileId}
+              onValueChange={(v) => {
+                if (v != null) handleDestProfileChange(v);
+              }}
+            >
+              <SelectTrigger size="sm" className="w-full">
+                <SelectValue placeholder="Select profile..." />
+              </SelectTrigger>
+              <SelectContent>
+                {profiles.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Destination bucket */}
+          <div className="space-y-1.5">
+            <Label className="text-xs">Destination Bucket</Label>
+            <Select
+              value={destBucket}
+              onValueChange={(v) => {
+                if (v == null) return;
+                setDestBucket(v);
+                setDiff(null);
+              }}
+              disabled={!destProfileId || loadingBuckets}
+            >
+              <SelectTrigger size="sm" className="w-full">
+                <SelectValue placeholder="Select bucket..." />
+              </SelectTrigger>
+              <SelectContent>
+                {destBuckets.map((b) => (
+                  <SelectItem key={b} value={b}>
+                    {b}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Destination prefix */}
+          <div className="space-y-1.5">
+            <Label className="text-xs">Destination Prefix (optional)</Label>
+            <Input
+              className="h-7 text-xs w-full"
+              placeholder="e.g. backups/"
+              value={destPrefix}
+              onChange={(e) => setDestPrefix(e.target.value)}
+            />
+          </div>
+
+          {/* Mode */}
+          <div className="space-y-1.5">
+            <Label className="text-xs">Sync Behavior</Label>
+            <Select
+              value={mode}
+              onValueChange={(v) => {
+                if (v == null) return;
+                setMode(v as SyncMode);
+                setDiff(null);
+              }}
+            >
+              <SelectTrigger size="sm" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="additive">
+                  Additive — only add missing files
+                </SelectItem>
+                <SelectItem value="overwrite">
+                  Overwrite — add missing + update changed
+                </SelectItem>
+                <SelectItem value="mirror">
+                  Mirror — exact copy (deletes extra files in dest)
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="mt-1 text-[10px] text-foreground/50">
+              Preview first, then run once. It will not keep syncing in the
+              background.
+            </p>
+          </div>
+
+          {mode === "mirror" && (
+            <div className="rounded border border-warning/30 bg-warning/10 p-2 text-warning text-xs">
+              <IconTriangleExclamation className="mr-1 inline size-3.5" />
+              Mirror mode deletes destination files that are not in the source.
+            </div>
+          )}
+
+          {/* Diff preview */}
+          {diff && (
+            <div className="space-y-1 rounded bg-muted p-3 text-xs">
+              <div className="mb-1 font-semibold">Preview:</div>
+              <div className="text-success">
+                + {diff.toAdd.length} file(s) to add
+              </div>
+              <div className="text-warning">
+                ~ {diff.toUpdate.length} file(s) to update
+              </div>
+              <div className="text-destructive">
+                - {diff.toDelete.length} file(s) to delete
+              </div>
+              {diff.toAdd.length === 0 &&
+                diff.toUpdate.length === 0 &&
+                diff.toDelete.length === 0 && (
+                  <div className="text-foreground/50">
+                    Already in sync — nothing to do
+                  </div>
+                )}
+            </div>
+          )}
+        </div>
+
+        <DialogFooter className="pt-0">
+          <Button variant="outline" size="sm" onClick={() => setOpen(false)}>
             Cancel
-          </button>
-          <button
-            type="button"
-            className="btn btn-outline btn-sm"
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={handlePreview}
             disabled={previewing || !destProfileId || !destBucket}
           >
             {previewing ? (
-              <span className="loading loading-spinner loading-xs" />
+              <IconSpinner className="size-3.5 animate-spin" />
             ) : (
               "Preview Changes"
             )}
-          </button>
-          <button
-            type="button"
-            className="btn btn-primary btn-sm"
-            onClick={handleSync}
-            disabled={syncing || !diff}
-          >
+          </Button>
+          <Button size="sm" onClick={handleSync} disabled={syncing || !diff}>
             {syncing ? (
-              <span className="loading loading-spinner loading-xs" />
+              <IconSpinner className="size-3.5 animate-spin" />
             ) : (
               "Run Sync"
             )}
-          </button>
-        </div>
-      }
-    >
-      <div className="space-y-3">
-        <div className="rounded border border-info/30 bg-info/10 p-2.5 text-xs">
-          <div className="flex items-start justify-between gap-3">
-            <div className="space-y-0.5">
-              <p className="font-semibold text-info">Runs once, then stops</p>
-              <p className="text-base-content/70">
-                Use this to copy one bucket/prefix to another profile or bucket.
-              </p>
-              <p className="text-base-content/50">
-                Need continuous local folder sync? Use Live Folder Sync.
-              </p>
-            </div>
-            <button
-              type="button"
-              className="btn btn-ghost btn-xs whitespace-nowrap"
-              onClick={handleOpenLiveFolderSync}
-            >
-              Open Live Sync
-            </button>
-          </div>
-        </div>
-
-        {/* Source info */}
-        <div className="rounded bg-base-300 p-2 text-xs">
-          <span className="font-semibold">Source Bucket/Prefix:</span>{" "}
-          {currentBucket}
-          {currentPrefix ? `/${currentPrefix}` : ""}
-        </div>
-
-        {/* Destination profile */}
-        <fieldset className="fieldset">
-          <legend className="fieldset-legend text-xs">
-            Destination Profile
-          </legend>
-          <select
-            id="sd-dest-profile"
-            className="select select-sm w-full"
-            value={destProfileId}
-            onChange={(e) => handleDestProfileChange(e.target.value)}
-          >
-            <option value="">Select profile...</option>
-            {profiles.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-        </fieldset>
-
-        {/* Destination bucket */}
-        <fieldset className="fieldset">
-          <legend className="fieldset-legend text-xs">
-            Destination Bucket
-          </legend>
-          <select
-            id="sd-dest-bucket"
-            className="select select-sm w-full"
-            value={destBucket}
-            onChange={(e) => {
-              setDestBucket(e.target.value);
-              setDiff(null);
-            }}
-            disabled={!destProfileId || loadingBuckets}
-          >
-            <option value="">Select bucket...</option>
-            {destBuckets.map((b) => (
-              <option key={b} value={b}>
-                {b}
-              </option>
-            ))}
-          </select>
-        </fieldset>
-
-        {/* Destination prefix */}
-        <fieldset className="fieldset">
-          <legend className="fieldset-legend text-xs">
-            Destination Prefix (optional)
-          </legend>
-          <input
-            id="sd-dest-prefix"
-            className="input input-sm w-full"
-            placeholder="e.g. backups/"
-            value={destPrefix}
-            onChange={(e) => setDestPrefix(e.target.value)}
-          />
-        </fieldset>
-
-        {/* Mode */}
-        <fieldset className="fieldset">
-          <legend className="fieldset-legend text-xs">Sync Behavior</legend>
-          <select
-            id="sd-sync-mode"
-            className="select select-sm w-full"
-            value={mode}
-            onChange={(e) => {
-              setMode(e.target.value as SyncMode);
-              setDiff(null);
-            }}
-          >
-            <option value="additive">Additive — only add missing files</option>
-            <option value="overwrite">
-              Overwrite — add missing + update changed
-            </option>
-            <option value="mirror">
-              Mirror — exact copy (deletes extra files in dest)
-            </option>
-          </select>
-          <p className="mt-1 text-[10px] text-base-content/50">
-            Preview first, then run once. It will not keep syncing in the
-            background.
-          </p>
-        </fieldset>
-
-        {mode === "mirror" && (
-          <div className="rounded border border-warning/30 bg-warning/10 p-2 text-warning text-xs">
-            <i className="fa-solid fa-triangle-exclamation mr-1" />
-            Mirror mode deletes destination files that are not in the source.
-          </div>
-        )}
-
-        {/* Diff preview */}
-        {diff && (
-          <div className="space-y-1 rounded bg-base-300 p-3 text-xs">
-            <div className="mb-1 font-semibold">Preview:</div>
-            <div className="text-success">
-              + {diff.toAdd.length} file(s) to add
-            </div>
-            <div className="text-warning">
-              ~ {diff.toUpdate.length} file(s) to update
-            </div>
-            <div className="text-error">
-              - {diff.toDelete.length} file(s) to delete
-            </div>
-            {diff.toAdd.length === 0 &&
-              diff.toUpdate.length === 0 &&
-              diff.toDelete.length === 0 && (
-                <div className="text-base-content/50">
-                  Already in sync — nothing to do
-                </div>
-              )}
-          </div>
-        )}
-      </div>
-    </Modal>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

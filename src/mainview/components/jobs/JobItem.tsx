@@ -1,7 +1,5 @@
-import { AnimatePresence, motion } from "framer-motion";
 import { memo, useState } from "react";
 import type { JobInfo } from "../../../shared/job.types";
-import { transitions } from "../../lib/animations";
 import {
   formatBytes,
   formatDate,
@@ -11,28 +9,71 @@ import {
   formatSpeed,
 } from "../../lib/formatters";
 import { useJobStore } from "../../stores/useJobStore";
+import { Button } from "@/components/ui/button";
+import {
+  IconArrowsRotate,
+  IconBan,
+  IconChevronRight,
+  IconCircleCheck,
+  IconCircleXmark,
+  IconClock,
+  IconCloudArrowDown,
+  IconCloudArrowUp,
+  IconCopy,
+  IconDatabase,
+  IconFileZipper,
+  IconGaugeHigh,
+  IconHourglassStart,
+  IconScissors,
+  IconSpinner,
+  IconTrashCan,
+  IconTriangleExclamation,
+  IconXmark,
+} from "@/lib/icons";
 
 interface JobItemProps {
   job: JobInfo;
 }
 
-const typeIcon: Record<string, string> = {
-  upload: "fa-solid fa-cloud-arrow-up text-success",
-  download: "fa-solid fa-cloud-arrow-down text-info",
-  copy: "fa-regular fa-copy text-accent",
-  move: "fa-solid fa-scissors text-warning",
-  delete: "fa-regular fa-trash-can text-error",
-  sync: "fa-solid fa-rotate text-primary",
-  archive: "fa-solid fa-file-zipper text-secondary",
-};
+function TypeIcon({ type }: { type: string }) {
+  const cls = "size-3.5";
+  switch (type) {
+    case "upload":
+      return <IconCloudArrowUp className={`${cls} text-success`} />;
+    case "download":
+      return <IconCloudArrowDown className={`${cls} text-info`} />;
+    case "copy":
+      return <IconCopy className={`${cls} text-accent`} />;
+    case "move":
+      return <IconScissors className={`${cls} text-warning`} />;
+    case "delete":
+      return <IconTrashCan className={`${cls} text-destructive`} />;
+    case "sync":
+      return <IconArrowsRotate className={`${cls} text-primary`} />;
+    case "archive":
+      return <IconFileZipper className={`${cls} text-secondary`} />;
+    default:
+      return <IconArrowsRotate className={`${cls} text-primary`} />;
+  }
+}
 
-const statusIcon: Record<string, string> = {
-  queued: "fa-solid fa-clock text-base-content/40",
-  running: "fa-solid fa-spinner fa-spin text-info",
-  completed: "fa-solid fa-circle-check text-success",
-  failed: "fa-solid fa-circle-xmark text-error",
-  cancelled: "fa-solid fa-ban text-warning",
-};
+function StatusIcon({ status }: { status: string }) {
+  const cls = "size-3";
+  switch (status) {
+    case "queued":
+      return <IconClock className={`${cls} text-foreground/40`} />;
+    case "running":
+      return <IconSpinner className={`${cls} text-info animate-spin`} />;
+    case "completed":
+      return <IconCircleCheck className={`${cls} text-success`} />;
+    case "failed":
+      return <IconCircleXmark className={`${cls} text-destructive`} />;
+    case "cancelled":
+      return <IconBan className={`${cls} text-warning`} />;
+    default:
+      return null;
+  }
+}
 
 const JobItemInner = function JobItemInner({ job }: JobItemProps) {
   const cancelJob = useJobStore((s) => s.cancelJob);
@@ -49,27 +90,27 @@ const JobItemInner = function JobItemInner({ job }: JobItemProps) {
   const pct = job.percentage ?? 0;
 
   /* ── inline metadata (under filename, next to status) ── */
-  const inlineChips: { label: string; icon?: string }[] = [];
+  const inlineChips: { label: string; showDb?: boolean }[] = [];
 
   if (isDone && job.bytesTotal && job.bytesTotal > 0) {
     inlineChips.push({
       label: formatBytes(job.bytesTotal),
-      icon: "fa-solid fa-database",
+      showDb: true,
     });
   }
 
   /* ── right-side stacked metadata ── */
-  const rightChips: { label: string; icon?: string }[] = [];
+  const rightChips: { label: string; showClock?: boolean }[] = [];
 
   if (isDone && job.startedAt && job.completedAt) {
     rightChips.push({
       label: formatDuration(job.startedAt, job.completedAt),
-      icon: "fa-regular fa-clock",
+      showClock: true,
     });
   } else if (isActive && job.startedAt) {
     rightChips.push({
       label: formatDuration(job.startedAt),
-      icon: "fa-regular fa-clock",
+      showClock: true,
     });
   }
 
@@ -120,20 +161,22 @@ const JobItemInner = function JobItemInner({ job }: JobItemProps) {
       {/* ── Collapsed header row ── */}
       <button
         type="button"
-        className={`flex w-full items-start gap-2.5 px-3 py-2 text-left transition-colors hover:bg-base-300/40 ${
+        className={`flex w-full items-start gap-2.5 px-3 py-2 text-left transition-colors hover:bg-muted/80 ${
           isDone ? "opacity-70 hover:opacity-100" : ""
         }`}
         onClick={() => setOpen((v) => !v)}
       >
         {/* Chevron + type icon stacked */}
         <div className="flex shrink-0 items-center gap-2 pt-0.5">
-          <motion.i
-            className="fa-solid fa-chevron-right text-[9px] text-base-content/30"
-            animate={{ rotate: open ? 90 : 0 }}
-            transition={transitions.fast}
+          <IconChevronRight
+            className="text-[9px] text-foreground/30"
+            style={{
+              transform: open ? "rotate(90deg)" : "rotate(0deg)",
+              transition: "transform 150ms ease",
+            }}
           />
           <span className="text-sm">
-            <i className={typeIcon[job.type] ?? typeIcon.sync} />
+            <TypeIcon type={job.type} />
           </span>
         </div>
 
@@ -145,9 +188,9 @@ const JobItemInner = function JobItemInner({ job }: JobItemProps) {
           </span>
 
           {/* Row 2: status + inline metadata */}
-          <div className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[10px] text-base-content/40">
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[10px] text-foreground/40">
             <span className="flex items-center gap-1">
-              <i className={statusIcon[job.status] ?? ""} />
+              <StatusIcon status={job.status} />
               {job.status}
             </span>
             {inlineChips.map((chip) => (
@@ -155,8 +198,8 @@ const JobItemInner = function JobItemInner({ job }: JobItemProps) {
                 key={chip.label}
                 className="whitespace-nowrap font-mono tabular-nums"
               >
-                {chip.icon && (
-                  <i className={`${chip.icon} mr-0.5 text-[8px]`} />
+                {chip.showDb && (
+                  <IconDatabase className="mr-0.5 inline size-[8px]" />
                 )}
                 {chip.label}
               </span>
@@ -166,16 +209,10 @@ const JobItemInner = function JobItemInner({ job }: JobItemProps) {
           {/* Progress bar */}
           {hasProgress && (
             <div className="mt-1.5">
-              <div className="relative h-2 w-full overflow-hidden rounded-full bg-base-300/80">
-                <motion.div
-                  className={`absolute inset-y-0 left-0 rounded-full ${
-                    job.status === "running"
-                      ? "bg-linear-to-r from-primary to-info"
-                      : "bg-primary/60"
-                  }`}
-                  initial={{ width: 0 }}
-                  animate={{ width: `${pct}%` }}
-                  transition={{ duration: 0.4, ease: "easeOut" }}
+              <div className="relative h-2 w-full overflow-hidden rounded-full bg-muted/80">
+                <div
+                  style={{ width: `${pct}%` }}
+                  className={`absolute inset-y-0 left-0 rounded-full transition-[width] duration-300 ease-out ${job.status === "running" ? "bg-linear-to-r from-primary to-info" : "bg-primary/60"}`}
                 />
               </div>
             </div>
@@ -183,22 +220,22 @@ const JobItemInner = function JobItemInner({ job }: JobItemProps) {
 
           {/* Transfer stats — separate line below progress bar */}
           {isRunning && job.bytesTotal && job.bytesTotal > 0 && (
-            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] text-base-content/50 tabular-nums">
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] text-foreground/50 tabular-nums">
               <span>
                 {formatBytes(job.bytesTransferred ?? 0)}
-                <span className="text-base-content/30"> / </span>
+                <span className="text-foreground/30"> / </span>
                 {formatBytes(job.bytesTotal)}
               </span>
-              <span className="font-semibold text-base-content/60">{pct}%</span>
+              <span className="font-semibold text-foreground/60">{pct}%</span>
               {job.speed ? (
                 <span>
-                  <i className="fa-solid fa-gauge-high mr-0.5 text-[8px] text-info/60" />
+                  <IconGaugeHigh className="mr-0.5 inline size-[8px] text-info/60" />
                   {formatSpeed(job.speed)}
                 </span>
               ) : null}
               {job.eta ? (
                 <span>
-                  <i className="fa-regular fa-clock mr-0.5 text-[8px] text-base-content/30" />
+                  <IconClock className="mr-0.5 inline size-[8px] text-foreground/30" />
                   {formatETA(job.eta)} remaining
                 </span>
               ) : null}
@@ -207,16 +244,16 @@ const JobItemInner = function JobItemInner({ job }: JobItemProps) {
 
           {/* Queued indicator */}
           {job.status === "queued" && (
-            <div className="mt-1 text-[10px] text-base-content/40">
-              <i className="fa-solid fa-hourglass-start mr-1 text-[8px]" />
+            <div className="mt-1 text-[10px] text-foreground/40">
+              <IconHourglassStart className="mr-1 inline size-[8px]" />
               Waiting in queue...
             </div>
           )}
 
           {/* Inline error for collapsed view */}
           {!open && job.error && (
-            <div className="mt-1 truncate text-[10px] text-error/80">
-              <i className="fa-solid fa-triangle-exclamation mr-1 text-[8px]" />
+            <div className="mt-1 truncate text-[10px] text-destructive/80">
+              <IconTriangleExclamation className="mr-1 inline size-[8px]" />
               {job.error}
             </div>
           )}
@@ -228,9 +265,11 @@ const JobItemInner = function JobItemInner({ job }: JobItemProps) {
             {rightChips.map((chip) => (
               <span
                 key={chip.label}
-                className="whitespace-nowrap font-mono text-[10px] text-base-content/40 tabular-nums"
+                className="whitespace-nowrap font-mono text-[10px] text-foreground/40 tabular-nums"
               >
-                {chip.icon && <i className={`${chip.icon} mr-1 text-[8px]`} />}
+                {chip.showClock && (
+                  <IconClock className="mr-1 inline size-[8px]" />
+                )}
                 {chip.label}
               </span>
             ))}
@@ -239,53 +278,47 @@ const JobItemInner = function JobItemInner({ job }: JobItemProps) {
 
         {/* Cancel button */}
         {isActive && (
-          <button
+          <Button
             type="button"
-            className="btn btn-ghost btn-xs shrink-0 text-base-content/40 hover:text-error"
+            variant="ghost"
+            size="icon-xs"
+            className="shrink-0 text-foreground/40 hover:text-destructive"
             onClick={(e) => {
               e.stopPropagation();
               cancelJob(job.id);
             }}
             title="Cancel"
           >
-            <i className="fa-solid fa-xmark" />
-          </button>
+            <IconXmark className="size-3.5" />
+          </Button>
         )}
       </button>
 
       {/* ── Expanded detail panel ── */}
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={transitions.fast}
-            className="overflow-hidden"
-          >
-            <div className="border-base-300/60 border-t bg-base-200/60 px-8 py-2">
-              <table className="w-full text-[11px]">
-                <tbody>
-                  {details.map(([label, value]) => (
-                    <tr key={label}>
-                      <td className="whitespace-nowrap py-0.5 pr-4 align-top font-semibold text-base-content/40">
-                        {label}
-                      </td>
-                      <td
-                        className={`break-all py-0.5 font-mono text-base-content/70 ${
-                          label === "Error" ? "text-error/80" : ""
-                        }`}
-                      >
-                        {value}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {open && (
+        <div className="overflow-hidden">
+          <div className="border-border/60 border-t bg-card/60 px-8 py-2">
+            <table className="w-full text-[11px]">
+              <tbody>
+                {details.map(([label, value]) => (
+                  <tr key={label}>
+                    <td className="whitespace-nowrap py-0.5 pr-4 align-top font-semibold text-foreground/40">
+                      {label}
+                    </td>
+                    <td
+                      className={`break-all py-0.5 font-mono text-foreground/70 ${
+                        label === "Error" ? "text-destructive/80" : ""
+                      }`}
+                    >
+                      {value}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

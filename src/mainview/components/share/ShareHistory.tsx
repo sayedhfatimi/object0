@@ -2,6 +2,16 @@ import { useEffect, useMemo, useState } from "react";
 import { formatRelativeDate, getFileName } from "../../lib/formatters";
 import { useShareHistoryStore } from "../../stores/useShareHistoryStore";
 import { toast } from "../common/Toast";
+import { Button } from "@/components/ui/button";
+import {
+  IconBroom,
+  IconClockRotateLeft,
+  IconCopy,
+  IconLink,
+  IconLinkSlash,
+  IconTrash,
+  IconXmark,
+} from "@/lib/icons";
 
 type FilterMode = "all" | "active" | "expired";
 
@@ -62,55 +72,53 @@ export function ShareHistory({ onClose }: { onClose: () => void }) {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between border-base-300 border-b px-4 py-3">
+      <div className="flex items-center justify-between border-border border-b px-4 py-3">
         <div className="flex items-center gap-2">
-          <i className="fa-solid fa-clock-rotate-left text-base-content/60" />
+          <IconClockRotateLeft className="size-4 text-foreground/60" />
           <h3 className="font-semibold text-sm">Share History</h3>
           {entries.length > 0 && (
-            <span className="badge badge-ghost badge-xs">{entries.length}</span>
+            <span className="rounded-full bg-muted px-1.5 py-px text-[9px] text-foreground/55">
+              {entries.length}
+            </span>
           )}
         </div>
-        <button
-          type="button"
-          className="btn btn-ghost btn-xs"
-          onClick={onClose}
-        >
-          <i className="fa-solid fa-xmark" />
-        </button>
+        <Button variant="ghost" size="icon-xs" onClick={onClose}>
+          <IconXmark className="size-3.5" />
+        </Button>
       </div>
 
       {/* Filter tabs */}
       {entries.length > 0 && (
-        <div className="flex gap-1 border-base-300 border-b px-4 py-2">
-          <button
-            type="button"
-            className={`btn btn-xs ${filter === "all" ? "btn-primary" : "btn-ghost"}`}
+        <div className="flex gap-1 border-border border-b px-4 py-2">
+          <Button
+            variant={filter === "all" ? "default" : "ghost"}
+            size="xs"
             onClick={() => setFilter("all")}
           >
             All ({entries.length})
-          </button>
-          <button
-            type="button"
-            className={`btn btn-xs ${filter === "active" ? "btn-success" : "btn-ghost"}`}
+          </Button>
+          <Button
+            variant={filter === "active" ? "default" : "ghost"}
+            size="xs"
             onClick={() => setFilter("active")}
           >
             Active ({activeCount})
-          </button>
-          <button
-            type="button"
-            className={`btn btn-xs ${filter === "expired" ? "btn-warning" : "btn-ghost"}`}
+          </Button>
+          <Button
+            variant={filter === "expired" ? "default" : "ghost"}
+            size="xs"
             onClick={() => setFilter("expired")}
           >
             Expired ({expiredCount})
-          </button>
+          </Button>
         </div>
       )}
 
       {/* Entries */}
       <div className="flex-1 overflow-y-auto">
         {filtered.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-12 text-base-content/40">
-            <i className="fa-solid fa-link-slash text-3xl" />
+          <div className="flex flex-col items-center gap-2 py-12 text-foreground/40">
+            <IconLinkSlash className="size-8" />
             <span className="text-sm">
               {entries.length === 0
                 ? "No share history yet"
@@ -118,20 +126,22 @@ export function ShareHistory({ onClose }: { onClose: () => void }) {
             </span>
           </div>
         ) : (
-          <ul className="divide-y divide-base-300">
+          <ul className="divide-y divide-border">
             {filtered.map((entry) => {
               const isExpired = new Date(entry.expiresAt) <= now;
               return (
                 <li
                   key={entry.id}
-                  className={`group flex items-start gap-3 px-4 py-3 transition-colors hover:bg-base-200/50 ${
+                  className={`group flex items-start gap-3 px-4 py-3 transition-colors hover:bg-card/50 ${
                     isExpired ? "opacity-50" : ""
                   }`}
                 >
                   <div className="mt-0.5">
-                    <i
-                      className={`fa-solid ${isExpired ? "fa-link-slash text-warning" : "fa-link text-success"} text-xs`}
-                    />
+                    {isExpired ? (
+                      <IconLinkSlash className="size-3.5 text-warning" />
+                    ) : (
+                      <IconLink className="size-3.5 text-success" />
+                    )}
                   </div>
 
                   <div className="min-w-0 flex-1">
@@ -140,38 +150,43 @@ export function ShareHistory({ onClose }: { onClose: () => void }) {
                         {getFileName(entry.key)}
                       </span>
                       <span
-                        className={`badge badge-xs ${isExpired ? "badge-warning" : "badge-success"}`}
+                        className={`rounded-full px-1.5 py-px text-[9px] ${
+                          isExpired
+                            ? "bg-warning/15 text-warning"
+                            : "bg-success/15 text-success"
+                        }`}
                       >
                         {formatExpiry(entry.expiresAt)}
                       </span>
                     </div>
-                    <div className="mt-0.5 truncate text-[10px] text-base-content/40">
+                    <div className="mt-0.5 truncate text-[10px] text-foreground/40">
                       {entry.bucket}/{entry.key}
                     </div>
-                    <div className="mt-0.5 text-[10px] text-base-content/40">
+                    <div className="mt-0.5 text-[10px] text-foreground/40">
                       Shared {formatRelativeDate(entry.createdAt)}
                     </div>
                   </div>
 
                   <div className="flex shrink-0 gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                     {!isExpired && (
-                      <button
-                        type="button"
-                        className="btn btn-ghost btn-xs"
+                      <Button
+                        variant="ghost"
+                        size="icon-xs"
                         onClick={() => handleCopy(entry.url)}
                         title="Copy link"
                       >
-                        <i className="fa-solid fa-copy fa-xs" />
-                      </button>
+                        <IconCopy className="size-3" />
+                      </Button>
                     )}
-                    <button
-                      type="button"
-                      className="btn btn-ghost btn-xs text-error"
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      className="text-destructive"
                       onClick={() => removeEntry(entry.id)}
                       title="Remove"
                     >
-                      <i className="fa-solid fa-trash fa-xs" />
-                    </button>
+                      <IconTrash className="size-3" />
+                    </Button>
                   </div>
                 </li>
               );
@@ -182,25 +197,27 @@ export function ShareHistory({ onClose }: { onClose: () => void }) {
 
       {/* Footer actions */}
       {entries.length > 0 && (
-        <div className="flex items-center justify-between border-base-300 border-t px-4 py-2">
+        <div className="flex items-center justify-between border-border border-t px-4 py-2">
           {expiredCount > 0 && (
-            <button
-              type="button"
-              className="btn btn-ghost btn-xs text-warning"
+            <Button
+              variant="ghost"
+              size="xs"
+              className="text-warning"
               onClick={clearExpired}
             >
-              <i className="fa-solid fa-broom fa-xs" />
+              <IconBroom className="size-3" />
               Clear Expired ({expiredCount})
-            </button>
+            </Button>
           )}
-          <button
-            type="button"
-            className="btn btn-ghost btn-xs text-error"
+          <Button
+            variant="ghost"
+            size="xs"
+            className="text-destructive"
             onClick={clearAll}
           >
-            <i className="fa-solid fa-trash fa-xs" />
+            <IconTrash className="size-3" />
             Clear All
-          </button>
+          </Button>
         </div>
       )}
     </div>

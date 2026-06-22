@@ -4,6 +4,16 @@ import { rpcCall } from "../../lib/rpc-client";
 import { useShareHistoryStore } from "../../stores/useShareHistoryStore";
 import { useThemeStore } from "../../stores/useThemeStore";
 import { useUIStore } from "../../stores/useUIStore";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { IconGear, IconSpinner, IconTrashCan, IconXmark } from "@/lib/icons";
 
 export function SettingsPanel({ onClose }: { onClose: () => void }) {
   const theme = useThemeStore((s) => s.theme);
@@ -37,14 +47,24 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
           ? "Saved in OS keychain"
           : "Not saved in OS keychain";
   const keychainBadge = keychainBusy
-    ? { label: "Working", className: "badge-info" }
+    ? { label: "Working" }
     : keychainAvailable === false
-      ? { label: "Unavailable", className: "badge-error" }
+      ? { label: "Unavailable" }
       : hasStoredPassphrase === null
-        ? { label: "Checking", className: "badge-ghost" }
+        ? { label: "Checking" }
         : hasStoredPassphrase
-          ? { label: "Stored", className: "badge-success" }
-          : { label: "Not Stored", className: "badge-ghost" };
+          ? { label: "Stored" }
+          : { label: "Not Stored" };
+
+  const keychainBadgeClass = keychainBusy
+    ? "bg-info/15 text-info"
+    : keychainAvailable === false
+      ? "bg-destructive/15 text-destructive"
+      : hasStoredPassphrase === null
+        ? "bg-muted text-foreground/55"
+        : hasStoredPassphrase
+          ? "bg-success/15 text-success"
+          : "bg-muted text-foreground/55";
 
   useEffect(() => {
     let mounted = true;
@@ -101,18 +121,14 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between border-base-300 border-b px-4 py-3">
+      <div className="flex items-center justify-between border-border border-b px-4 py-3">
         <div className="flex items-center gap-2">
-          <i className="fa-solid fa-gear text-base-content/60" />
+          <IconGear className="size-4 text-foreground/60" />
           <h3 className="font-semibold text-sm">Settings</h3>
         </div>
-        <button
-          type="button"
-          className="btn btn-ghost btn-xs"
-          onClick={onClose}
-        >
-          <i className="fa-solid fa-xmark" />
-        </button>
+        <Button variant="ghost" size="icon-xs" onClick={onClose}>
+          <IconXmark className="size-3.5" />
+        </Button>
       </div>
 
       {/* Settings body */}
@@ -120,174 +136,189 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
         <div className="flex flex-col gap-6">
           {/* Appearance */}
           <section>
-            <h4 className="mb-3 font-semibold text-base-content/50 text-xs uppercase tracking-wider">
+            <h4 className="mb-3 font-semibold text-foreground/50 text-xs uppercase tracking-wider">
               Appearance
             </h4>
             <div className="flex flex-col gap-3">
-              <label className="flex items-center justify-between">
+              <div className="flex items-center justify-between">
                 <span className="text-sm">Theme</span>
-                <select
-                  className="select select-bordered select-xs w-32"
+                <Select
                   value={theme}
-                  onChange={(e) =>
-                    setTheme(e.target.value as "dark" | "light")
-                  }
+                  onValueChange={(v) => {
+                    if (v != null) setTheme(v as "dark" | "light");
+                  }}
                 >
-                  <option value="dark">Dark</option>
-                  <option value="light">Light</option>
-                </select>
-              </label>
-              <label className="flex items-center justify-between">
+                  <SelectTrigger size="sm" className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="dark">Dark</SelectItem>
+                    <SelectItem value="light">Light</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center justify-between">
                 <span className="text-sm">Default View</span>
-                <select
-                  className="select select-bordered select-xs w-32"
+                <Select
                   value={viewMode}
-                  onChange={(e) =>
-                    setViewMode(e.target.value as "table" | "grid")
-                  }
+                  onValueChange={(v) => {
+                    if (v != null) setViewMode(v as "table" | "grid");
+                  }}
                 >
-                  <option value="table">Table</option>
-                  <option value="grid">Grid</option>
-                </select>
-              </label>
+                  <SelectTrigger size="sm" className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="table">Table</SelectItem>
+                    <SelectItem value="grid">Grid</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </section>
 
           {/* Browsing */}
           <section>
-            <h4 className="mb-3 font-semibold text-base-content/50 text-xs uppercase tracking-wider">
+            <h4 className="mb-3 font-semibold text-foreground/50 text-xs uppercase tracking-wider">
               Browsing
             </h4>
             <div className="flex flex-col gap-3">
-              <label className="flex items-center justify-between">
+              <div className="flex items-center justify-between">
                 <div>
                   <span className="text-sm">Page Size</span>
-                  <p className="text-[10px] text-base-content/40">
+                  <p className="text-[10px] text-foreground/40">
                     Objects loaded per page
                   </p>
                 </div>
-                <select
-                  className="select select-bordered select-xs w-32"
-                  value={pageSize}
-                  onChange={(e) => setPageSize(Number(e.target.value))}
+                <Select
+                  value={String(pageSize)}
+                  onValueChange={(v) => {
+                    if (v != null) setPageSize(Number(v));
+                  }}
                 >
-                  {PAGE_SIZES.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                  <SelectTrigger size="sm" className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PAGE_SIZES.map((s) => (
+                      <SelectItem key={s} value={String(s)}>
+                        {s}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </section>
 
           {/* Notifications */}
           <section>
-            <h4 className="mb-3 font-semibold text-base-content/50 text-xs uppercase tracking-wider">
+            <h4 className="mb-3 font-semibold text-foreground/50 text-xs uppercase tracking-wider">
               Notifications
             </h4>
             <div className="flex flex-col gap-3">
-              <label className="flex cursor-pointer items-center justify-between">
+              <div className="flex items-center justify-between">
                 <div>
                   <span className="text-sm">Desktop Notifications</span>
-                  <p className="text-[10px] text-base-content/40">
+                  <p className="text-[10px] text-foreground/40">
                     Notify when jobs complete
                   </p>
                 </div>
-                <input
-                  type="checkbox"
-                  className="toggle toggle-primary toggle-sm"
+                <Switch
                   checked={desktopNotifications}
-                  onChange={(e) => setDesktopNotifications(e.target.checked)}
+                  onCheckedChange={setDesktopNotifications}
                 />
-              </label>
+              </div>
             </div>
           </section>
 
           {/* Privacy */}
           <section>
-            <h4 className="mb-3 font-semibold text-base-content/50 text-xs uppercase tracking-wider">
+            <h4 className="mb-3 font-semibold text-foreground/50 text-xs uppercase tracking-wider">
               Privacy
             </h4>
             <div className="flex flex-col gap-3">
-              <label className="flex cursor-pointer items-center justify-between">
+              <div className="flex items-center justify-between">
                 <div>
                   <span className="text-sm">Persist Share History</span>
-                  <p className="text-[10px] text-base-content/40">
+                  <p className="text-[10px] text-foreground/40">
                     Save generated share URLs locally between app restarts
                   </p>
                 </div>
-                <input
-                  type="checkbox"
-                  className="toggle toggle-primary toggle-sm"
+                <Switch
                   checked={persistShareHistory}
-                  onChange={(e) => {
-                    const enabled = e.target.checked;
+                  onCheckedChange={(enabled) => {
                     setPersistShareHistory(enabled);
-                    if (!enabled) {
-                      clearShareHistory();
-                    }
+                    if (!enabled) clearShareHistory();
                   }}
                 />
-              </label>
+              </div>
             </div>
           </section>
 
           {/* Transfers */}
           <section>
-            <h4 className="mb-3 font-semibold text-base-content/50 text-xs uppercase tracking-wider">
+            <h4 className="mb-3 font-semibold text-foreground/50 text-xs uppercase tracking-wider">
               Transfers
             </h4>
             <div className="flex flex-col gap-3">
-              <label className="flex items-center justify-between">
+              <div className="flex items-center justify-between">
                 <div>
                   <span className="text-sm">Concurrent Jobs</span>
-                  <p className="text-[10px] text-base-content/40">
+                  <p className="text-[10px] text-foreground/40">
                     Max parallel transfers (default 3)
                   </p>
                 </div>
-                <select
-                  className="select select-bordered select-xs w-32"
-                  value={jobConcurrency}
-                  onChange={(e) => {
-                    const n = Number(e.target.value);
+                <Select
+                  value={String(jobConcurrency)}
+                  onValueChange={(v) => {
+                    if (v == null) return;
+                    const n = Number(v);
                     setJobConcurrency(n);
                     rpcCall("jobs:set-concurrency", { concurrency: n });
                   }}
                 >
-                  {CONCURRENCY_OPTIONS.map((n) => (
-                    <option key={n} value={n}>
-                      {n}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                  <SelectTrigger size="sm" className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CONCURRENCY_OPTIONS.map((n) => (
+                      <SelectItem key={n} value={String(n)}>
+                        {n}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </section>
 
           {/* Vault */}
           <section>
-            <h4 className="mb-3 font-semibold text-base-content/50 text-xs uppercase tracking-wider">
+            <h4 className="mb-3 font-semibold text-foreground/50 text-xs uppercase tracking-wider">
               Vault
             </h4>
             <div className="flex flex-col gap-3">
-              <div className="space-y-2 rounded-md border border-base-300/70 bg-base-200/35 p-2.5">
+              <div className="space-y-2 rounded-md border border-border/70 bg-card/35 p-2.5">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <span className="text-sm">Stored Passphrase</span>
-                    <p className="text-[10px] text-base-content/40">
+                    <p className="text-[10px] text-foreground/40">
                       {keychainStatusText}
                     </p>
                   </div>
-                  <span className={`badge badge-xs ${keychainBadge.className}`}>
+                  <span
+                    className={`rounded-full px-1.5 py-px text-[9px] ${keychainBadgeClass}`}
+                  >
                     {keychainBadge.label}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    className="btn btn-outline btn-xs w-full"
+                  <Button
+                    variant="outline"
+                    size="xs"
+                    className="w-full"
                     disabled={
                       keychainBusy ||
                       keychainAvailable === false ||
@@ -297,16 +328,16 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
                     onClick={handleForgetStoredPassphrase}
                   >
                     {keychainBusy ? (
-                      <span className="loading loading-spinner loading-xs" />
+                      <IconSpinner className="size-3.5 animate-spin" />
                     ) : (
                       <>
-                        <i className="fa-regular fa-trash-can" />
+                        <IconTrashCan className="size-3.5" />
                         Forget Stored Passphrase
                       </>
                     )}
-                  </button>
+                  </Button>
                 </div>
-                <p className="text-[10px] text-base-content/35">
+                <p className="text-[10px] text-foreground/35">
                   Removes the saved passphrase from your OS keychain.
                 </p>
 
@@ -314,7 +345,9 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
                   <p className="text-[10px] text-success">{keychainMessage}</p>
                 )}
                 {keychainError && (
-                  <p className="text-[10px] text-error">{keychainError}</p>
+                  <p className="text-[10px] text-destructive">
+                    {keychainError}
+                  </p>
                 )}
               </div>
             </div>
@@ -322,14 +355,14 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
 
           {/* Keyboard Shortcuts */}
           <section>
-            <h4 className="mb-3 font-semibold text-base-content/50 text-xs uppercase tracking-wider">
+            <h4 className="mb-3 font-semibold text-foreground/50 text-xs uppercase tracking-wider">
               Keyboard Shortcuts
             </h4>
             <div className="flex flex-col gap-1.5 text-sm">
               <ShortcutRow combo="Ctrl+K" label="Command Palette" />
               <ShortcutRow combo="Ctrl+B" label="Toggle Sidebar" />
               <ShortcutRow combo="Ctrl+J" label="Toggle Job Panel" />
-              <ShortcutRow combo="Ctrl+\\" label="Toggle Theme" />
+              <ShortcutRow combo="Ctrl+\" label="Toggle Theme" />
               <ShortcutRow combo="Ctrl+," label="Open Settings" />
               <ShortcutRow combo="↑ / ↓" label="Navigate rows" />
               <ShortcutRow combo="Space" label="Toggle selection" />
@@ -349,8 +382,10 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
 function ShortcutRow({ combo, label }: { combo: string; label: string }) {
   return (
     <div className="flex items-center justify-between">
-      <span className="text-base-content/60">{label}</span>
-      <kbd className="kbd kbd-xs">{combo}</kbd>
+      <span className="text-foreground/60">{label}</span>
+      <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px] text-foreground/70">
+        {combo}
+      </kbd>
     </div>
   );
 }

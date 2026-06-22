@@ -1,11 +1,19 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { motion } from "framer-motion";
 import { useEffect, useMemo, useRef } from "react";
 import type { JobInfo } from "../../../shared/job.types";
-import { transitions } from "../../lib/animations";
 import { formatBytes, formatSpeed } from "../../lib/formatters";
 import { useJobStore } from "../../stores/useJobStore";
 import { useUIStore } from "../../stores/useUIStore";
+import { Button } from "@/components/ui/button";
+import {
+  IconArrowsRotate,
+  IconBroom,
+  IconCheck,
+  IconFolderOpen,
+  IconGaugeHigh,
+  IconPlay,
+  IconXmark,
+} from "@/lib/icons";
 import { JobItem } from "./JobItem";
 
 const VIRTUALIZE_AFTER_COUNT = 80;
@@ -160,93 +168,91 @@ export function JobPanel() {
   }, [rowVirtualizer, shouldVirtualize]);
 
   return (
-    <motion.div
-      initial={{ height: 0, opacity: 0, y: 8 }}
-      animate={{ height: 224, opacity: 1, y: 0 }}
-      exit={{ height: 0, opacity: 0, y: 8 }}
-      transition={transitions.normal}
-      className="flex shrink-0 flex-col overflow-hidden border-base-300 border-t bg-base-200/50"
-    >
+    <div className="flex shrink-0 flex-col overflow-hidden border-border border-t bg-card/50">
       {/* Header */}
-      <div className="flex items-center justify-between border-base-300 border-b px-3 py-1.5">
+      <div className="flex items-center justify-between border-border border-b px-3 py-1.5">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-base-content/50 text-xs uppercase tracking-wider">
+          <span className="font-semibold text-foreground/50 text-xs uppercase tracking-wider">
             Jobs
           </span>
           {activeJobs.length > 0 && (
-            <span className="badge badge-info badge-xs tabular-nums">
+            <span className="rounded-full bg-info/15 px-1.5 py-px text-[9px] text-info tabular-nums">
               {activeJobs.length} active
             </span>
           )}
           {succeededCount > 0 && (
-            <span className="badge badge-success badge-xs tabular-nums">
+            <span className="rounded-full bg-success/15 px-1.5 py-px text-[9px] text-success tabular-nums">
               {succeededCount}
-              <i className="fa-solid fa-check ml-0.5 text-[7px]" />
+              <IconCheck className="ml-0.5 inline size-[7px]" />
             </span>
           )}
           {failedCount > 0 && (
-            <span className="badge badge-error badge-xs tabular-nums">
+            <span className="rounded-full bg-destructive/15 px-1.5 py-px text-[9px] text-destructive tabular-nums">
               {failedCount}
-              <i className="fa-solid fa-xmark ml-0.5 text-[7px]" />
+              <IconXmark className="ml-0.5 inline size-[7px]" />
             </span>
           )}
         </div>
         <div className="flex gap-0.5">
           {completedJobs.length > 0 && (
-            <button
+            <Button
               type="button"
-              className="btn btn-ghost btn-xs text-base-content/40 hover:text-base-content/70"
+              variant="ghost"
+              size="xs"
+              className="text-foreground/40 hover:text-foreground/70"
               onClick={clearCompleted}
               title="Clear completed"
             >
-              <i className="fa-solid fa-broom text-[10px]" />
-            </button>
+              <IconBroom className="size-[10px]" />
+            </Button>
           )}
-          <button
+          <Button
             type="button"
-            className="btn btn-ghost btn-xs text-base-content/40 hover:text-base-content/70"
+            variant="ghost"
+            size="xs"
+            className="text-foreground/40 hover:text-foreground/70"
             onClick={refreshJobs}
             title="Refresh"
           >
-            <i className="fa-solid fa-arrows-rotate text-[10px]" />
-          </button>
-          <button
+            <IconArrowsRotate className="size-[10px]" />
+          </Button>
+          <Button
             type="button"
-            className="btn btn-ghost btn-xs text-base-content/40 hover:text-base-content/70"
+            variant="ghost"
+            size="xs"
+            className="text-foreground/40 hover:text-foreground/70"
             onClick={() => setJobPanelOpen(false)}
             title="Close"
           >
-            <i className="fa-solid fa-xmark text-[10px]" />
-          </button>
+            <IconXmark className="size-[10px]" />
+          </Button>
         </div>
       </div>
 
       {/* Bulk progress summary — only when multiple jobs are running */}
       {runningJobs.length > 1 && totalBytes > 0 && (
-        <div className="border-base-300/60 border-b bg-base-100/40 px-3 py-1.5">
+        <div className="border-border/60 border-b bg-background/40 px-3 py-1.5">
           <div className="flex items-center gap-3">
             <div className="flex-1">
-              <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-base-300/80">
-                <motion.div
-                  className="absolute inset-y-0 left-0 rounded-full bg-linear-to-r from-primary to-info"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${bulkPercent}%` }}
-                  transition={{ duration: 0.4, ease: "easeOut" }}
+              <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-muted/80">
+                <div
+                  style={{ width: `${bulkPercent}%` }}
+                  className="absolute inset-y-0 left-0 rounded-full bg-linear-to-r from-primary to-info transition-[width] duration-300 ease-out"
                 />
               </div>
             </div>
-            <div className="flex shrink-0 items-center gap-2 text-[10px] text-base-content/50 tabular-nums">
-              <span className="font-semibold text-base-content/60">
+            <div className="flex shrink-0 items-center gap-2 text-[10px] text-foreground/50 tabular-nums">
+              <span className="font-semibold text-foreground/60">
                 {bulkPercent}%
               </span>
               <span>
                 {formatBytes(transferredBytes)}
-                <span className="text-base-content/30"> / </span>
+                <span className="text-foreground/30"> / </span>
                 {formatBytes(totalBytes)}
               </span>
               {bulkSpeed > 0 && (
                 <span>
-                  <i className="fa-solid fa-gauge-high mr-0.5 text-[8px] text-info/60" />
+                  <IconGaugeHigh className="mr-0.5 inline size-[8px] text-info/60" />
                   {formatSpeed(bulkSpeed)}
                 </span>
               )}
@@ -258,8 +264,8 @@ export function JobPanel() {
       {/* Jobs list */}
       <div ref={listRef} className="flex-1 overflow-y-auto">
         {jobs.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center gap-1.5 text-base-content/30">
-            <i className="fa-regular fa-folder-open text-2xl" />
+          <div className="flex h-full flex-col items-center justify-center gap-1.5 text-foreground/30">
+            <IconFolderOpen className="size-8" />
             <span className="text-xs">No jobs</span>
           </div>
         ) : shouldVirtualize ? (
@@ -278,20 +284,18 @@ export function JobPanel() {
                     key={virtualRow.key}
                     data-index={virtualRow.index}
                     ref={rowVirtualizer.measureElement}
-                    className="absolute top-0 left-0 w-full border-base-300/40 border-b bg-base-200/95 px-3 py-1"
+                    className="absolute top-0 left-0 w-full border-border/40 border-b bg-card/95 px-3 py-1"
                     style={{ transform: `translateY(${virtualRow.start}px)` }}
                   >
-                    <span className="font-semibold text-[10px] text-base-content/30 uppercase tracking-wider">
-                      <i
-                        className={`fa-solid ${
-                          isActive
-                            ? "fa-play text-info/50"
-                            : "fa-check text-success/50"
-                        } mr-1 text-[8px]`}
-                      />
+                    <span className="font-semibold text-[10px] text-foreground/30 uppercase tracking-wider">
+                      {isActive ? (
+                        <IconPlay className="mr-1 inline size-[8px] text-info/50" />
+                      ) : (
+                        <IconCheck className="mr-1 inline size-[8px] text-success/50" />
+                      )}
                       {isActive ? "Active" : "Completed"}
                       {isActive && row.queuedCount && row.queuedCount > 0 && (
-                        <span className="ml-1 font-normal text-base-content/20">
+                        <span className="ml-1 font-normal text-foreground/20">
                           ({row.queuedCount} queued)
                         </span>
                       )}
@@ -307,8 +311,8 @@ export function JobPanel() {
                   ref={rowVirtualizer.measureElement}
                   className={`absolute top-0 left-0 w-full border-b ${
                     row.group === "active"
-                      ? "border-base-300/50"
-                      : "border-base-300/30"
+                      ? "border-border/50"
+                      : "border-border/30"
                   }`}
                   style={{ transform: `translateY(${virtualRow.start}px)` }}
                 >
@@ -323,19 +327,19 @@ export function JobPanel() {
             {activeJobs.length > 0 && (
               <div>
                 {completedJobs.length > 0 && (
-                  <div className="sticky top-0 z-10 border-base-300/40 border-b bg-base-200/95 px-3 py-1">
-                    <span className="font-semibold text-[10px] text-base-content/30 uppercase tracking-wider">
-                      <i className="fa-solid fa-play mr-1 text-[8px] text-info/50" />
+                  <div className="sticky top-0 z-10 border-border/40 border-b bg-card/95 px-3 py-1">
+                    <span className="font-semibold text-[10px] text-foreground/30 uppercase tracking-wider">
+                      <IconPlay className="mr-1 inline size-[8px] text-info/50" />
                       Active
                       {queuedJobs.length > 0 && (
-                        <span className="ml-1 font-normal text-base-content/20">
+                        <span className="ml-1 font-normal text-foreground/20">
                           ({queuedJobs.length} queued)
                         </span>
                       )}
                     </span>
                   </div>
                 )}
-                <div className="divide-y divide-base-300/50">
+                <div className="divide-y divide-border/50">
                   {activeJobs.map((j) => (
                     <JobItem key={j.id} job={j} />
                   ))}
@@ -347,14 +351,14 @@ export function JobPanel() {
             {completedJobs.length > 0 && (
               <div>
                 {activeJobs.length > 0 && (
-                  <div className="sticky top-0 z-10 border-base-300/40 border-b bg-base-200/95 px-3 py-1">
-                    <span className="font-semibold text-[10px] text-base-content/30 uppercase tracking-wider">
-                      <i className="fa-solid fa-check mr-1 text-[8px] text-success/50" />
+                  <div className="sticky top-0 z-10 border-border/40 border-b bg-card/95 px-3 py-1">
+                    <span className="font-semibold text-[10px] text-foreground/30 uppercase tracking-wider">
+                      <IconCheck className="mr-1 inline size-[8px] text-success/50" />
                       Completed
                     </span>
                   </div>
                 )}
-                <div className="divide-y divide-base-300/30">
+                <div className="divide-y divide-border/30">
                   {completedJobs.map((j) => (
                     <JobItem key={j.id} job={j} />
                   ))}
@@ -364,6 +368,6 @@ export function JobPanel() {
           </div>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }
