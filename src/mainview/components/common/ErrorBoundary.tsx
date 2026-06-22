@@ -1,5 +1,7 @@
 import type { ErrorInfo, ReactNode } from "react";
 import { Component } from "react";
+import { Button } from "@/components/ui/button";
+import { IconArrowsRotate, IconBug } from "@/lib/icons";
 
 interface Props {
   children: ReactNode;
@@ -34,20 +36,16 @@ export class ErrorBoundary extends Component<Props, State> {
       if (this.props.fallback) return this.props.fallback;
 
       return (
-        <div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-base-content">
-          <i className="fa-solid fa-bug text-5xl text-error/60" />
+        <div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-foreground">
+          <IconBug className="size-12 text-destructive/60" />
           <h2 className="font-bold text-lg">Something went wrong</h2>
-          <p className="max-w-md text-center text-base-content/60 text-sm">
+          <p className="max-w-md text-center text-foreground/60 text-sm">
             {this.state.error?.message || "An unexpected error occurred."}
           </p>
-          <button
-            type="button"
-            className="btn btn-primary btn-sm"
-            onClick={this.handleReset}
-          >
-            <i className="fa-solid fa-arrows-rotate mr-1" />
+          <Button variant="default" size="sm" onClick={this.handleReset}>
+            <IconArrowsRotate className="size-4" />
             Try Again
-          </button>
+          </Button>
         </div>
       );
     }

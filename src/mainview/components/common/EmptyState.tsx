@@ -1,6 +1,5 @@
-import { motion } from "framer-motion";
 import type React from "react";
-import { contentFadeVariants, transitions } from "../../lib/animations";
+import { IconLightbulb } from "@/lib/icons";
 
 interface EmptyStateProps {
   icon?: React.ReactNode;
@@ -18,35 +17,21 @@ export function EmptyState({
   hint,
 }: EmptyStateProps) {
   return (
-    <motion.div
-      className="flex flex-col items-center justify-center py-16 text-base-content/50"
-      variants={contentFadeVariants}
-      initial="initial"
-      animate="animate"
-      transition={transitions.normal}
-    >
+    <div className="flex flex-col items-center justify-center py-16 text-foreground/50">
       {icon && (
-        <motion.div
-          className="mb-4 text-4xl opacity-40"
-          animate={{ y: [0, -6, 0] }}
-          transition={{
-            duration: 3,
-            repeat: Number.POSITIVE_INFINITY,
-            ease: "easeInOut",
-          }}
-        >
+        <div className="mb-4 text-4xl opacity-40">
           {icon}
-        </motion.div>
+        </div>
       )}
       <h3 className="font-semibold text-lg">{title}</h3>
       {description && <p className="mt-1 text-sm">{description}</p>}
       {action && <div className="mt-4">{action}</div>}
       {hint && (
-        <p className="mt-6 text-[10px] text-base-content/30">
-          <i className="fa-regular fa-lightbulb mr-1" />
+        <p className="mt-6 text-[10px] text-foreground/30">
+          <IconLightbulb className="mr-1 inline size-3" />
           {hint}
         </p>
       )}
-    </motion.div>
+    </div>
   );
 }

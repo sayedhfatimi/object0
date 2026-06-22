@@ -1,72 +1,98 @@
+import type { LucideIcon } from "lucide-react";
+import {
+  IconCode,
+  IconCss3Alt,
+  IconDatabase,
+  IconFile,
+  IconFileAudio,
+  IconFileCode,
+  IconFileExcel,
+  IconFileLines,
+  IconFilePdf,
+  IconFileVideo,
+  IconFileWord,
+  IconFileZipper,
+  IconFolder,
+  IconFont,
+  IconGem,
+  IconGolang,
+  IconHtml5,
+  IconImage,
+  IconJs,
+  IconMicrochip,
+  IconPython,
+  IconReact,
+  IconTerminal,
+} from "@/lib/icons";
 import { getExtension } from "../../lib/formatters";
 
-const ICON_MAP: Record<string, string> = {
+const ICON_MAP: Record<string, LucideIcon> = {
   // Images
-  png: "fa-regular fa-image",
-  jpg: "fa-regular fa-image",
-  jpeg: "fa-regular fa-image",
-  gif: "fa-regular fa-image",
-  svg: "fa-regular fa-image",
-  webp: "fa-regular fa-image",
-  ico: "fa-regular fa-image",
+  png: IconImage,
+  jpg: IconImage,
+  jpeg: IconImage,
+  gif: IconImage,
+  svg: IconImage,
+  webp: IconImage,
+  ico: IconImage,
   // Documents
-  pdf: "fa-regular fa-file-pdf",
-  doc: "fa-regular fa-file-word",
-  docx: "fa-regular fa-file-word",
-  txt: "fa-regular fa-file-lines",
-  md: "fa-regular fa-file-lines",
-  rtf: "fa-regular fa-file-lines",
+  pdf: IconFilePdf,
+  doc: IconFileWord,
+  docx: IconFileWord,
+  txt: IconFileLines,
+  md: IconFileLines,
+  rtf: IconFileLines,
   // Spreadsheets
-  csv: "fa-regular fa-file-excel",
-  xls: "fa-regular fa-file-excel",
-  xlsx: "fa-regular fa-file-excel",
+  csv: IconFileExcel,
+  xls: IconFileExcel,
+  xlsx: IconFileExcel,
   // Code
-  js: "fa-brands fa-js",
-  ts: "fa-solid fa-code",
-  jsx: "fa-brands fa-react",
-  tsx: "fa-brands fa-react",
-  py: "fa-brands fa-python",
-  rb: "fa-solid fa-gem",
-  go: "fa-brands fa-golang",
-  rs: "fa-solid fa-gear",
-  html: "fa-brands fa-html5",
-  css: "fa-brands fa-css3-alt",
-  json: "fa-regular fa-file-code",
-  xml: "fa-regular fa-file-code",
-  yaml: "fa-regular fa-file-code",
-  yml: "fa-regular fa-file-code",
-  toml: "fa-regular fa-file-code",
+  js: IconJs,
+  ts: IconCode,
+  jsx: IconReact,
+  tsx: IconReact,
+  py: IconPython,
+  rb: IconGem,
+  go: IconGolang,
+  rs: IconCode,
+  html: IconHtml5,
+  css: IconCss3Alt,
+  json: IconFileCode,
+  xml: IconFileCode,
+  yaml: IconFileCode,
+  yml: IconFileCode,
+  toml: IconFileCode,
   // Archives
-  zip: "fa-regular fa-file-zipper",
-  tar: "fa-regular fa-file-zipper",
-  gz: "fa-regular fa-file-zipper",
-  rar: "fa-regular fa-file-zipper",
-  "7z": "fa-regular fa-file-zipper",
+  zip: IconFileZipper,
+  tar: IconFileZipper,
+  gz: IconFileZipper,
+  rar: IconFileZipper,
+  "7z": IconFileZipper,
   // Audio
-  mp3: "fa-regular fa-file-audio",
-  wav: "fa-regular fa-file-audio",
-  flac: "fa-regular fa-file-audio",
-  ogg: "fa-regular fa-file-audio",
-  aac: "fa-regular fa-file-audio",
+  mp3: IconFileAudio,
+  wav: IconFileAudio,
+  flac: IconFileAudio,
+  ogg: IconFileAudio,
+  aac: IconFileAudio,
   // Video
-  mp4: "fa-regular fa-file-video",
-  mkv: "fa-regular fa-file-video",
-  avi: "fa-regular fa-file-video",
-  mov: "fa-regular fa-file-video",
-  webm: "fa-regular fa-file-video",
+  mp4: IconFileVideo,
+  mkv: IconFileVideo,
+  avi: IconFileVideo,
+  mov: IconFileVideo,
+  webm: IconFileVideo,
   // Fonts
-  ttf: "fa-solid fa-font",
-  otf: "fa-solid fa-font",
-  woff: "fa-solid fa-font",
-  woff2: "fa-solid fa-font",
+  ttf: IconFont,
+  otf: IconFont,
+  woff: IconFont,
+  woff2: IconFont,
   // Database
-  db: "fa-solid fa-database",
-  sql: "fa-solid fa-database",
-  sqlite: "fa-solid fa-database",
+  db: IconDatabase,
+  sql: IconDatabase,
+  sqlite: IconDatabase,
   // Executable
-  exe: "fa-solid fa-microchip",
-  bin: "fa-solid fa-microchip",
-  sh: "fa-solid fa-terminal",
+  exe: IconMicrochip,
+  bin: IconMicrochip,
+  sh: IconTerminal,
 };
 
 interface FileIconProps {
@@ -77,11 +103,12 @@ interface FileIconProps {
 
 export function FileIcon({ name, isFolder, className = "" }: FileIconProps) {
   if (isFolder) {
-    return <i className={`fa-solid fa-folder text-warning ${className}`} />;
+    const Icon = IconFolder;
+    return <Icon className={`text-warning ${className}`} />;
   }
 
   const ext = getExtension(name).toLowerCase();
-  const iconClass = ICON_MAP[ext] ?? "fa-regular fa-file";
+  const Icon = ICON_MAP[ext] ?? IconFile;
 
-  return <i className={`${iconClass} ${className}`} />;
+  return <Icon className={className} />;
 }

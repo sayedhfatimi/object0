@@ -98,9 +98,9 @@ export function ResizeHandle({
       {/* Visual indicator dot */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 transition-opacity group-hover:opacity-100">
         <div className="flex flex-col gap-0.5">
-          <div className="h-1 w-1 rounded-full bg-base-content/30" />
-          <div className="h-1 w-1 rounded-full bg-base-content/30" />
-          <div className="h-1 w-1 rounded-full bg-base-content/30" />
+          <div className="h-1 w-1 rounded-full bg-foreground/30" />
+          <div className="h-1 w-1 rounded-full bg-foreground/30" />
+          <div className="h-1 w-1 rounded-full bg-foreground/30" />
         </div>
       </div>
     </div>
