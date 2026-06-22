@@ -15,7 +15,9 @@ export {
   // ── Brand / Technology ─────────────────────────────────────────────────
   // lucide-react has no brand icons; use generic stand-ins that are semantically close.
   Cloud as IconAws, // fa-aws            → cloud provider
+  Cloud as IconCloud, // fa-cloud         → cloud / bucket root
   Code as IconPython, // fa-python         → code / scripting
+  Code as IconCode, // fa-code           → code / TypeScript
   Code2 as IconGolang, // fa-golang         → code / compiled lang
   Globe as IconGoogle, // fa-google         → web / search
   Layers as IconReact, // fa-react          → component layers (closest neutral)
@@ -32,7 +34,7 @@ export {
   // ── Objects / Files ────────────────────────────────────────────────────
   Package as IconBoxOpen, // fa-box-open       → open package / box
   Eraser as IconBroom, // fa-broom          → clear / erase
-  Beaker as IconBucket, // fa-bucket         → bucket / container
+  Container as IconBucket, // fa-bucket         → S3 storage bucket
   Bug as IconBug, // fa-bug            (debug)
 
   // ── Checks / Confirmations ─────────────────────────────────────────────
