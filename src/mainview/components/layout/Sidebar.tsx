@@ -13,6 +13,19 @@ import { ProfileForm } from "../profiles/ProfileForm";
 import { ProfileList } from "../profiles/ProfileList";
 import { Button } from "../ui/button";
 import {
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupAction,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
+  Sidebar as SidebarPrimitive,
+} from "../ui/sidebar";
+import {
   IconArrowsRotate,
   IconAws,
   IconBucket,
@@ -30,12 +43,7 @@ import {
   IconGoogle,
 } from "../../lib/icons";
 
-interface SidebarProps {
-  collapsed: boolean;
-  width?: number;
-}
-
-export function Sidebar({ collapsed, width = 256 }: SidebarProps) {
+export function Sidebar() {
   const profiles = useVaultStore((s) => s.profiles);
   const lock = useVaultStore((s) => s.lock);
   const {
@@ -82,282 +90,213 @@ export function Sidebar({ collapsed, width = 256 }: SidebarProps) {
     setDeletingProfile(null);
   };
 
-  /* ── Collapsed sidebar ── */
-  if (collapsed) {
-    return (
-      <aside className="flex h-full w-12 shrink-0 flex-col items-center border-border border-r bg-card">
-        {/* Profile icons */}
-        <div className="flex flex-1 flex-col items-center gap-0.5 overflow-y-auto py-2">
-          {profiles.map((p) => {
-            const isActive = p.id === activeProfile?.id;
-            const ProviderIcon = providerIcon(p.provider);
-            return (
-              <div key={p.id} className="relative">
-                {isActive && (
-                  <div className="absolute top-1 -left-0.5 h-4 w-1 rounded-r-full bg-primary" />
-                )}
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  className={`transition-all ${
-                    isActive
-                      ? "bg-primary/10 text-primary"
-                      : "text-foreground/60 hover:text-foreground"
-                  }`}
-                  title={p.name}
-                  onClick={() => switchProfile(p)}
-                >
+  return (
+    <SidebarPrimitive collapsible="icon">
+      {/* ── Header: active profile summary ── */}
+      <SidebarHeader className="border-border border-b px-3 py-2">
+        {activeProfile ? (
+          <div className="flex items-center gap-2.5 group-data-[collapsible=icon]:justify-center">
+            {(() => {
+              const ProviderIcon = providerIcon(activeProfile.provider);
+              return (
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <ProviderIcon className="size-4" />
-                </Button>
+                </div>
+              );
+            })()}
+            <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
+              <div className="truncate font-medium text-sm leading-tight">
+                {activeProfile.name}
               </div>
-            );
-          })}
-
-          {/* Add profile */}
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="mt-1 border border-foreground/20 border-dashed text-foreground/30 hover:border-primary/40 hover:text-primary/60"
-            title="Add Profile"
-            onClick={() => setAddingProfile(true)}
-          >
-            <IconPlus className="size-[11px]" />
-          </Button>
-        </div>
-
-        {/* Active bucket indicator */}
-        {selectedBucket && (
-          <div
-            className="mb-1 w-9 truncate text-center text-[10px] text-foreground/40"
-            title={selectedBucket}
-          >
-            <IconBucket className="size-3 inline" />
+              <div className="truncate text-[11px] text-foreground/40">
+                {PROVIDER_LABELS[activeProfile.provider]}
+                {selectedBucket && (
+                  <>
+                    <span className="mx-1">·</span>
+                    <IconBucket className="mr-0.5 inline size-[10px]" />
+                    {selectedBucket}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2.5 text-foreground/40 group-data-[collapsible=icon]:justify-center">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-foreground/20 border-dashed">
+              <IconUser className="size-3" />
+            </div>
+            <span className="text-xs group-data-[collapsible=icon]:hidden">
+              Select a profile
+            </span>
           </div>
         )}
+      </SidebarHeader>
 
-        {/* Bottom actions */}
-        <div className="flex flex-col items-center gap-1 border-border border-t py-2">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="text-foreground/40 hover:text-destructive"
-            title="Lock Vault"
-            onClick={lock}
-          >
-            <IconLock className="size-4" />
-          </Button>
-        </div>
-
-        {/* Modals (shared) */}
-        <Modal
-          open={addingProfile}
-          onClose={() => setAddingProfile(false)}
-          title="Add Profile"
-        >
-          <ProfileForm onDone={() => setAddingProfile(false)} />
-        </Modal>
-      </aside>
-    );
-  }
-
-  /* ── Expanded sidebar ── */
-  return (
-    <aside
-      className="flex h-full shrink-0 flex-col border-border border-r bg-card"
-      style={{ width }}
-    >
-      {/* Header: profile */}
-      <div className="flex items-center gap-2 border-border border-b px-3 py-2">
-        <div className="min-w-0 flex-1">
-          {activeProfile ? (
-            <div className="flex items-center gap-2.5">
-              {(() => {
-                const ProviderIcon = providerIcon(activeProfile.provider);
-                return (
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <ProviderIcon className="size-4" />
-                  </div>
-                );
-              })()}
-              <div className="min-w-0 flex-1">
-                <div className="truncate font-medium text-sm leading-tight">
-                  {activeProfile.name}
-                </div>
-                <div className="truncate text-[11px] text-foreground/40">
-                  {PROVIDER_LABELS[activeProfile.provider]}
-                  {selectedBucket && (
-                    <>
-                      <span className="mx-1">·</span>
-                      <IconBucket className="mr-0.5 inline size-[10px]" />
-                      {selectedBucket}
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2.5 text-foreground/40">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-foreground/20 border-dashed">
-                <IconUser className="size-3" />
-              </div>
-              <span className="text-xs">Select a profile</span>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Scrollable content area with favorites + profiles + buckets */}
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-        {/* Favorites section (cross-profile pinned buckets) */}
+      {/* ── Scrollable content ── */}
+      <SidebarContent>
+        {/* Favorites section */}
         {favoriteEntries.length > 0 && (
-          <div>
-            <SectionHeader
-              icon={<IconStar className="size-[11px]" />}
-              label="Favorites"
-              count={favoriteEntries.length}
-            />
-            <ul className="w-full px-1">
+          <SidebarGroup className="p-0">
+            <SidebarGroupLabel className="sticky top-0 z-10 flex items-center justify-between border-border border-b bg-card px-3 py-2 text-foreground/50">
+              <div className="flex items-center gap-1.5">
+                <IconStar className="size-[11px]" />
+                <span className="font-semibold text-[11px] uppercase tracking-wider">
+                  Favorites
+                </span>
+                <span className="rounded-full bg-muted px-1.5 py-px text-[10px] text-foreground/40 tabular-nums">
+                  {favoriteEntries.length}
+                </span>
+              </div>
+            </SidebarGroupLabel>
+            <SidebarMenu className="px-1">
               {favoriteEntries.map((fav) => {
                 const profile = profiles.find((p) => p.id === fav.profileId);
                 const isActive =
                   activeProfile?.id === fav.profileId &&
                   selectedBucket === fav.bucket;
                 return (
-                  <li key={`${fav.profileId}:${fav.bucket}`}>
-                    <div
-                      className={`group/fav flex w-full items-center gap-1 rounded-md px-1 py-0.5 text-sm ${
-                        isActive ? "bg-muted" : ""
-                      }`}
+                  <SidebarMenuItem key={`${fav.profileId}:${fav.bucket}`}>
+                    <SidebarMenuButton
+                      isActive={isActive}
+                      tooltip={fav.bucket}
+                      onClick={() =>
+                        selectFavoriteBucket(fav.profileId, fav.bucket)
+                      }
                     >
-                      <button
-                        type="button"
-                        className="flex flex-1 items-center gap-2 overflow-hidden rounded-sm px-1 py-1 hover:bg-muted"
-                        onClick={() =>
-                          selectFavoriteBucket(fav.profileId, fav.bucket)
-                        }
-                      >
-                        <IconBucket className="size-3 shrink-0" />
-                        <div className="min-w-0 flex-1 text-left">
-                          <span className="block truncate">{fav.bucket}</span>
-                          {profile && (
-                            <span className="block truncate text-[11px] text-foreground/40">
-                              {profile.name}
-                            </span>
-                          )}
-                        </div>
-                      </button>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        className="shrink-0 text-warning"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleFavorite(fav.profileId, fav.bucket);
-                        }}
-                        title="Unpin bucket"
-                      >
-                        <IconStar className="size-3" />
-                      </Button>
-                    </div>
-                  </li>
+                      <IconBucket className="size-3 shrink-0" />
+                      <div className="min-w-0 flex-1 text-left">
+                        <span className="block truncate">{fav.bucket}</span>
+                        {profile && (
+                          <span className="block truncate text-[11px] text-foreground/40">
+                            {profile.name}
+                          </span>
+                        )}
+                      </div>
+                    </SidebarMenuButton>
+                    <SidebarGroupAction
+                      title="Unpin bucket"
+                      className="text-warning"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFavorite(fav.profileId, fav.bucket);
+                      }}
+                    >
+                      <IconStar className="size-3" />
+                    </SidebarGroupAction>
+                  </SidebarMenuItem>
                 );
               })}
-            </ul>
-          </div>
+            </SidebarMenu>
+          </SidebarGroup>
         )}
 
         {/* Profiles section */}
-        <div>
-          <SectionHeader
-            icon={<IconUserGroup className="size-[11px]" />}
-            label="Profiles"
-            count={profiles.length}
-            action={
+        <SidebarGroup className="p-0">
+          <SidebarGroupLabel className="sticky top-0 z-10 flex items-center justify-between border-border border-b bg-card px-3 py-2 text-foreground/50">
+            <div className="flex items-center gap-1.5">
+              <IconUserGroup className="size-[11px]" />
+              <span className="font-semibold text-[11px] uppercase tracking-wider">
+                Profiles
+              </span>
+              {profiles.length > 0 && (
+                <span className="rounded-full bg-muted px-1.5 py-px text-[10px] text-foreground/40 tabular-nums">
+                  {profiles.length}
+                </span>
+              )}
+            </div>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="text-foreground/40 hover:text-primary group-data-[collapsible=icon]:hidden"
+              onClick={() => setAddingProfile(true)}
+              title="Add Profile"
+            >
+              <IconPlus className="size-[11px]" />
+            </Button>
+          </SidebarGroupLabel>
+
+          {/* Profile list — rendered as SidebarMenu items */}
+          {profiles.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 p-4 group-data-[collapsible=icon]:hidden">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
+                <IconCloudArrowUp className="size-5 text-primary" />
+              </div>
+              <div className="text-center">
+                <p className="font-medium text-sm">No profiles yet</p>
+                <p className="mt-0.5 text-foreground/50 text-xs">
+                  Add an S3-compatible profile to get started
+                </p>
+              </div>
               <Button
-                variant="ghost"
-                size="icon-sm"
-                className="text-foreground/40 hover:text-primary"
+                variant="outline"
+                size="sm"
+                className="mt-1"
                 onClick={() => setAddingProfile(true)}
-                title="Add Profile"
               >
-                <IconPlus className="size-[11px]" />
+                <IconPlus className="size-3" /> Add Profile
               </Button>
-            }
-          />
-          <ProfileList
-            profiles={profiles}
-            activeId={activeProfile?.id ?? null}
-            onSelect={switchProfile}
-            onEdit={(p) => setEditingProfile(p)}
-            onDelete={(p) => setDeletingProfile(p)}
-          />
-        </div>
+            </div>
+          ) : (
+            <ProfileList
+              profiles={profiles}
+              activeId={activeProfile?.id ?? null}
+              onSelect={switchProfile}
+              onEdit={(p) => setEditingProfile(p)}
+              onDelete={(p) => setDeletingProfile(p)}
+            />
+          )}
+        </SidebarGroup>
 
         {/* Buckets section (when profile selected) */}
         {activeProfile && (
-          <div className="mt-auto">
-            <SectionHeader
-              icon={<IconBucket className="size-[11px]" />}
-              label="Buckets"
-              count={buckets.length}
-              action={
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  className="text-foreground/40 hover:text-primary"
-                  onClick={refreshBuckets}
-                  title="Refresh Buckets"
-                >
-                  <IconArrowsRotate className="size-[11px]" />
-                </Button>
-              }
-            />
-            <BucketList
-              buckets={buckets}
-              loading={bucketsLoading}
-              selectedBucket={selectedBucket}
-              profileId={activeProfile?.id ?? null}
-              onSelect={selectBucket}
-            />
-          </div>
-        )}
-
-        {/* Empty state when no profiles */}
-        {profiles.length === 0 && (
-          <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
-              <IconCloudArrowUp className="size-5 text-primary" />
+          <SidebarGroup className="p-0">
+            <SidebarGroupLabel className="sticky top-0 z-10 flex items-center justify-between border-border border-b bg-card px-3 py-2 text-foreground/50">
+              <div className="flex items-center gap-1.5">
+                <IconBucket className="size-[11px]" />
+                <span className="font-semibold text-[11px] uppercase tracking-wider">
+                  Buckets
+                </span>
+                {buckets.length > 0 && (
+                  <span className="rounded-full bg-muted px-1.5 py-px text-[10px] text-foreground/40 tabular-nums">
+                    {buckets.length}
+                  </span>
+                )}
+              </div>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="text-foreground/40 hover:text-primary group-data-[collapsible=icon]:hidden"
+                onClick={refreshBuckets}
+                title="Refresh Buckets"
+              >
+                <IconArrowsRotate className="size-[11px]" />
+              </Button>
+            </SidebarGroupLabel>
+            <div className="group-data-[collapsible=icon]:hidden">
+              <BucketList
+                buckets={buckets}
+                loading={bucketsLoading}
+                selectedBucket={selectedBucket}
+                profileId={activeProfile?.id ?? null}
+                onSelect={selectBucket}
+              />
             </div>
-            <div className="text-center">
-              <p className="font-medium text-sm">No profiles yet</p>
-              <p className="mt-0.5 text-foreground/50 text-xs">
-                Add an S3-compatible profile to get started
-              </p>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-1"
-              onClick={() => setAddingProfile(true)}
-            >
-              <IconPlus className="size-3" /> Add Profile
-            </Button>
-          </div>
+          </SidebarGroup>
         )}
-      </div>
+      </SidebarContent>
 
-      {/* Footer */}
-      <div className="flex items-center justify-between border-border border-t px-3 py-2">
-        <div className="text-[11px] text-foreground/35">
-          {profiles.length} profile{profiles.length !== 1 ? "s" : ""}
-          {buckets.length > 0 && (
-            <>
-              {" "}
-              · {buckets.length} bucket{buckets.length !== 1 ? "s" : ""}
-            </>
-          )}
-        </div>
-        <div className="flex items-center gap-1">
+      {/* ── Footer: profile count + lock ── */}
+      <SidebarFooter className="border-border border-t px-3 py-2">
+        <div className="flex items-center justify-between group-data-[collapsible=icon]:justify-center">
+          <div className="text-[11px] text-foreground/35 group-data-[collapsible=icon]:hidden">
+            {profiles.length} profile{profiles.length !== 1 ? "s" : ""}
+            {buckets.length > 0 && (
+              <>
+                {" "}
+                · {buckets.length} bucket{buckets.length !== 1 ? "s" : ""}
+              </>
+            )}
+          </div>
           <Button
             variant="ghost"
             size="sm"
@@ -366,12 +305,17 @@ export function Sidebar({ collapsed, width = 256 }: SidebarProps) {
             title="Lock Vault"
           >
             <IconLock className="size-4" />
-            <span className="text-[11px]">Lock</span>
+            <span className="text-[11px] group-data-[collapsible=icon]:hidden">
+              Lock
+            </span>
           </Button>
         </div>
-      </div>
+      </SidebarFooter>
 
-      {/* Add Profile Modal */}
+      {/* Click-to-resize rail */}
+      <SidebarRail />
+
+      {/* ── Modals ── */}
       <Modal
         open={addingProfile}
         onClose={() => setAddingProfile(false)}
@@ -380,7 +324,6 @@ export function Sidebar({ collapsed, width = 256 }: SidebarProps) {
         <ProfileForm onDone={() => setAddingProfile(false)} />
       </Modal>
 
-      {/* Edit Profile Modal */}
       <Modal
         open={!!editingProfile}
         onClose={() => setEditingProfile(null)}
@@ -394,7 +337,6 @@ export function Sidebar({ collapsed, width = 256 }: SidebarProps) {
         )}
       </Modal>
 
-      {/* Delete Profile Confirmation */}
       <ConfirmDialog
         open={!!deletingProfile}
         title="Delete Profile"
@@ -404,37 +346,7 @@ export function Sidebar({ collapsed, width = 256 }: SidebarProps) {
         onConfirm={handleDeleteProfile}
         onClose={() => setDeletingProfile(null)}
       />
-    </aside>
-  );
-}
-
-/* ── Section header sub-component ── */
-function SectionHeader({
-  icon,
-  label,
-  count,
-  action,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  count: number;
-  action?: React.ReactNode;
-}) {
-  return (
-    <div className="sticky top-0 z-10 flex items-center justify-between border-border border-b bg-card px-3 py-2">
-      <div className="flex items-center gap-1.5 text-foreground/50">
-        {icon}
-        <span className="font-semibold text-[11px] uppercase tracking-wider">
-          {label}
-        </span>
-        {count > 0 && (
-          <span className="rounded-full bg-muted px-1.5 py-px text-[10px] text-foreground/40 tabular-nums">
-            {count}
-          </span>
-        )}
-      </div>
-      {action}
-    </div>
+    </SidebarPrimitive>
   );
 }
 

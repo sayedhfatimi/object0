@@ -3,15 +3,12 @@ import { useTabStore } from "../../stores/useTabStore";
 import { useUIStore } from "../../stores/useUIStore";
 import { ResizeHandle } from "../common/ResizeHandle";
 import { DetailPanel } from "../objects/DetailPanel";
+import { SidebarInset, SidebarProvider } from "../ui/sidebar";
 import { ContentArea } from "./ContentArea";
 import { Sidebar } from "./Sidebar";
 import { StatusBar } from "./StatusBar";
 import { TabBar } from "./TabBar";
 import { TopBar } from "./TopBar";
-import {
-  IconChevronLeft,
-  IconChevronRight,
-} from "../../lib/icons";
 
 const JobPanel = lazy(() =>
   import("../jobs/JobPanel").then((module) => ({ default: module.JobPanel })),
@@ -89,6 +86,7 @@ function RightRailPanel({
 
 export function MainLayout() {
   const sidebarCollapsed = useUIStore((s) => s.sidebarCollapsed);
+  const toggleSidebar = useUIStore((s) => s.toggleSidebar);
   const jobPanelOpen = useUIStore((s) => s.jobPanelOpen);
   const detailKey = useUIStore((s) => s.detailKey);
   const shareHistoryOpen = useUIStore((s) => s.shareHistoryOpen);
@@ -104,32 +102,25 @@ export function MainLayout() {
   const setDetailPanelWidth = useUIStore((s) => s.setDetailPanelWidth);
 
   return (
-    <div className="flex h-screen flex-col bg-background text-foreground">
+    // SidebarProvider is the outermost wrapper; controlled open state wired
+    // to useUIStore so Ctrl+B (toggleSidebar) and the trigger both work.
+    // --sidebar-width is passed via style to preserve the resizable width.
+    <SidebarProvider
+      open={!sidebarCollapsed}
+      onOpenChange={() => toggleSidebar()}
+      style={
+        {
+          "--sidebar-width": `${sidebarWidth}px`,
+          "--sidebar-width-icon": "3rem",
+        } as React.CSSProperties
+      }
+      className="h-screen flex-col"
+    >
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <nav aria-label="Sidebar" className="relative flex h-full shrink-0">
-          <Sidebar collapsed={sidebarCollapsed} width={sidebarWidth} />
-          {/* Toggle pinned to right edge */}
-          <button
-            type="button"
-            className="absolute top-2 -right-4 z-20 flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background text-foreground/60 shadow-sm transition-colors hover:bg-primary/10 hover:text-primary"
-            onClick={() => useUIStore.getState().toggleSidebar()}
-            title={
-              sidebarCollapsed
-                ? "Expand Sidebar (Ctrl+B)"
-                : "Collapse Sidebar (Ctrl+B)"
-            }
-            aria-label={
-              sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
-            }
-          >
-            {sidebarCollapsed ? (
-              <IconChevronRight className="size-[11px]" />
-            ) : (
-              <IconChevronLeft className="size-[11px]" />
-            )}
-          </button>
-        </nav>
+        {/* Shadcn Sidebar primitive — collapse wired to useUIStore */}
+        <Sidebar />
+
+        {/* ResizeHandle for drag-to-resize sidebar (when expanded) */}
         {!sidebarCollapsed && (
           <ResizeHandle
             side="right"
@@ -141,7 +132,7 @@ export function MainLayout() {
         )}
 
         {/* Main content area */}
-        <main className="flex flex-1 flex-col overflow-hidden">
+        <SidebarInset className="flex flex-col overflow-hidden">
           <TopBar />
           {hasTabs && <TabBar />}
           <div className="flex flex-1 overflow-hidden">
@@ -199,12 +190,13 @@ export function MainLayout() {
               <JobPanel />
             </Suspense>
           )}
-        </main>
+        </SidebarInset>
       </div>
 
       <footer>
         <StatusBar />
       </footer>
+
       <Suspense fallback={null}>
         <SyncDialog />
       </Suspense>
@@ -220,6 +212,6 @@ export function MainLayout() {
       <Suspense fallback={null}>
         <CommandPalette />
       </Suspense>
-    </div>
+    </SidebarProvider>
   );
 }
