@@ -1,6 +1,15 @@
 import { useState } from "react";
 import { useObjectStore } from "../../stores/useObjectStore";
 import { useProfileStore } from "../../stores/useProfileStore";
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+  BreadcrumbEllipsis,
+} from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import {
   IconCloud,
@@ -48,7 +57,7 @@ export function ObjectBreadcrumb({
   };
 
   // For very deep paths, collapse middle segments — build a flat render list
-  // Each element is either a separator "/" or a real part/ellipsis.
+  // Each element is either a real part or null (ellipsis placeholder).
   const MAX_VISIBLE = 4;
   const shouldCollapse = parts.length > MAX_VISIBLE;
 
@@ -73,53 +82,60 @@ export function ObjectBreadcrumb({
 
   return (
     <div className="flex items-center gap-1">
-      <nav aria-label="Breadcrumb" className="text-xs">
-        <ol className="flex flex-wrap items-center gap-1">
-          <li>
+      <Breadcrumb className="text-xs">
+        <BreadcrumbList className="gap-1 text-xs">
+          {/* Profile root */}
+          <BreadcrumbItem>
             <span className="flex items-center gap-1 text-foreground/50">
               <IconCloud className="size-3 shrink-0" />
               {profileName}
             </span>
-          </li>
-          <li aria-hidden className="text-foreground/30">/</li>
-          <li>
-            <button
-              type="button"
-              className="flex items-center gap-1 font-medium hover:underline focus-visible:outline-none focus-visible:underline"
+          </BreadcrumbItem>
+
+          <BreadcrumbSeparator />
+
+          {/* Bucket */}
+          <BreadcrumbItem>
+            <BreadcrumbLink
+              render={<button type="button" />}
+              className="flex items-center gap-1 font-medium"
               onClick={() => handleNavigate(-1)}
             >
               <IconBucket className="size-3 shrink-0" />
               {bucket}
-            </button>
-          </li>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+
+          {/* Prefix segments */}
           {visibleParts.flatMap((item) => {
             if (item === null) {
               return [
-                <li key="sep-ellipsis" aria-hidden className="text-foreground/30">/</li>,
-                <li key="ellipsis">
-                  <span className="text-foreground/40">…</span>
-                </li>,
+                <BreadcrumbSeparator key="sep-ellipsis" />,
+                <BreadcrumbItem key="ellipsis">
+                  <BreadcrumbEllipsis />
+                </BreadcrumbItem>,
               ];
             }
             return [
-              <li key={`sep-${item.realIndex}`} aria-hidden className="text-foreground/30">/</li>,
-              <li key={`part-${item.realIndex}`}>
+              <BreadcrumbSeparator key={`sep-${item.realIndex}`} />,
+              <BreadcrumbItem key={`part-${item.realIndex}`}>
                 {item.isLast ? (
-                  <span className="font-medium">{item.label}</span>
+                  <BreadcrumbPage className="font-medium">
+                    {item.label}
+                  </BreadcrumbPage>
                 ) : (
-                  <button
-                    type="button"
-                    className="hover:underline focus-visible:outline-none focus-visible:underline"
+                  <BreadcrumbLink
+                    render={<button type="button" />}
                     onClick={() => handleNavigate(item.realIndex)}
                   >
                     {item.label}
-                  </button>
+                  </BreadcrumbLink>
                 )}
-              </li>,
+              </BreadcrumbItem>,
             ];
           })}
-        </ol>
-      </nav>
+        </BreadcrumbList>
+      </Breadcrumb>
 
       {/* Copy path button */}
       {currentPrefix && (

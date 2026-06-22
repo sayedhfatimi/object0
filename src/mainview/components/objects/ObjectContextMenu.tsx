@@ -1,9 +1,16 @@
-import { useEffect, useRef } from "react";
+import type { ReactNode } from "react";
+import { ContextMenu as ContextMenuPrimitive } from "@base-ui/react/context-menu";
 import { rpcCall } from "../../lib/rpc-client";
 import { useBucketStore } from "../../stores/useBucketStore";
 import { useObjectStore } from "../../stores/useObjectStore";
 import { useProfileStore } from "../../stores/useProfileStore";
 import { useUIStore } from "../../stores/useUIStore";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+} from "@/components/ui/context-menu";
 import { toast } from "../common/Toast";
 import {
   IconCircleInfo,
@@ -16,44 +23,27 @@ import {
   IconTrashCan,
 } from "@/lib/icons";
 
-interface ContextMenuState {
-  x: number;
-  y: number;
-  key: string;
-  isFolder: boolean;
-}
-
 interface ObjectContextMenuProps {
-  menu: ContextMenuState | null;
-  onClose: () => void;
+  /** The object key or folder prefix for this item */
+  objectKey: string;
+  /** Whether this item is a folder (prefix ending in /) */
+  isFolder: boolean;
+  /** Callback to open the rename UI for this key */
   onRename: (key: string) => void;
-}
-
-export type { ContextMenuState };
-
-const MENU_WIDTH = 192;
-const MENU_MARGIN = 8;
-const FILE_MENU_HEIGHT = 356;
-const FOLDER_MENU_HEIGHT = 316;
-
-function clampMenuPosition(
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-): { x: number; y: number } {
-  const maxX = window.innerWidth - width - MENU_MARGIN;
-  const maxY = window.innerHeight - height - MENU_MARGIN;
-  return {
-    x: Math.min(Math.max(x, MENU_MARGIN), Math.max(MENU_MARGIN, maxX)),
-    y: Math.min(Math.max(y, MENU_MARGIN), Math.max(MENU_MARGIN, maxY)),
-  };
+  /** The trigger element. The ContextMenuTrigger renders as a <div> by default.
+   *  Pass a `render` element if the trigger must render as a different tag
+   *  (e.g. `render={<tr />}` for table rows). */
+  children?: ReactNode;
+  /** Override the element that ContextMenuTrigger renders as (Base UI `render` prop) */
+  triggerRender?: React.ReactElement;
 }
 
 export function ObjectContextMenu({
-  menu,
-  onClose,
+  objectKey,
+  isFolder,
   onRename,
+  children,
+  triggerRender,
 }: ObjectContextMenuProps) {
   const profileId = useProfileStore((s) => s.activeProfileId);
   const bucket = useBucketStore((s) => s.selectedBucket);
@@ -61,49 +51,25 @@ export function ObjectContextMenu({
   const setDetailKey = useUIStore((s) => s.setDetailKey);
   const openTransferDialog = useUIStore((s) => s.openTransferDialog);
 
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  // Close on outside click or Escape
-  useEffect(() => {
-    if (!menu) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [menu, onClose]);
-
-  if (!menu || !profileId || !bucket) return null;
-
-  const fileName = menu.key.split("/").filter(Boolean).pop() ?? menu.key;
-  const menuPosition = clampMenuPosition(
-    menu.x,
-    menu.y,
-    MENU_WIDTH,
-    menu.isFolder ? FOLDER_MENU_HEIGHT : FILE_MENU_HEIGHT,
-  );
+  const fileName = objectKey.split("/").filter(Boolean).pop() ?? objectKey;
 
   const handleCopyKey = async () => {
     try {
-      await navigator.clipboard.writeText(menu.key);
+      await navigator.clipboard.writeText(objectKey);
       toast.success("Key copied to clipboard");
     } catch {
       toast.error("Failed to copy");
     }
-    onClose();
   };
 
   const handleDownload = async () => {
+    if (!profileId || !bucket) return;
     try {
-      if (menu.isFolder) {
+      if (isFolder) {
         const result = await rpcCall("transfer:download-folder", {
           profileId,
           bucket,
-          prefix: menu.key,
+          prefix: objectKey,
         });
         if (result.jobIds.length > 0) {
           useUIStore.getState().setJobPanelOpen(true);
@@ -113,7 +79,7 @@ export function ObjectContextMenu({
         await rpcCall("transfer:download", {
           profileId,
           bucket,
-          key: menu.key,
+          key: objectKey,
           localPath: `~/Downloads/${fileName}`,
         });
         useUIStore.getState().setJobPanelOpen(true);
@@ -127,31 +93,28 @@ export function ObjectContextMenu({
         return;
       toast.error(err instanceof Error ? err.message : "Unknown error");
     }
-    onClose();
   };
 
   const handleShare = () => {
-    if (menu.isFolder) return;
-    openShareDialog({ key: menu.key, bucket, profileId });
-    onClose();
+    if (isFolder || !profileId || !bucket) return;
+    openShareDialog({ key: objectKey, bucket, profileId });
   };
 
   const handleDetails = () => {
-    setDetailKey(menu.key);
-    onClose();
+    setDetailKey(objectKey);
   };
 
   const handleRename = () => {
-    onRename(menu.key);
-    onClose();
+    onRename(objectKey);
   };
 
   const handleDelete = async () => {
+    if (!profileId || !bucket) return;
     try {
       await rpcCall("objects:delete", {
         profileId,
         bucket,
-        keys: [menu.key],
+        keys: [objectKey],
       });
       toast.success(`Deleted "${fileName}"`);
       const prefix = useObjectStore.getState().currentPrefix;
@@ -159,126 +122,79 @@ export function ObjectContextMenu({
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Unknown error");
     }
-    onClose();
   };
 
-  return (
-    <>
-      {/* Dismiss overlay */}
-      <button
-        type="button"
-        className="fixed inset-0 z-50 cursor-default bg-transparent"
-        onClick={onClose}
-        onContextMenu={(e) => {
-          e.preventDefault();
-          onClose();
-        }}
-        aria-hidden
-      />
+  const menuContent = (
+    <ContextMenuContent>
+      {/* Details (files only) */}
+      {!isFolder && (
+        <ContextMenuItem onClick={handleDetails}>
+          <IconCircleInfo className="size-4 shrink-0" /> Details
+        </ContextMenuItem>
+      )}
 
-      {/* Menu panel */}
-      <div
-        ref={menuRef}
-        role="menu"
-        aria-label="Object actions"
-        className="fixed z-60 w-48 rounded-lg border border-foreground/10 bg-popover p-1 text-popover-foreground shadow-md"
-        style={{
-          top: menuPosition.y,
-          left: menuPosition.x,
-        }}
+      {/* Download */}
+      <ContextMenuItem onClick={() => void handleDownload()}>
+        <IconCloudArrowDown className="size-4 shrink-0" /> Download
+      </ContextMenuItem>
+
+      {/* Share (files only) */}
+      {!isFolder && (
+        <ContextMenuItem onClick={handleShare}>
+          <IconShareNodes className="size-4 shrink-0" /> Share
+        </ContextMenuItem>
+      )}
+
+      {/* Rename */}
+      <ContextMenuItem onClick={handleRename}>
+        <IconPen className="size-4 shrink-0" /> Rename
+      </ContextMenuItem>
+
+      {/* Copy to bucket */}
+      <ContextMenuItem
+        onClick={() =>
+          openTransferDialog({ keys: [objectKey], defaultMode: "copy" })
+        }
       >
-        {/* Details (files only) */}
-        {!menu.isFolder && (
-          <button
-            type="button"
-            role="menuitem"
-            className="flex w-full cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm outline-hidden select-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-            onClick={handleDetails}
-          >
-            <IconCircleInfo className="size-4 shrink-0" /> Details
-          </button>
-        )}
+        <IconCopy className="size-4 shrink-0" /> Copy to Bucket
+      </ContextMenuItem>
 
-        {/* Download */}
-        <button
-          type="button"
-          role="menuitem"
-          className="flex w-full cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm outline-hidden select-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-          onClick={() => void handleDownload()}
-        >
-          <IconCloudArrowDown className="size-4 shrink-0" /> Download
-        </button>
+      {/* Move to bucket */}
+      <ContextMenuItem
+        onClick={() =>
+          openTransferDialog({ keys: [objectKey], defaultMode: "move" })
+        }
+      >
+        <IconArrowRightArrowLeft className="size-4 shrink-0" /> Move to Bucket
+      </ContextMenuItem>
 
-        {/* Share (files only) */}
-        {!menu.isFolder && (
-          <button
-            type="button"
-            role="menuitem"
-            className="flex w-full cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm outline-hidden select-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-            onClick={handleShare}
-          >
-            <IconShareNodes className="size-4 shrink-0" /> Share
-          </button>
-        )}
+      {/* Copy key */}
+      <ContextMenuItem onClick={() => void handleCopyKey()}>
+        <IconClipboard className="size-4 shrink-0" /> Copy Key
+      </ContextMenuItem>
 
-        {/* Rename */}
-        <button
-          type="button"
-          role="menuitem"
-          className="flex w-full cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm outline-hidden select-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-          onClick={handleRename}
-        >
-          <IconPen className="size-4 shrink-0" /> Rename
-        </button>
+      <ContextMenuSeparator />
 
-        {/* Copy to bucket */}
-        <button
-          type="button"
-          role="menuitem"
-          className="flex w-full cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm outline-hidden select-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-          onClick={() => {
-            openTransferDialog({ keys: [menu.key], defaultMode: "copy" });
-            onClose();
-          }}
-        >
-          <IconCopy className="size-4 shrink-0" /> Copy to Bucket
-        </button>
+      {/* Delete */}
+      <ContextMenuItem
+        variant="destructive"
+        onClick={() => void handleDelete()}
+      >
+        <IconTrashCan className="size-4 shrink-0" /> Delete
+      </ContextMenuItem>
+    </ContextMenuContent>
+  );
 
-        {/* Move to bucket */}
-        <button
-          type="button"
-          role="menuitem"
-          className="flex w-full cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm outline-hidden select-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-          onClick={() => {
-            openTransferDialog({ keys: [menu.key], defaultMode: "move" });
-            onClose();
-          }}
-        >
-          <IconArrowRightArrowLeft className="size-4 shrink-0" /> Move to Bucket
-        </button>
-
-        {/* Copy key */}
-        <button
-          type="button"
-          role="menuitem"
-          className="flex w-full cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm outline-hidden select-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-          onClick={() => void handleCopyKey()}
-        >
-          <IconClipboard className="size-4 shrink-0" /> Copy Key
-        </button>
-
-        <hr className="-mx-1 my-1 border-t border-border" />
-
-        {/* Delete */}
-        <button
-          type="button"
-          role="menuitem"
-          className="flex w-full cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm text-destructive outline-hidden select-none hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive"
-          onClick={() => void handleDelete()}
-        >
-          <IconTrashCan className="size-4 shrink-0 text-destructive" /> Delete
-        </button>
-      </div>
-    </>
+  return (
+    <ContextMenu>
+      <ContextMenuPrimitive.Trigger
+        data-slot="context-menu-trigger"
+        className="select-none"
+        render={triggerRender}
+      >
+        {children}
+      </ContextMenuPrimitive.Trigger>
+      {menuContent}
+    </ContextMenu>
   );
 }

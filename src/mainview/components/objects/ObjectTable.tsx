@@ -13,7 +13,6 @@ import {
   Table,
   TableHeader,
   TableBody,
-  TableRow,
   TableHead,
   TableCell,
 } from "@/components/ui/table";
@@ -21,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FileIcon } from "../common/FileIcon";
 import { toast } from "../common/Toast";
-import { type ContextMenuState, ObjectContextMenu } from "./ObjectContextMenu";
+import { ObjectContextMenu } from "./ObjectContextMenu";
 
 interface ObjectTableProps {
   objects: S3Object[];
@@ -52,7 +51,6 @@ export function ObjectTable({
 }: ObjectTableProps) {
   const totalItems = objects.length + prefixes.length;
   const allSelected = totalItems > 0 && selectedKeys.size === totalItems;
-  const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [renamingKey, setRenamingKey] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const renameRef = useRef<HTMLInputElement>(null);
@@ -119,7 +117,18 @@ export function ObjectTable({
       const rect = row?.getBoundingClientRect();
       const x = rect ? rect.left + Math.min(rect.width - 12, 220) : 200;
       const y = rect ? rect.top + rect.height / 2 : 160;
-      setContextMenu({ x, y, key, isFolder });
+
+      // Dispatch a synthetic contextmenu event on the row element so the
+      // Base UI ContextMenu primitive can open at the keyboard-triggered position.
+      if (row) {
+        const syntheticEvent = new MouseEvent("contextmenu", {
+          bubbles: true,
+          cancelable: true,
+          clientX: x,
+          clientY: y,
+        });
+        row.dispatchEvent(syntheticEvent);
+      }
     },
     [prefixes, sorted, totalRows],
   );
@@ -294,15 +303,6 @@ export function ObjectTable({
     setRenamingKey(null);
   };
 
-  const handleContextMenu = (
-    e: React.MouseEvent,
-    key: string,
-    isFolder: boolean,
-  ) => {
-    e.preventDefault();
-    setContextMenu({ x: e.clientX, y: e.clientY, key, isFolder });
-  };
-
   const sortIcon = (field: string) => {
     if (sortField !== field) return "";
     return sortDir === "asc" ? " ↑" : " ↓";
@@ -319,7 +319,7 @@ export function ObjectTable({
     >
       <Table aria-label="Object table" className="table-fixed">
         <TableHeader className="sticky top-0 z-10 bg-muted/80 backdrop-blur-sm">
-          <TableRow className="hover:bg-transparent border-b">
+          <tr className="hover:bg-transparent border-b">
             <TableHead className="w-8 px-2">
               <Checkbox
                 checked={allSelected}
@@ -389,23 +389,29 @@ export function ObjectTable({
                 <span aria-hidden>{sortIcon("lastModified")}</span>
               </button>
             </TableHead>
-          </TableRow>
+          </tr>
         </TableHeader>
         <TableBody>
           {/* Prefixes (folders) */}
           {prefixes.map((p, i) => (
-            <TableRow
+            <ObjectContextMenu
               key={p.prefix}
-              data-row-index={i}
-              aria-selected={selectedKeys.has(p.prefix)}
-              className={`cursor-pointer transition-colors duration-150 ${
-                selectedKeys.has(p.prefix)
-                  ? "border-l-2 border-l-primary bg-primary/10"
-                  : "border-l-2 border-l-transparent"
-              } ${focusedIndex === i ? "outline outline-1 outline-primary/60" : ""}`}
-              onDoubleClick={() => onNavigate(p.prefix)}
-              onClick={() => setFocusedIndex(i)}
-              onContextMenu={(e) => handleContextMenu(e, p.prefix, true)}
+              objectKey={p.prefix}
+              isFolder
+              onRename={startRename}
+              triggerRender={
+                <tr
+                  data-row-index={i}
+                  aria-selected={selectedKeys.has(p.prefix)}
+                  className={`cursor-pointer transition-colors duration-150 ${
+                    selectedKeys.has(p.prefix)
+                      ? "border-l-2 border-l-primary bg-primary/10"
+                      : "border-l-2 border-l-transparent"
+                  } ${focusedIndex === i ? "outline outline-1 outline-primary/60" : ""}`}
+                  onDoubleClick={() => onNavigate(p.prefix)}
+                  onClick={() => setFocusedIndex(i)}
+                />
+              }
             >
               <TableCell className="px-2">
                 <Checkbox
@@ -428,24 +434,30 @@ export function ObjectTable({
               </TableCell>
               <TableCell className="text-right text-foreground/40">—</TableCell>
               <TableCell className="text-right text-foreground/40">—</TableCell>
-            </TableRow>
+            </ObjectContextMenu>
           ))}
 
           {/* Objects (files) */}
           {sorted.map((obj, i) => {
             const rowIdx = prefixes.length + i;
             return (
-              <TableRow
+              <ObjectContextMenu
                 key={obj.key}
-                data-row-index={rowIdx}
-                aria-selected={selectedKeys.has(obj.key)}
-                className={`transition-colors duration-150 ${
-                  selectedKeys.has(obj.key)
-                    ? "border-l-2 border-l-primary bg-primary/10"
-                    : "border-l-2 border-l-transparent"
-                } ${focusedIndex === rowIdx ? "outline outline-1 outline-primary/60" : ""}`}
-                onClick={() => setFocusedIndex(rowIdx)}
-                onContextMenu={(e) => handleContextMenu(e, obj.key, false)}
+                objectKey={obj.key}
+                isFolder={false}
+                onRename={startRename}
+                triggerRender={
+                  <tr
+                    data-row-index={rowIdx}
+                    aria-selected={selectedKeys.has(obj.key)}
+                    className={`transition-colors duration-150 ${
+                      selectedKeys.has(obj.key)
+                        ? "border-l-2 border-l-primary bg-primary/10"
+                        : "border-l-2 border-l-transparent"
+                    } ${focusedIndex === rowIdx ? "outline outline-1 outline-primary/60" : ""}`}
+                    onClick={() => setFocusedIndex(rowIdx)}
+                  />
+                }
               >
                 <TableCell className="px-2">
                   <Checkbox
@@ -491,7 +503,7 @@ export function ObjectTable({
                 <TableCell className="text-right text-foreground/60">
                   {formatRelativeDate(obj.lastModified)}
                 </TableCell>
-              </TableRow>
+              </ObjectContextMenu>
             );
           })}
         </TableBody>
@@ -502,13 +514,6 @@ export function ObjectTable({
           <div className="size-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
         </div>
       )}
-
-      {/* Context Menu */}
-      <ObjectContextMenu
-        menu={contextMenu}
-        onClose={() => setContextMenu(null)}
-        onRename={startRename}
-      />
     </div>
   );
 }
