@@ -45,7 +45,7 @@ function TypeIcon({ type }: { type: string }) {
     case "download":
       return <IconCloudArrowDown className={`${cls} text-info`} />;
     case "copy":
-      return <IconCopy className={`${cls} text-accent`} />;
+      return <IconCopy className={`${cls} text-primary`} />;
     case "move":
       return <IconScissors className={`${cls} text-warning`} />;
     case "delete":

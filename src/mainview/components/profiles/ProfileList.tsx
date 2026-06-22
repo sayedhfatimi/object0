@@ -98,7 +98,7 @@ function ProviderIcon({ provider }: { provider: ProfileInfo["provider"] }) {
     case "aws":
       return <IconAws className="size-4 text-warning" />;
     case "r2":
-      return <IconCloud className="size-4 text-accent" />;
+      return <IconCloud className="size-4 text-info" />;
     case "spaces":
       return <IconDigitalOcean className="size-4 text-info" />;
     case "minio":
@@ -117,7 +117,7 @@ function ProviderIcon({ provider }: { provider: ProfileInfo["provider"] }) {
 function providerBadge(provider: ProfileInfo["provider"]): string {
   const map: Record<string, string> = {
     aws: "bg-warning/10 text-warning",
-    r2: "bg-accent/10 text-accent",
+    r2: "bg-info/10 text-info",
     spaces: "bg-info/10 text-info",
     minio: "bg-destructive/10 text-destructive",
     gcs: "bg-success/10 text-success",
@@ -130,7 +130,7 @@ function providerBadge(provider: ProfileInfo["provider"]): string {
 function providerDot(provider: ProfileInfo["provider"]): string {
   const map: Record<string, string> = {
     aws: "bg-warning",
-    r2: "bg-accent",
+    r2: "bg-info",
     spaces: "bg-info",
     minio: "bg-destructive",
     gcs: "bg-success",
