@@ -21,6 +21,10 @@ coverage
 .env.local
 .env.*.local
 
+# Claude Code agent scratch (worktrees, subagent-driven-development ledger)
+.claude/worktrees/
+.superpowers/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
