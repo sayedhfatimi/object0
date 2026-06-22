@@ -74,7 +74,7 @@ export function BucketList({
             className={`size-6 shrink-0 ${
               showStar
                 ? "text-warning"
-                : "opacity-0 group-hover/bucket:opacity-100"
+                : "opacity-0 group-hover/bucket:opacity-100 text-muted-foreground"
             }`}
             onClick={(e) => {
               e.stopPropagation();
@@ -82,7 +82,9 @@ export function BucketList({
             }}
             title={showStar ? "Unpin bucket" : "Pin bucket"}
           >
-            <IconStar className="size-3" />
+            <IconStar
+              className={`size-3 ${showStar ? "fill-current" : ""}`}
+            />
           </Button>
         )}
       </div>

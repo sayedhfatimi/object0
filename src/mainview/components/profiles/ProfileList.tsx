@@ -1,9 +1,23 @@
-import type React from "react";
-import { useState } from "react";
+import { ContextMenu as ContextMenuPrimitive } from "@base-ui/react/context-menu";
 import type { ProfileInfo } from "../../../shared/profile.types";
 import { PROVIDER_LABELS } from "../../../shared/profile.types";
-import { Button } from "@/components/ui/button";
-import { IconPenToSquare, IconTrashCan, IconAws, IconCloud, IconDigitalOcean, IconServer, IconGoogle, IconFire, IconGear } from "@/lib/icons";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+} from "@/components/ui/context-menu";
+import {
+  IconPenToSquare,
+  IconTrashCan,
+  IconAws,
+  IconCloud,
+  IconDigitalOcean,
+  IconServer,
+  IconGoogle,
+  IconFire,
+  IconGear,
+} from "@/lib/icons";
 
 interface ProfileListProps {
   profiles: ProfileInfo[];
@@ -13,19 +27,6 @@ interface ProfileListProps {
   onDelete: (profile: ProfileInfo) => void;
 }
 
-const PROFILE_MENU_WIDTH = 160;
-const PROFILE_MENU_HEIGHT = 98;
-const MENU_MARGIN = 8;
-
-function clampMenuPosition(x: number, y: number): { x: number; y: number } {
-  const maxX = window.innerWidth - PROFILE_MENU_WIDTH - MENU_MARGIN;
-  const maxY = window.innerHeight - PROFILE_MENU_HEIGHT - MENU_MARGIN;
-  return {
-    x: Math.min(Math.max(x, MENU_MARGIN), Math.max(MENU_MARGIN, maxX)),
-    y: Math.min(Math.max(y, MENU_MARGIN), Math.max(MENU_MARGIN, maxY)),
-  };
-}
-
 export function ProfileList({
   profiles,
   activeId,
@@ -33,12 +34,6 @@ export function ProfileList({
   onEdit,
   onDelete,
 }: ProfileListProps) {
-  const [contextMenu, setContextMenu] = useState<{
-    profile: ProfileInfo;
-    x: number;
-    y: number;
-  } | null>(null);
-
   if (profiles.length === 0) {
     return (
       <div className="px-3 py-4 text-center text-muted-foreground/60 text-xs">
@@ -47,34 +42,15 @@ export function ProfileList({
     );
   }
 
-  const handleContextMenu = (e: React.MouseEvent, profile: ProfileInfo) => {
-    e.preventDefault();
-    setContextMenu({ profile, x: e.clientX, y: e.clientY });
-  };
-
-  const closeContextMenu = () => setContextMenu(null);
-  const clampedMenu = contextMenu
-    ? clampMenuPosition(contextMenu.x, contextMenu.y)
-    : null;
-
   return (
-    <>
-      {/* Dismiss overlay */}
-      {contextMenu && (
-        <button
-          type="button"
-          className="fixed inset-0 z-50 cursor-default bg-transparent"
-          onClick={closeContextMenu}
-          onContextMenu={(e) => {
-            e.preventDefault();
-            closeContextMenu();
-          }}
-        />
-      )}
-
-      <ul className="w-full space-y-0.5 px-1">
-        {profiles.map((p) => (
-          <li key={p.id}>
+    <ul className="w-full space-y-0.5 px-1">
+      {profiles.map((p) => (
+        <ContextMenu key={p.id}>
+          <ContextMenuPrimitive.Trigger
+            data-slot="context-menu-trigger"
+            className="select-none w-full"
+            render={<li />}
+          >
             <button
               type="button"
               className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors duration-150 hover:bg-accent hover:text-accent-foreground ${
@@ -83,27 +59,14 @@ export function ProfileList({
                   : "text-foreground"
               }`}
               onClick={() => onSelect(p)}
-              onContextMenu={(e) => handleContextMenu(e, p)}
-              onKeyDown={(e) => {
-                if (
-                  e.key === "ContextMenu" ||
-                  (e.key === "F10" && e.shiftKey)
-                ) {
-                  e.preventDefault();
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  setContextMenu({
-                    profile: p,
-                    x: rect.left + Math.min(rect.width - 12, 180),
-                    y: rect.top + rect.height / 2,
-                  });
-                }
-              }}
             >
               <span className="text-base shrink-0">
                 <ProviderIcon provider={p.provider} />
               </span>
               <div className="flex flex-col items-start min-w-0">
-                <span className="font-medium text-sm truncate w-full">{p.name}</span>
+                <span className="font-medium text-sm truncate w-full">
+                  {p.name}
+                </span>
                 <span
                   className={`inline-flex items-center gap-1 rounded-full px-1.5 py-px text-[9px] leading-tight ${providerBadge(p.provider)}`}
                 >
@@ -114,43 +77,19 @@ export function ProfileList({
                 </span>
               </div>
             </button>
-          </li>
-        ))}
-      </ul>
-
-      {/* Context menu */}
-      {contextMenu && (
-        <div
-          className="fixed z-60 w-40 rounded-lg border border-border bg-popover p-1 shadow-lg"
-          style={{ top: clampedMenu?.y, left: clampedMenu?.x }}
-        >
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start gap-2 px-2 py-1.5 h-auto font-normal"
-            onClick={() => {
-              onEdit(contextMenu.profile);
-              closeContextMenu();
-            }}
-          >
-            <IconPenToSquare className="size-3.5" /> Edit
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start gap-2 px-2 py-1.5 h-auto font-normal text-destructive hover:text-destructive"
-            onClick={() => {
-              onDelete(contextMenu.profile);
-              closeContextMenu();
-            }}
-          >
-            <IconTrashCan className="size-3.5" /> Delete
-          </Button>
-        </div>
-      )}
-    </>
+          </ContextMenuPrimitive.Trigger>
+          <ContextMenuContent>
+            <ContextMenuItem onClick={() => onEdit(p)}>
+              <IconPenToSquare className="size-3.5 shrink-0" /> Edit
+            </ContextMenuItem>
+            <ContextMenuSeparator />
+            <ContextMenuItem variant="destructive" onClick={() => onDelete(p)}>
+              <IconTrashCan className="size-3.5 shrink-0" /> Delete
+            </ContextMenuItem>
+          </ContextMenuContent>
+        </ContextMenu>
+      ))}
+    </ul>
   );
 }
 
