@@ -1,7 +1,8 @@
-import { AnimatePresence, motion } from "framer-motion";
+import { Loader2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ErrorBoundary } from "../components/common/ErrorBoundary";
 import { Toast } from "../components/common/Toast";
+import { ErrorBoundary } from "../components/common/ErrorBoundary";
+import { ParticleBackground } from "../components/common/ParticleBackground";
 import { MainLayout } from "../components/layout/MainLayout";
 import { ChangePassphraseDialog } from "../components/vault/ChangePassphraseDialog";
 import { RecoveryFlow } from "../components/vault/RecoveryFlow";
@@ -10,7 +11,6 @@ import { SetupScreen } from "../components/vault/SetupScreen";
 import { UnlockScreen } from "../components/vault/UnlockScreen";
 import { useJobProgress } from "../hooks/useJobProgress";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
-import { transitions } from "../lib/animations";
 import {
   dispatchObjectToolbarEvent,
   OBJECT_TOOLBAR_EVENTS,
@@ -37,44 +37,34 @@ export default function App() {
 
   const [showRecovery, setShowRecovery] = useState(false);
 
-  // Subscribe to job events
   useJobProgress();
 
-  // Check vault status on mount
   useEffect(() => {
     checkStatus();
     useFavoritesStore.getState().init();
     useFolderSyncStore.getState().init();
-
     if (!useUIStore.getState().persistShareHistory) {
       useShareHistoryStore.getState().clearAll();
     }
-
-    // Sync persisted concurrency setting to backend
     const concurrency = useUIStore.getState().jobConcurrency;
     if (concurrency) {
       rpcCall("jobs:set-concurrency", { concurrency });
     }
   }, [checkStatus]);
 
-  // Start folder sync when vault is unlocked
   useEffect(() => {
     if (unlocked) {
       useFolderSyncStore.getState().loadRules();
-      rpcCall("folder-sync:start-all", undefined).catch(() => {
-        // Best-effort start
-      });
+      rpcCall("folder-sync:start-all", undefined).catch(() => {});
     }
   }, [unlocked]);
 
-  // Keep recovery flow explicit; don't persist it across successful unlocks
   useEffect(() => {
     if (unlocked || !exists) {
       setShowRecovery(false);
     }
   }, [unlocked, exists]);
 
-  // Global keyboard shortcuts
   const toggleTheme = useThemeStore((s) => s.toggle);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
   const setJobPanelOpen = useUIStore((s) => s.setJobPanelOpen);
@@ -102,7 +92,6 @@ export default function App() {
   );
   useKeyboardShortcuts(shortcuts);
 
-  // Determine which screen to show
   const screenKey = loading
     ? "loading"
     : !exists
@@ -121,80 +110,28 @@ export default function App() {
 
   return (
     <ThemeProvider>
+      <ParticleBackground />
       <Toast />
       <ErrorBoundary>
-        <AnimatePresence mode="wait">
+        <div className="relative z-10 h-screen">
           {screenKey === "loading" && (
-            <motion.div
-              key="loading"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={transitions.fast}
-              className="flex h-screen items-center justify-center bg-base-100"
-            >
-              <span className="loading loading-spinner loading-lg text-primary" />
-            </motion.div>
+            <div className="flex h-screen items-center justify-center bg-background">
+              <Loader2 className="size-8 animate-spin text-primary" />
+            </div>
           )}
-          {screenKey === "setup" && (
-            <motion.div
-              key="setup"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={transitions.fast}
-            >
-              <SetupScreen />
-            </motion.div>
-          )}
+          {screenKey === "setup" && <SetupScreen />}
           {screenKey === "unlock" && (
-            <motion.div
-              key="unlock"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={transitions.fast}
-            >
-              <UnlockScreen onForgotPassphrase={() => setShowRecovery(true)} />
-            </motion.div>
+            <UnlockScreen onForgotPassphrase={() => setShowRecovery(true)} />
           )}
           {screenKey === "recovery" && (
-            <motion.div
-              key="recovery"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={transitions.fast}
-            >
-              <RecoveryFlow onBack={() => setShowRecovery(false)} />
-            </motion.div>
+            <RecoveryFlow onBack={() => setShowRecovery(false)} />
           )}
           {screenKey === "change-passphrase" && (
-            <motion.div
-              key="change-passphrase"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={transitions.fast}
-            >
-              <ChangePassphraseDialog onComplete={() => {}} />
-            </motion.div>
+            <ChangePassphraseDialog onComplete={() => {}} />
           )}
-          {screenKey === "main" && (
-            <motion.div
-              key="main"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={transitions.normal}
-              className="h-screen"
-            >
-              <MainLayout />
-            </motion.div>
-          )}
-        </AnimatePresence>
+          {screenKey === "main" && <MainLayout />}
+        </div>
 
-        {/* Recovery key overlay — shown after setup or passphrase change */}
         {pendingRecoveryKey && (
           <RecoveryKeyDisplay
             recoveryKey={pendingRecoveryKey}
