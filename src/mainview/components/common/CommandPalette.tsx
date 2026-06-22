@@ -62,8 +62,8 @@ export function CommandPalette() {
       },
       {
         id: "toggle-theme",
-        label: `Switch to ${theme === "dark-dim" ? "Light" : "Dark"} Theme`,
-        icon: theme === "dark-dim" ? "fa-solid fa-sun" : "fa-solid fa-moon",
+        label: `Switch to ${theme === "dark" ? "Light" : "Dark"} Theme`,
+        icon: theme === "dark" ? "fa-solid fa-sun" : "fa-solid fa-moon",
         section: "View",
         shortcut: "Ctrl+\\",
         action: toggleTheme,

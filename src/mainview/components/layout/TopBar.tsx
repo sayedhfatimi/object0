@@ -56,7 +56,7 @@ export function TopBar() {
         >
           <i
             className={
-              theme === "dark-dim" ? "fa-regular fa-sun" : "fa-regular fa-moon"
+              theme === "dark" ? "fa-regular fa-sun" : "fa-regular fa-moon"
             }
           />
         </button>

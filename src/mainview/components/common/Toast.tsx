@@ -9,7 +9,7 @@ export { sonnerToast as toast };
  */
 export function Toast() {
   const theme = useThemeStore((s) => s.theme);
-  const sonnerTheme = theme === "dark-dim" ? "dark" : "light";
+  const sonnerTheme = theme === "dark" ? "dark" : "light";
 
   return (
     <Toaster

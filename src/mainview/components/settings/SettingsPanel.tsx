@@ -130,11 +130,11 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
                   className="select select-bordered select-xs w-32"
                   value={theme}
                   onChange={(e) =>
-                    setTheme(e.target.value as "dark-dim" | "light-nord")
+                    setTheme(e.target.value as "dark" | "light")
                   }
                 >
-                  <option value="dark-dim">Dark</option>
-                  <option value="light-nord">Light</option>
+                  <option value="dark">Dark</option>
+                  <option value="light">Light</option>
                 </select>
               </label>
               <label className="flex items-center justify-between">
