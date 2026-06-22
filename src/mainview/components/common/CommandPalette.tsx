@@ -298,6 +298,7 @@ export function CommandPalette() {
   }, []);
 
   // Group commands by section for rendering
+  // cmdk owns filtering + hides empty groups; we pass all sections unfiltered.
   const sections = useMemo(() => {
     const map = new Map<string, PaletteCommand[]>();
     for (const cmd of commands) {
@@ -332,11 +333,9 @@ export function CommandPalette() {
             </CommandGroup>
           ))}
         </CommandList>
-        {(activeProfile || bucket) && (
+        {activeProfile && bucket && (
           <div className="border-t px-3 py-2 text-[11px] text-muted-foreground">
-            {activeProfile && bucket
-              ? `${activeProfile.name} / ${bucket}`
-              : activeProfile?.name ?? bucket}
+            {`${activeProfile.name} / ${bucket}`}
           </div>
         )}
       </Command>
