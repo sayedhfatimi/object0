@@ -22,11 +22,14 @@ export const useThemeStore = create<ThemeState>()(
       storage: createJSONStorage(() => localStorage),
       // Migrate the old daisyUI theme names to the new values.
       migrate: (persisted) => {
-        const state = persisted as { theme?: string } | undefined;
-        const old = state?.theme;
+        const old = (persisted as { theme?: string } | undefined)?.theme;
         const theme: Theme =
-          old === "light-nord" ? "light" : old === "dark-dim" ? "dark" : (old as Theme) ?? "dark";
-        return { theme } as ThemeState;
+          old === "light-nord" || old === "light"
+            ? "light"
+            : old === "dark-dim" || old === "dark"
+              ? "dark"
+              : "dark";
+        return { theme } as Pick<ThemeState, "theme">;
       },
       version: 1,
     },
