@@ -17,6 +17,7 @@ import {
   IconCheck,
   IconFolderOpen,
   IconGaugeHigh,
+  IconListCheck,
   IconPlay,
   IconXmark,
 } from "@/lib/icons";
@@ -187,9 +188,10 @@ export function JobPanel() {
         className="flex w-[400px] flex-col gap-0 p-0 sm:max-w-none"
       >
         {/* Header */}
-        <SheetHeader className="flex-row items-center justify-between gap-2 border-border border-b px-3 py-1.5">
-          <SheetTitle className="flex items-center gap-2 font-semibold text-foreground/50 text-xs uppercase tracking-wider">
-            Jobs
+        <SheetHeader className="flex-row items-center justify-between gap-2 space-y-0 border-border border-b px-4 py-3">
+          <SheetTitle className="flex min-w-0 items-center gap-2 font-semibold text-sm">
+            <IconListCheck className="size-4 shrink-0 text-foreground/60" />
+            <span className="truncate">Jobs</span>
             {activeJobs.length > 0 && (
               <span className="rounded-full bg-info/15 px-1.5 py-px text-[9px] text-info tabular-nums">
                 {activeJobs.length} active
@@ -208,7 +210,7 @@ export function JobPanel() {
               </span>
             )}
           </SheetTitle>
-          <div className="flex gap-0.5">
+          <div className="flex shrink-0 items-center gap-0.5">
             {completedJobs.length > 0 && (
               <Button
                 type="button"
@@ -234,12 +236,12 @@ export function JobPanel() {
             <Button
               type="button"
               variant="ghost"
-              size="xs"
-              className="text-foreground/40 hover:text-foreground/70"
+              size="icon-sm"
+              className="text-foreground/50 hover:text-foreground"
               onClick={() => setJobPanelOpen(false)}
               title="Close"
             >
-              <IconXmark className="size-[10px]" />
+              <IconXmark className="size-4" />
             </Button>
           </div>
         </SheetHeader>
@@ -309,13 +311,11 @@ export function JobPanel() {
                           <IconCheck className="mr-1 inline size-[8px] text-success/50" />
                         )}
                         {isActive ? "Active" : "Completed"}
-                        {isActive &&
-                          row.queuedCount &&
-                          row.queuedCount > 0 && (
-                            <span className="ml-1 font-normal text-foreground/20">
-                              ({row.queuedCount} queued)
-                            </span>
-                          )}
+                        {isActive && row.queuedCount && row.queuedCount > 0 && (
+                          <span className="ml-1 font-normal text-foreground/20">
+                            ({row.queuedCount} queued)
+                          </span>
+                        )}
                       </span>
                     </div>
                   );

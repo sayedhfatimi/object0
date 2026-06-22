@@ -238,7 +238,16 @@ export function ShareDialog() {
                     }}
                   >
                     <SelectTrigger size="sm" className="flex-1">
-                      <SelectValue />
+                      <SelectValue>
+                        {(value) => {
+                          const labels: Record<string, string> = {
+                            minutes: "Minutes",
+                            hours: "Hours",
+                            days: "Days",
+                          };
+                          return labels[value as string] ?? (value as string);
+                        }}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="minutes">Minutes</SelectItem>

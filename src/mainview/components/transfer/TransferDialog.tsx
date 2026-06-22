@@ -168,7 +168,15 @@ export function TransferDialog() {
               }}
             >
               <SelectTrigger size="sm" className="w-full">
-                <SelectValue />
+                <SelectValue>
+                  {(value) => {
+                    const labels: Record<string, string> = {
+                      copy: "Copy — keep original files",
+                      move: "Move — delete originals after transfer",
+                    };
+                    return labels[value as string] ?? (value as string);
+                  }}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="copy">Copy — keep original files</SelectItem>
@@ -189,7 +197,12 @@ export function TransferDialog() {
               }}
             >
               <SelectTrigger size="sm" className="w-full">
-                <SelectValue placeholder="Select profile..." />
+                <SelectValue placeholder="Select profile...">
+                  {(value) =>
+                    profiles.find((p) => p.id === value)?.name ??
+                    (value as string)
+                  }
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {profiles.map((p) => (
@@ -216,7 +229,9 @@ export function TransferDialog() {
                   placeholder={
                     loadingBuckets ? "Loading..." : "Select bucket..."
                   }
-                />
+                >
+                  {(value) => value as string}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {destBuckets.map((b) => (

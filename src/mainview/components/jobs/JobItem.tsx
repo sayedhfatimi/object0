@@ -211,13 +211,8 @@ const JobItemInner = function JobItemInner({ job }: JobItemProps) {
           {/* Progress bar */}
           {hasProgress && (
             <div className="mt-1.5">
-              <ProgressPrimitive.Root
-                value={pct}
-                className="flex flex-wrap"
-              >
-                <ProgressPrimitive.Track
-                  className="relative flex h-2 w-full items-center overflow-x-hidden rounded-full bg-muted/80"
-                >
+              <ProgressPrimitive.Root value={pct} className="flex flex-wrap">
+                <ProgressPrimitive.Track className="relative flex h-2 w-full items-center overflow-x-hidden rounded-full bg-muted/80">
                   <ProgressPrimitive.Indicator
                     className={cn(
                       "h-full transition-all",

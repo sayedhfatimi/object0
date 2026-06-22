@@ -224,7 +224,12 @@ export function ProfileForm({ onDone, editProfile }: ProfileFormProps) {
           onValueChange={(v) => handleProviderChange(v as Provider)}
         >
           <SelectTrigger id="pf-provider" className="h-8 text-sm">
-            <SelectValue />
+            <SelectValue>
+              {(value) =>
+                PROVIDERS.find((p) => p.value === value)?.label ??
+                (value as string)
+              }
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {PROVIDERS.map((p) => (

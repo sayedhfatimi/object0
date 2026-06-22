@@ -19,7 +19,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FileIcon } from "../common/FileIcon";
-import { IconImage, IconClipboard } from "@/lib/icons";
+import {
+  IconImage,
+  IconClipboard,
+  IconCircleInfo,
+  IconXmark,
+} from "@/lib/icons";
 
 const PREVIEWABLE_IMAGES = new Set([
   "png",
@@ -83,13 +88,25 @@ export function DetailPanel() {
     >
       <SheetContent
         side="right"
-        showCloseButton
+        showCloseButton={false}
         className="flex flex-col gap-0 p-0 w-72 sm:max-w-xs"
       >
-        <SheetHeader className="border-b border-border px-3 py-2">
-          <SheetTitle className="text-xs font-semibold text-foreground/50 uppercase tracking-wider">
-            Details
+        <SheetHeader className="flex-row items-center justify-between gap-2 space-y-0 border-border border-b px-4 py-3">
+          <SheetTitle className="flex min-w-0 items-center gap-2 font-semibold text-sm">
+            <IconCircleInfo className="size-4 shrink-0 text-foreground/60" />
+            <span className="truncate">Details</span>
           </SheetTitle>
+          <div className="flex shrink-0 items-center gap-0.5">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="text-foreground/50 hover:text-foreground"
+              onClick={() => setDetailKey(null)}
+              title="Close"
+            >
+              <IconXmark className="size-4" />
+            </Button>
+          </div>
         </SheetHeader>
 
         {/* Content */}

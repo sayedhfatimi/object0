@@ -164,7 +164,12 @@ export function SyncDialog() {
               }}
             >
               <SelectTrigger size="sm" className="w-full">
-                <SelectValue placeholder="Select profile..." />
+                <SelectValue placeholder="Select profile...">
+                  {(value) =>
+                    profiles.find((p) => p.id === value)?.name ??
+                    (value as string)
+                  }
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {profiles.map((p) => (
@@ -189,7 +194,9 @@ export function SyncDialog() {
               disabled={!destProfileId || loadingBuckets}
             >
               <SelectTrigger size="sm" className="w-full">
-                <SelectValue placeholder="Select bucket..." />
+                <SelectValue placeholder="Select bucket...">
+                  {(value) => value as string}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {destBuckets.map((b) => (
@@ -224,7 +231,17 @@ export function SyncDialog() {
               }}
             >
               <SelectTrigger size="sm" className="w-full">
-                <SelectValue />
+                <SelectValue>
+                  {(value) => {
+                    const labels: Record<string, string> = {
+                      additive: "Additive — only add missing files",
+                      overwrite: "Overwrite — add missing + update changed",
+                      mirror:
+                        "Mirror — exact copy (deletes extra files in dest)",
+                    };
+                    return labels[value as string] ?? (value as string);
+                  }}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="additive">

@@ -19,7 +19,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
-import { IconGear, IconSpinner, IconTrashCan } from "@/lib/icons";
+import { IconGear, IconSpinner, IconTrashCan, IconXmark } from "@/lib/icons";
 
 export function SettingsPanel() {
   const settingsOpen = useUIStore((s) => s.settingsOpen);
@@ -135,14 +135,25 @@ export function SettingsPanel() {
     >
       <SheetContent
         side="right"
-        showCloseButton
+        showCloseButton={false}
         className="flex w-[360px] flex-col gap-0 p-0 sm:max-w-none"
       >
-        <SheetHeader className="border-border border-b px-4 py-3">
-          <SheetTitle className="flex items-center gap-2 font-semibold text-sm">
-            <IconGear className="size-4 text-foreground/60" />
-            Settings
+        <SheetHeader className="flex-row items-center justify-between gap-2 space-y-0 border-border border-b px-4 py-3">
+          <SheetTitle className="flex min-w-0 items-center gap-2 font-semibold text-sm">
+            <IconGear className="size-4 shrink-0 text-foreground/60" />
+            <span className="truncate">Settings</span>
           </SheetTitle>
+          <div className="flex shrink-0 items-center gap-0.5">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="text-foreground/50 hover:text-foreground"
+              onClick={() => setSettingsOpen(false)}
+              title="Close"
+            >
+              <IconXmark className="size-4" />
+            </Button>
+          </div>
         </SheetHeader>
 
         {/* Settings body */}
@@ -163,7 +174,15 @@ export function SettingsPanel() {
                     }}
                   >
                     <SelectTrigger size="sm" className="w-32">
-                      <SelectValue />
+                      <SelectValue>
+                        {(value) => {
+                          const labels: Record<string, string> = {
+                            dark: "Dark",
+                            light: "Light",
+                          };
+                          return labels[value as string] ?? (value as string);
+                        }}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="dark">Dark</SelectItem>
@@ -180,7 +199,15 @@ export function SettingsPanel() {
                     }}
                   >
                     <SelectTrigger size="sm" className="w-32">
-                      <SelectValue />
+                      <SelectValue>
+                        {(value) => {
+                          const labels: Record<string, string> = {
+                            table: "Table",
+                            grid: "Grid",
+                          };
+                          return labels[value as string] ?? (value as string);
+                        }}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="table">Table</SelectItem>
@@ -211,7 +238,7 @@ export function SettingsPanel() {
                     }}
                   >
                     <SelectTrigger size="sm" className="w-32">
-                      <SelectValue />
+                      <SelectValue>{(value) => value as string}</SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {PAGE_SIZES.map((s) => (
@@ -293,7 +320,7 @@ export function SettingsPanel() {
                     }}
                   >
                     <SelectTrigger size="sm" className="w-32">
-                      <SelectValue />
+                      <SelectValue>{(value) => value as string}</SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {CONCURRENCY_OPTIONS.map((n) => (

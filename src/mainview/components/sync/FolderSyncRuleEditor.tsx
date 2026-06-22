@@ -139,7 +139,11 @@ export function FolderSyncRuleEditor({
           }}
         >
           <SelectTrigger size="sm" className="w-full">
-            <SelectValue placeholder="Select profile..." />
+            <SelectValue placeholder="Select profile...">
+              {(value) =>
+                profiles.find((p) => p.id === value)?.name ?? (value as string)
+              }
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {profiles.map((p) => (
@@ -164,7 +168,9 @@ export function FolderSyncRuleEditor({
           <SelectTrigger size="sm" className="w-full">
             <SelectValue
               placeholder={loadingBuckets ? "Loading..." : "Select bucket..."}
-            />
+            >
+              {(value) => value as string}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {buckets.map((b) => (
@@ -214,7 +220,16 @@ export function FolderSyncRuleEditor({
           }}
         >
           <SelectTrigger size="sm" className="w-full">
-            <SelectValue />
+            <SelectValue>
+              {(value) => {
+                const labels: Record<string, string> = {
+                  bidirectional: "Bidirectional — sync both ways",
+                  "local-to-remote": "Upload only — local → remote",
+                  "remote-to-local": "Download only — remote → local",
+                };
+                return labels[value as string] ?? (value as string);
+              }}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="bidirectional">
@@ -240,7 +255,17 @@ export function FolderSyncRuleEditor({
           }}
         >
           <SelectTrigger size="sm" className="w-full">
-            <SelectValue />
+            <SelectValue>
+              {(value) => {
+                const labels: Record<string, string> = {
+                  "newer-wins": "Newer wins (compare timestamps)",
+                  "local-wins": "Local always wins",
+                  "remote-wins": "Remote always wins",
+                  "keep-both": "Keep both (mark as conflict)",
+                };
+                return labels[value as string] ?? (value as string);
+              }}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="newer-wins">
@@ -265,7 +290,19 @@ export function FolderSyncRuleEditor({
           }}
         >
           <SelectTrigger size="sm" className="w-full">
-            <SelectValue />
+            <SelectValue>
+              {(value) => {
+                const labels: Record<string, string> = {
+                  "15000": "15 seconds",
+                  "30000": "30 seconds",
+                  "60000": "1 minute",
+                  "300000": "5 minutes",
+                  "600000": "10 minutes",
+                  "1800000": "30 minutes",
+                };
+                return labels[value as string] ?? (value as string);
+              }}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="15000">15 seconds</SelectItem>

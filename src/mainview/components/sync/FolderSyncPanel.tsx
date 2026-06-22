@@ -214,120 +214,119 @@ export function FolderSyncPanel() {
           className="flex w-[360px] flex-col gap-0 p-0 sm:max-w-none"
         >
           {/* Header */}
-          <SheetHeader className="border-border border-b">
-            <div className="space-y-2 px-3 py-2">
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <SheetTitle className="flex items-center gap-2 font-semibold text-sm leading-tight">
-                    <IconFolderOpen className="size-3.5 text-primary" />
-                    Live Folder Sync
-                  </SheetTitle>
-                  <p className="mt-0.5 pl-5 text-[10px] text-foreground/50">
-                    Continuous local folder &lt;-&gt; bucket sync in the
-                    background
-                  </p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon-xs"
-                  className="text-foreground/40 hover:text-foreground"
-                  onClick={() => setFolderSyncPanelOpen(false)}
-                  title="Close"
-                >
-                  <IconXmark className="size-3.5" />
-                </Button>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-1.5 pl-5">
-                {activeCount > 0 && (
-                  <span className="rounded-full bg-success/20 px-1.5 py-px text-[9px] text-success tabular-nums">
-                    {activeCount} active
-                  </span>
-                )}
-                {conflicts.length > 0 && (
-                  <span className="rounded-full bg-warning/20 px-1.5 py-px text-[9px] text-warning tabular-nums">
-                    {conflicts.length} conflict
-                    {conflicts.length === 1 ? "" : "s"}
-                  </span>
-                )}
-                <Button
-                  variant="ghost"
-                  size="xs"
-                  className="h-5 min-h-5 gap-1 px-1.5 text-[10px] text-foreground/55 hover:text-primary"
-                  onClick={() => setAddDialogOpen(true)}
-                  title="Add Live Sync Rule"
-                >
-                  <IconPlus className="size-[9px]" />
-                  Add rule
-                </Button>
-                <div className="ml-auto flex">
-                  <Button
-                    variant={!isCompact ? "default" : "ghost"}
-                    size="xs"
-                    className="h-5 min-h-5 rounded-r-none px-1.5 text-[10px]"
-                    onClick={() => setFolderSyncListDensity("comfortable")}
-                  >
-                    Cozy
-                  </Button>
-                  <Button
-                    variant={isCompact ? "default" : "ghost"}
-                    size="xs"
-                    className="h-5 min-h-5 rounded-l-none px-1.5 text-[10px]"
-                    onClick={() => setFolderSyncListDensity("compact")}
-                  >
-                    Dense
-                  </Button>
-                </div>
-                {rules.length > 0 && (
-                  <>
-                    {conflicts.length > 0 && (
-                      <Button
-                        variant="ghost"
-                        size="xs"
-                        className="h-5 min-h-5 gap-1 px-1.5 text-[10px] text-warning/70 hover:text-warning"
-                        onClick={() => clearConflicts()}
-                        title="Clear conflict notifications"
-                      >
-                        <IconBroom className="size-[9px]" />
-                        Clear conflicts
-                      </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="icon-xs"
-                      className="size-5 min-h-5 text-foreground/40 hover:text-success"
-                      onClick={resumeAll}
-                      title="Resume All"
-                    >
-                      <IconPlay className="size-[9px]" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon-xs"
-                      className="size-5 min-h-5 text-foreground/40 hover:text-warning"
-                      onClick={pauseAll}
-                      title="Pause All"
-                    >
-                      <IconPause className="size-[9px]" />
-                    </Button>
-                  </>
-                )}
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center justify-between gap-1.5 border-border border-t bg-card/50 px-3 py-1.5 text-[10px] text-foreground/55">
-              <span className="min-w-0 flex-1">
-                For one-time bucket copies, use Object Sync.
-              </span>
+          <SheetHeader className="flex-row items-center justify-between gap-2 space-y-0 border-border border-b px-4 py-3">
+            <SheetTitle className="flex min-w-0 items-center gap-2 font-semibold text-sm">
+              <IconFolderOpen className="size-4 shrink-0 text-foreground/60" />
+              <span className="truncate">Live Folder Sync</span>
+            </SheetTitle>
+            <div className="flex shrink-0 items-center gap-0.5">
               <Button
                 variant="ghost"
-                size="xs"
-                className="h-5 min-h-5 px-1.5 text-[10px] text-info hover:text-info"
-                onClick={() => setSyncDialogOpen(true)}
+                size="icon-sm"
+                className="text-foreground/50 hover:text-foreground"
+                onClick={() => setFolderSyncPanelOpen(false)}
+                title="Close"
               >
-                Open Object Sync
+                <IconXmark className="size-4" />
               </Button>
             </div>
           </SheetHeader>
+
+          {/* subtitle — moved out of header */}
+          <p className="border-border border-b px-4 py-2 text-[11px] text-foreground/50">
+            Continuous local folder ↔ bucket sync in the background
+          </p>
+
+          {/* secondary toolbar */}
+          <div className="flex flex-wrap items-center gap-1.5 border-border border-b px-3 py-1.5">
+            {activeCount > 0 && (
+              <span className="rounded-full bg-success/20 px-1.5 py-px text-[9px] text-success tabular-nums">
+                {activeCount} active
+              </span>
+            )}
+            {conflicts.length > 0 && (
+              <span className="rounded-full bg-warning/20 px-1.5 py-px text-[9px] text-warning tabular-nums">
+                {conflicts.length} conflict{conflicts.length === 1 ? "" : "s"}
+              </span>
+            )}
+            <Button
+              variant="ghost"
+              size="xs"
+              className="h-5 min-h-5 gap-1 px-1.5 text-[10px] text-foreground/55 hover:text-primary"
+              onClick={() => setAddDialogOpen(true)}
+              title="Add Live Sync Rule"
+            >
+              <IconPlus className="size-[9px]" />
+              Add rule
+            </Button>
+            <div className="ml-auto flex">
+              <Button
+                variant={!isCompact ? "default" : "ghost"}
+                size="xs"
+                className="h-5 min-h-5 rounded-r-none px-1.5 text-[10px]"
+                onClick={() => setFolderSyncListDensity("comfortable")}
+              >
+                Cozy
+              </Button>
+              <Button
+                variant={isCompact ? "default" : "ghost"}
+                size="xs"
+                className="h-5 min-h-5 rounded-l-none px-1.5 text-[10px]"
+                onClick={() => setFolderSyncListDensity("compact")}
+              >
+                Dense
+              </Button>
+            </div>
+            {rules.length > 0 && (
+              <>
+                {conflicts.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="xs"
+                    className="h-5 min-h-5 gap-1 px-1.5 text-[10px] text-warning/70 hover:text-warning"
+                    onClick={() => clearConflicts()}
+                    title="Clear conflict notifications"
+                  >
+                    <IconBroom className="size-[9px]" />
+                    Clear conflicts
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  className="size-5 min-h-5 text-foreground/40 hover:text-success"
+                  onClick={resumeAll}
+                  title="Resume All"
+                >
+                  <IconPlay className="size-[9px]" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  className="size-5 min-h-5 text-foreground/40 hover:text-warning"
+                  onClick={pauseAll}
+                  title="Pause All"
+                >
+                  <IconPause className="size-[9px]" />
+                </Button>
+              </>
+            )}
+          </div>
+
+          {/* the "For one-time..." info row stays AS-IS */}
+          <div className="flex flex-wrap items-center justify-between gap-1.5 border-border border-b bg-card/50 px-3 py-1.5 text-[10px] text-foreground/55">
+            <span className="min-w-0 flex-1">
+              For one-time bucket copies, use Object Sync.
+            </span>
+            <Button
+              variant="ghost"
+              size="xs"
+              className="h-5 min-h-5 px-1.5 text-[10px] text-info hover:text-info"
+              onClick={() => setSyncDialogOpen(true)}
+            >
+              Open Object Sync
+            </Button>
+          </div>
 
           {/* Rule list */}
           <div className="flex-1 overflow-y-auto">
@@ -484,42 +483,40 @@ export function FolderSyncPanel() {
                     </div>
 
                     {/* Progress bar when syncing */}
-                    {status === "syncing" &&
-                      progress &&
-                      progress.total > 0 && (
-                        <div className="space-y-0.5">
+                    {status === "syncing" && progress && progress.total > 0 && (
+                      <div className="space-y-0.5">
+                        <div
+                          className={`flex items-center justify-between text-foreground/50 ${
+                            isCompact ? "text-[9px]" : "text-[10px]"
+                          }`}
+                        >
+                          <span>
+                            {progress.completed}/{progress.total} files
+                          </span>
+                          <span>
+                            {formatBytes(progress.bytesTransferred)} /{" "}
+                            {formatBytes(progress.bytesTotal)}
+                          </span>
+                        </div>
+                        <Progress
+                          value={
+                            progress.total > 0
+                              ? (progress.completed / progress.total) * 100
+                              : 0
+                          }
+                          className="h-1"
+                        />
+                        {state?.currentFile && (
                           <div
-                            className={`flex items-center justify-between text-foreground/50 ${
-                              isCompact ? "text-[9px]" : "text-[10px]"
+                            className={`truncate text-foreground/30 ${
+                              isCompact ? "text-[8px]" : "text-[9px]"
                             }`}
                           >
-                            <span>
-                              {progress.completed}/{progress.total} files
-                            </span>
-                            <span>
-                              {formatBytes(progress.bytesTransferred)} /{" "}
-                              {formatBytes(progress.bytesTotal)}
-                            </span>
+                            {state.currentFile}
                           </div>
-                          <Progress
-                            value={
-                              progress.total > 0
-                                ? (progress.completed / progress.total) * 100
-                                : 0
-                            }
-                            className="h-1"
-                          />
-                          {state?.currentFile && (
-                            <div
-                              className={`truncate text-foreground/30 ${
-                                isCompact ? "text-[8px]" : "text-[9px]"
-                              }`}
-                            >
-                              {state.currentFile}
-                            </div>
-                          )}
-                        </div>
-                      )}
+                        )}
+                      </div>
+                    )}
 
                     {/* Error message */}
                     {error && (

@@ -10,12 +10,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import {
   IconBroom,
   IconClockRotateLeft,
@@ -23,6 +18,7 @@ import {
   IconLink,
   IconLinkSlash,
   IconTrash,
+  IconXmark,
 } from "@/lib/icons";
 
 type FilterMode = "all" | "active" | "expired";
@@ -92,19 +88,30 @@ export function ShareHistory() {
     >
       <SheetContent
         side="right"
-        showCloseButton
+        showCloseButton={false}
         className="flex w-[360px] flex-col gap-0 p-0 sm:max-w-none"
       >
-        <SheetHeader className="border-border border-b px-4 py-3">
-          <SheetTitle className="flex items-center gap-2 font-semibold text-sm">
-            <IconClockRotateLeft className="size-4 text-foreground/60" />
-            Share History
+        <SheetHeader className="flex-row items-center justify-between gap-2 space-y-0 border-border border-b px-4 py-3">
+          <SheetTitle className="flex min-w-0 items-center gap-2 font-semibold text-sm">
+            <IconClockRotateLeft className="size-4 shrink-0 text-foreground/60" />
+            <span className="truncate">Share History</span>
             {entries.length > 0 && (
               <span className="rounded-full bg-muted px-1.5 py-px text-[9px] text-foreground/55">
                 {entries.length}
               </span>
             )}
           </SheetTitle>
+          <div className="flex shrink-0 items-center gap-0.5">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="text-foreground/50 hover:text-foreground"
+              onClick={() => setShareHistoryOpen(false)}
+              title="Close"
+            >
+              <IconXmark className="size-4" />
+            </Button>
+          </div>
         </SheetHeader>
 
         {/* Filter tabs */}
