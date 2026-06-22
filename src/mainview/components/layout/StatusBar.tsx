@@ -1,7 +1,5 @@
-import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useState } from "react";
 import { useOnlineStatus } from "../../hooks/useOnlineStatus";
-import { transitions } from "../../lib/animations";
 import { formatBytes, formatSpeed } from "../../lib/formatters";
 import { onEvent, rpcCall } from "../../lib/rpc-client";
 import { useBucketStore } from "../../stores/useBucketStore";
@@ -10,6 +8,19 @@ import { useJobStore } from "../../stores/useJobStore";
 import { useObjectStore } from "../../stores/useObjectStore";
 import { useProfileStore } from "../../stores/useProfileStore";
 import { useUIStore } from "../../stores/useUIStore";
+import { Progress } from "../ui/progress";
+import {
+  IconArrowUpRightFromSquare,
+  IconBucket,
+  IconCheckDouble,
+  IconCircleUser,
+  IconFile,
+  IconFolder,
+  IconFolderOpen,
+  IconGrid2,
+  IconTableList,
+  IconWifi,
+} from "../../lib/icons";
 
 export function StatusBar() {
   const profile = useProfileStore((s) => s.activeProfile);
@@ -78,167 +89,129 @@ export function StatusBar() {
     : 0;
 
   return (
-    <div className="flex h-7 shrink-0 items-center justify-between border-base-300 border-t bg-base-200 px-3 text-[11px] text-base-content/55">
+    <div className="flex h-7 shrink-0 items-center justify-between border-border border-t bg-card px-3 text-[11px] text-foreground/55">
       <div className="flex items-center gap-3">
-        <AnimatePresence>
-          {!online && (
-            <motion.span
-              key="offline"
-              className="flex items-center gap-1 text-warning"
-              role="status"
-              initial={{ opacity: 0, x: -8 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -8 }}
-              transition={transitions.fast}
-            >
-              <i className="fa-solid fa-wifi fa-xs" />
-              Offline
-            </motion.span>
-          )}
-        </AnimatePresence>
+        {!online && (
+          <span
+            className="flex items-center gap-1 text-warning"
+            role="status"
+          >
+            <IconWifi className="size-3" />
+            Offline
+          </span>
+        )}
         {profile && (
           <span>
-            <i className="fa-solid fa-circle-user fa-xs mr-0.5" />
+            <IconCircleUser className="mr-0.5 inline size-3" />
             {profile.name}
           </span>
         )}
         {bucket && (
           <span>
-            <i className="fa-solid fa-bucket fa-xs mr-0.5" />
+            <IconBucket className="mr-0.5 inline size-3" />
             {bucket}
             {prefixDepth > 0 && (
-              <span className="ml-1 text-base-content/30">
+              <span className="ml-1 text-foreground/30">
                 (depth {prefixDepth})
               </span>
             )}
           </span>
         )}
         {bucket && (
-          <span className="text-base-content/30">
-            <i
-              className={`fa-solid ${viewMode === "table" ? "fa-table-list" : "fa-grid-2"} fa-xs`}
-            />
+          <span className="text-foreground/30">
+            {viewMode === "table" ? (
+              <IconTableList className="inline size-3" />
+            ) : (
+              <IconGrid2 className="inline size-3" />
+            )}
           </span>
         )}
       </div>
 
       <div className="flex items-center gap-3">
-        <AnimatePresence>
-          {selectedKeys.size > 0 && (
-            <motion.span
-              key="selection"
-              className="text-primary/70"
-              role="status"
-              aria-live="polite"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={transitions.fast}
-            >
-              <i className="fa-solid fa-check-double fa-xs mr-0.5" />
-              {selectedKeys.size} selected ({formatBytes(selectedSize)})
-            </motion.span>
-          )}
-        </AnimatePresence>
+        {selectedKeys.size > 0 && (
+          <span
+            className="text-primary/70"
+            role="status"
+            aria-live="polite"
+          >
+            <IconCheckDouble className="mr-0.5 inline size-3" />
+            {selectedKeys.size} selected ({formatBytes(selectedSize)})
+          </span>
+        )}
         {(objects.length > 0 || prefixes.length > 0) && (
           <span>
             {prefixes.length > 0 && (
               <>
-                <i className="fa-solid fa-folder fa-xs mr-0.5" />
+                <IconFolder className="mr-0.5 inline size-3" />
                 {prefixes.length}
               </>
             )}
             {prefixes.length > 0 && objects.length > 0 && (
-              <span className="mx-1 text-base-content/20">|</span>
+              <span className="mx-1 text-foreground/20">|</span>
             )}
             {objects.length > 0 && (
               <>
-                <i className="fa-regular fa-file fa-xs mr-0.5" />
+                <IconFile className="mr-0.5 inline size-3" />
                 {objects.length}
               </>
             )}
           </span>
         )}
-        <AnimatePresence>
-          {activeCount > 0 && (
-            <motion.button
-              key="jobs"
-              type="button"
-              className="flex items-center gap-2 text-info transition-colors hover:text-info-content"
-              onClick={() => setJobPanelOpen(true)}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={transitions.fast}
-            >
-              <span>
-                {activeCount} job{activeCount > 1 ? "s" : ""}{" "}
-                {runningJobs.length > 0 ? "running" : "queued"}
-              </span>
-              {runningJobs.length > 0 && totalBytes > 0 && (
-                <>
-                  <progress
-                    className="progress progress-info h-1.5 w-20"
-                    value={aggregatePercent}
-                    max={100}
-                  />
-                  <span className="tabular-nums">{aggregatePercent}%</span>
-                  {aggregateSpeed > 0 && (
-                    <span>{formatSpeed(aggregateSpeed)}</span>
-                  )}
-                </>
-              )}
-            </motion.button>
-          )}
-        </AnimatePresence>
-        <AnimatePresence>
-          {folderSyncRules.length > 0 && (
-            <motion.button
-              key="folder-sync"
-              type="button"
-              className={`flex items-center gap-1 transition-colors ${
-                folderSyncSyncing > 0
-                  ? "text-info"
-                  : folderSyncActive > 0
-                    ? "text-success/70"
-                    : "text-base-content/40"
-              } hover:text-primary`}
-              onClick={() => setFolderSyncPanelOpen(true)}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={transitions.fast}
-              title="Live Folder Sync"
-            >
-              <i
-                className={`fa-solid fa-folder-open fa-xs ${
-                  folderSyncSyncing > 0 ? "fa-beat-fade" : ""
-                }`}
-              />
-              {folderSyncSyncing > 0
-                ? `Live syncing ${folderSyncSyncing} folder(s)`
-                : `${folderSyncActive} live sync active`}
-            </motion.button>
-          )}
-        </AnimatePresence>
-        <AnimatePresence>
-          {updateReady && updateVersion && (
-            <motion.button
-              key="update"
-              type="button"
-              className="flex items-center gap-1 text-success transition-colors hover:text-success-content"
-              onClick={handleApplyUpdate}
-              disabled={applying}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={transitions.fast}
-            >
-              <i className="fa-solid fa-arrow-up-right-from-square fa-xs" />
-              {applying ? "Updating…" : `Update to v${updateVersion}`}
-            </motion.button>
-          )}
-        </AnimatePresence>
+        {activeCount > 0 && (
+          <button
+            type="button"
+            className="flex items-center gap-2 text-blue-500 transition-colors hover:text-blue-400"
+            onClick={() => setJobPanelOpen(true)}
+          >
+            <span>
+              {activeCount} job{activeCount > 1 ? "s" : ""}{" "}
+              {runningJobs.length > 0 ? "running" : "queued"}
+            </span>
+            {runningJobs.length > 0 && totalBytes > 0 && (
+              <>
+                <Progress
+                  value={aggregatePercent}
+                  className="h-1.5 w-20"
+                />
+                <span className="tabular-nums">{aggregatePercent}%</span>
+                {aggregateSpeed > 0 && (
+                  <span>{formatSpeed(aggregateSpeed)}</span>
+                )}
+              </>
+            )}
+          </button>
+        )}
+        {folderSyncRules.length > 0 && (
+          <button
+            type="button"
+            className={`flex items-center gap-1 transition-colors ${
+              folderSyncSyncing > 0
+                ? "text-blue-500"
+                : folderSyncActive > 0
+                  ? "text-green-500/70"
+                  : "text-foreground/40"
+            } hover:text-primary`}
+            onClick={() => setFolderSyncPanelOpen(true)}
+            title="Live Folder Sync"
+          >
+            <IconFolderOpen className="size-3" />
+            {folderSyncSyncing > 0
+              ? `Live syncing ${folderSyncSyncing} folder(s)`
+              : `${folderSyncActive} live sync active`}
+          </button>
+        )}
+        {updateReady && updateVersion && (
+          <button
+            type="button"
+            className="flex items-center gap-1 text-green-500 transition-colors hover:text-green-400"
+            onClick={handleApplyUpdate}
+            disabled={applying}
+          >
+            <IconArrowUpRightFromSquare className="size-3" />
+            {applying ? "Updating…" : `Update to v${updateVersion}`}
+          </button>
+        )}
       </div>
     </div>
   );

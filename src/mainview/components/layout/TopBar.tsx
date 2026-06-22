@@ -7,6 +7,16 @@ import { useThemeStore } from "../../stores/useThemeStore";
 import { useUIStore } from "../../stores/useUIStore";
 import { ObjectBreadcrumb } from "../objects/ObjectBreadcrumb";
 import { ObjectToolbar } from "../objects/ObjectToolbar";
+import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
+import {
+  IconClockRotateLeft,
+  IconFolderOpen,
+  IconGear,
+  IconListCheck,
+  IconMoon,
+  IconSun,
+} from "../../lib/icons";
 
 export function TopBar() {
   const activeProfile = useProfileStore((s) => s.activeProfile);
@@ -31,7 +41,7 @@ export function TopBar() {
   const setSettingsOpen = useUIStore((s) => s.setSettingsOpen);
 
   return (
-    <div className="drag-region flex flex-col border-base-300 border-b bg-base-200/50">
+    <div className="drag-region flex flex-col border-border border-b bg-card/50">
       {/* Top row: breadcrumb + global actions */}
       <div className="flex items-center gap-2 px-3 py-2">
         <div className="no-drag group/breadcrumb flex-1">
@@ -41,84 +51,93 @@ export function TopBar() {
               bucket={bucket}
             />
           ) : (
-            <span className="text-base-content/40 text-sm">
+            <span className="text-foreground/40 text-sm">
               {activeProfile ? "Select a bucket" : "Select a profile to begin"}
             </span>
           )}
         </div>
 
-        <button
-          type="button"
-          className="no-drag btn btn-ghost btn-sm btn-square"
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="no-drag"
           onClick={toggleTheme}
           title="Toggle Theme (Ctrl+\\)"
           aria-label="Toggle theme"
         >
-          <i
-            className={
-              theme === "dark" ? "fa-regular fa-sun" : "fa-regular fa-moon"
-            }
-          />
-        </button>
+          {theme === "dark" ? (
+            <IconSun className="size-4" />
+          ) : (
+            <IconMoon className="size-4" />
+          )}
+        </Button>
 
-        <button
-          type="button"
-          className="no-drag btn btn-ghost btn-sm btn-square relative"
-          onClick={() => setShareHistoryOpen(!shareHistoryOpen)}
-          title="Share History"
-          aria-label="Toggle share history"
-        >
-          <i className="fa-solid fa-clock-rotate-left" />
+        <div className="no-drag relative">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => setShareHistoryOpen(!shareHistoryOpen)}
+            title="Share History"
+            aria-label="Toggle share history"
+          >
+            <IconClockRotateLeft className="size-4" />
+          </Button>
           {shareHistoryCount > 0 && (
-            <span className="badge badge-ghost badge-xs absolute -top-1 -right-1 min-w-4 text-[10px]">
+            <Badge
+              variant="outline"
+              className="absolute -top-1 -right-1 min-w-4 px-1 text-[10px]"
+            >
               {shareHistoryCount}
-            </span>
+            </Badge>
           )}
-        </button>
+        </div>
 
-        <button
-          type="button"
-          className="no-drag btn btn-ghost btn-sm btn-square relative"
-          onClick={() => setJobPanelOpen(!jobPanelOpen)}
-          title="Toggle Jobs Panel (Ctrl+J)"
-          aria-label="Toggle jobs panel"
-        >
-          <i className="fa-solid fa-list-check" />
+        <div className="no-drag relative">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => setJobPanelOpen(!jobPanelOpen)}
+            title="Toggle Jobs Panel (Ctrl+J)"
+            aria-label="Toggle jobs panel"
+          >
+            <IconListCheck className="size-4" />
+          </Button>
           {activeJobCount > 0 && (
-            <span className="badge badge-info badge-xs absolute -top-1 -right-1 min-w-4 text-[10px]">
+            <Badge className="absolute -top-1 -right-1 min-w-4 px-1 text-[10px] bg-blue-500 text-white border-transparent">
               {activeJobCount}
-            </span>
+            </Badge>
           )}
-        </button>
+        </div>
 
-        <button
-          type="button"
-          className="no-drag btn btn-ghost btn-sm btn-square relative"
-          onClick={() => setFolderSyncPanelOpen(!folderSyncPanelOpen)}
-          title="Live Folder Sync (continuous local <-> bucket)"
-          aria-label="Toggle live folder sync panel"
-        >
-          <i
-            className={`fa-solid fa-folder-open ${
-              syncingCount() > 0 ? "text-info" : ""
-            }`}
-          />
+        <div className="no-drag relative">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => setFolderSyncPanelOpen(!folderSyncPanelOpen)}
+            title="Live Folder Sync (continuous local <-> bucket)"
+            aria-label="Toggle live folder sync panel"
+          >
+            <IconFolderOpen
+              className={`size-4 ${syncingCount() > 0 ? "text-blue-500" : ""}`}
+            />
+          </Button>
           {activeCount() > 0 && (
-            <span className="badge badge-success badge-xs absolute -top-1 -right-1 min-w-4 text-[10px]">
+            <Badge className="absolute -top-1 -right-1 min-w-4 px-1 text-[10px] bg-green-500 text-white border-transparent">
               {activeCount()}
-            </span>
+            </Badge>
           )}
-        </button>
+        </div>
 
-        <button
-          type="button"
-          className="no-drag btn btn-ghost btn-sm btn-square"
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="no-drag"
           onClick={() => setSettingsOpen(!settingsOpen)}
           title="Settings (Ctrl+,)"
           aria-label="Toggle settings panel"
         >
-          <i className="fa-solid fa-gear" />
-        </button>
+          <IconGear className="size-4" />
+        </Button>
       </div>
 
       {/* Toolbar row (when viewing objects) */}

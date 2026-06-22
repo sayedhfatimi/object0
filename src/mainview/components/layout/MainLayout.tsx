@@ -1,6 +1,4 @@
-import { AnimatePresence, motion } from "framer-motion";
 import { lazy, type ReactNode, Suspense } from "react";
-import { transitions } from "../../lib/animations";
 import { useTabStore } from "../../stores/useTabStore";
 import { useUIStore } from "../../stores/useUIStore";
 import { ResizeHandle } from "../common/ResizeHandle";
@@ -10,6 +8,10 @@ import { Sidebar } from "./Sidebar";
 import { StatusBar } from "./StatusBar";
 import { TabBar } from "./TabBar";
 import { TopBar } from "./TopBar";
+import {
+  IconChevronLeft,
+  IconChevronRight,
+} from "../../lib/icons";
 
 const JobPanel = lazy(() =>
   import("../jobs/JobPanel").then((module) => ({ default: module.JobPanel })),
@@ -57,7 +59,6 @@ const CommandPalette = lazy(() =>
 
 interface RightRailPanelProps {
   open: boolean;
-  panelKey: string;
   ariaLabel: string;
   width: number;
   children: ReactNode;
@@ -65,37 +66,24 @@ interface RightRailPanelProps {
 
 function RightRailPanel({
   open,
-  panelKey,
   ariaLabel,
   width,
   children,
 }: RightRailPanelProps) {
+  if (!open) return null;
   return (
-    <AnimatePresence initial={false}>
-      {open && (
-        <motion.div
-          key={panelKey}
-          className="relative flex h-full shrink-0 overflow-hidden border-base-300 border-l bg-base-100"
-          initial={{ width: 0 }}
-          animate={{ width }}
-          exit={{ width: 0 }}
-          transition={transitions.normal}
-          style={{ willChange: "width" }}
-        >
-          <motion.aside
-            aria-label={ariaLabel}
-            className="h-full shrink-0"
-            style={{ width }}
-            initial={{ x: 14, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: 10, opacity: 0 }}
-            transition={transitions.fast}
-          >
-            {children}
-          </motion.aside>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <div
+      className="relative flex h-full shrink-0 overflow-hidden border-border border-l bg-background"
+      style={{ width }}
+    >
+      <aside
+        aria-label={ariaLabel}
+        className="h-full shrink-0"
+        style={{ width }}
+      >
+        {children}
+      </aside>
+    </div>
   );
 }
 
@@ -116,7 +104,7 @@ export function MainLayout() {
   const setDetailPanelWidth = useUIStore((s) => s.setDetailPanelWidth);
 
   return (
-    <div className="flex h-screen flex-col bg-base-100 text-base-content">
+    <div className="flex h-screen flex-col bg-background text-foreground">
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
         <nav aria-label="Sidebar" className="relative flex h-full shrink-0">
@@ -124,7 +112,7 @@ export function MainLayout() {
           {/* Toggle pinned to right edge */}
           <button
             type="button"
-            className="absolute top-2 -right-4 z-20 flex h-8 w-8 items-center justify-center rounded-full border border-base-300 bg-base-100 text-base-content/60 shadow-sm transition-colors hover:bg-primary/10 hover:text-primary"
+            className="absolute top-2 -right-4 z-20 flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background text-foreground/60 shadow-sm transition-colors hover:bg-primary/10 hover:text-primary"
             onClick={() => useUIStore.getState().toggleSidebar()}
             title={
               sidebarCollapsed
@@ -135,9 +123,11 @@ export function MainLayout() {
               sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
             }
           >
-            <i
-              className={`fa-solid ${sidebarCollapsed ? "fa-chevron-right" : "fa-chevron-left"} text-[11px]`}
-            />
+            {sidebarCollapsed ? (
+              <IconChevronRight className="size-[11px]" />
+            ) : (
+              <IconChevronLeft className="size-[11px]" />
+            )}
           </button>
         </nav>
         {!sidebarCollapsed && (
@@ -153,41 +143,29 @@ export function MainLayout() {
         {/* Main content area */}
         <main className="flex flex-1 flex-col overflow-hidden">
           <TopBar />
-          <AnimatePresence>
-            {hasTabs && <TabBar key="tabbar" />}
-          </AnimatePresence>
+          {hasTabs && <TabBar />}
           <div className="flex flex-1 overflow-hidden">
             <ContentArea />
-            <AnimatePresence>
-              {detailKey && (
-                <motion.div
-                  key="detail-panel"
-                  className="flex shrink-0"
-                  initial={{ width: 0, opacity: 0 }}
-                  animate={{ width: detailPanelWidth, opacity: 1 }}
-                  exit={{ width: 0, opacity: 0 }}
-                  transition={transitions.spring}
+            {detailKey && (
+              <div className="flex shrink-0" style={{ width: detailPanelWidth }}>
+                <ResizeHandle
+                  side="left"
+                  width={detailPanelWidth}
+                  minWidth={240}
+                  maxWidth={500}
+                  onResize={setDetailPanelWidth}
+                />
+                <aside
+                  aria-label="Object details"
+                  style={{ width: detailPanelWidth }}
+                  className="shrink-0"
                 >
-                  <ResizeHandle
-                    side="left"
-                    width={detailPanelWidth}
-                    minWidth={240}
-                    maxWidth={500}
-                    onResize={setDetailPanelWidth}
-                  />
-                  <aside
-                    aria-label="Object details"
-                    style={{ width: detailPanelWidth }}
-                    className="shrink-0"
-                  >
-                    <DetailPanel />
-                  </aside>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  <DetailPanel />
+                </aside>
+              </div>
+            )}
             <RightRailPanel
               open={shareHistoryOpen}
-              panelKey="share-history"
               ariaLabel="Share history"
               width={288}
             >
@@ -197,7 +175,6 @@ export function MainLayout() {
             </RightRailPanel>
             <RightRailPanel
               open={settingsOpen}
-              panelKey="settings"
               ariaLabel="Settings"
               width={288}
             >
@@ -207,7 +184,6 @@ export function MainLayout() {
             </RightRailPanel>
             <RightRailPanel
               open={folderSyncPanelOpen}
-              panelKey="folder-sync"
               ariaLabel="Live Folder Sync"
               width={320}
             >
@@ -218,13 +194,11 @@ export function MainLayout() {
               </Suspense>
             </RightRailPanel>
           </div>
-          <AnimatePresence>
-            {jobPanelOpen && (
-              <Suspense fallback={null}>
-                <JobPanel key="job-panel" />
-              </Suspense>
-            )}
-          </AnimatePresence>
+          {jobPanelOpen && (
+            <Suspense fallback={null}>
+              <JobPanel />
+            </Suspense>
+          )}
         </main>
       </div>
 

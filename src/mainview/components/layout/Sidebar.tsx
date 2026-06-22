@@ -1,9 +1,7 @@
-import { AnimatePresence, motion } from "framer-motion";
 import { useMemo, useState } from "react";
 import type { ProfileInfo } from "../../../shared/profile.types";
 import { PROVIDER_LABELS } from "../../../shared/profile.types";
 import { useS3Buckets } from "../../hooks/useS3Buckets";
-import { fadeVariants, transitions } from "../../lib/animations";
 import { rpcCall } from "../../lib/rpc-client";
 import { useFavoritesStore } from "../../stores/useFavoritesStore";
 import { useVaultStore } from "../../stores/useVaultStore";
@@ -13,6 +11,24 @@ import { Modal } from "../common/Modal";
 import { toast } from "../common/Toast";
 import { ProfileForm } from "../profiles/ProfileForm";
 import { ProfileList } from "../profiles/ProfileList";
+import { Button } from "../ui/button";
+import {
+  IconArrowsRotate,
+  IconAws,
+  IconBucket,
+  IconCloud,
+  IconCloudArrowUp,
+  IconDigitalOcean,
+  IconFire,
+  IconGear,
+  IconLock,
+  IconPlus,
+  IconServer,
+  IconStar,
+  IconUser,
+  IconUserGroup,
+  IconGoogle,
+} from "../../lib/icons";
 
 interface SidebarProps {
   collapsed: boolean;
@@ -69,73 +85,67 @@ export function Sidebar({ collapsed, width = 256 }: SidebarProps) {
   /* ── Collapsed sidebar ── */
   if (collapsed) {
     return (
-      <motion.aside
-        layout
-        transition={transitions.spring}
-        className="flex h-full w-12 shrink-0 flex-col items-center border-base-300 border-r bg-base-200"
-      >
+      <aside className="flex h-full w-12 shrink-0 flex-col items-center border-border border-r bg-card">
         {/* Profile icons */}
         <div className="flex flex-1 flex-col items-center gap-0.5 overflow-y-auto py-2">
           {profiles.map((p) => {
             const isActive = p.id === activeProfile?.id;
+            const ProviderIcon = providerIcon(p.provider);
             return (
               <div key={p.id} className="relative">
                 {isActive && (
                   <div className="absolute top-1 -left-0.5 h-4 w-1 rounded-r-full bg-primary" />
                 )}
-                <button
-                  type="button"
-                  className={`btn btn-ghost btn-sm btn-square transition-all ${
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className={`transition-all ${
                     isActive
                       ? "bg-primary/10 text-primary"
-                      : "text-base-content/60 hover:text-base-content"
+                      : "text-foreground/60 hover:text-foreground"
                   }`}
                   title={p.name}
                   onClick={() => switchProfile(p)}
                 >
-                  <i className={providerIconCollapsed(p.provider)} />
-                </button>
+                  <ProviderIcon className="size-4" />
+                </Button>
               </div>
             );
           })}
 
           {/* Add profile */}
-          <button
-            type="button"
-            className="btn btn-ghost btn-square btn-sm mt-1 border border-base-content/20 border-dashed text-base-content/30 hover:border-primary/40 hover:text-primary/60"
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="mt-1 border border-foreground/20 border-dashed text-foreground/30 hover:border-primary/40 hover:text-primary/60"
             title="Add Profile"
             onClick={() => setAddingProfile(true)}
           >
-            <i className="fa-solid fa-plus text-[11px]" />
-          </button>
+            <IconPlus className="size-[11px]" />
+          </Button>
         </div>
 
         {/* Active bucket indicator */}
-        <AnimatePresence>
-          {selectedBucket && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={transitions.fast}
-              className="mb-1 w-9 truncate text-center text-[10px] text-base-content/40"
-              title={selectedBucket}
-            >
-              <i className="fa-solid fa-bucket fa-xs" />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {selectedBucket && (
+          <div
+            className="mb-1 w-9 truncate text-center text-[10px] text-foreground/40"
+            title={selectedBucket}
+          >
+            <IconBucket className="size-3 inline" />
+          </div>
+        )}
 
         {/* Bottom actions */}
-        <div className="flex flex-col items-center gap-1 border-base-300 border-t py-2">
-          <button
-            type="button"
-            className="btn btn-ghost btn-sm btn-square text-base-content/40 hover:text-error"
+        <div className="flex flex-col items-center gap-1 border-border border-t py-2">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="text-foreground/40 hover:text-destructive"
             title="Lock Vault"
             onClick={lock}
           >
-            <i className="fa-solid fa-lock text-sm" />
-          </button>
+            <IconLock className="size-4" />
+          </Button>
         </div>
 
         {/* Modals (shared) */}
@@ -146,154 +156,132 @@ export function Sidebar({ collapsed, width = 256 }: SidebarProps) {
         >
           <ProfileForm onDone={() => setAddingProfile(false)} />
         </Modal>
-      </motion.aside>
+      </aside>
     );
   }
 
   /* ── Expanded sidebar ── */
   return (
-    <motion.aside
-      layout
-      transition={transitions.spring}
-      className="flex h-full shrink-0 flex-col border-base-300 border-r bg-base-200"
+    <aside
+      className="flex h-full shrink-0 flex-col border-border border-r bg-card"
       style={{ width }}
     >
       {/* Header: profile */}
-      <div className="flex items-center gap-2 border-base-300 border-b px-3 py-2">
+      <div className="flex items-center gap-2 border-border border-b px-3 py-2">
         <div className="min-w-0 flex-1">
-          <AnimatePresence mode="wait">
-            {activeProfile ? (
-              <motion.div
-                key={activeProfile.id}
-                variants={fadeVariants}
-                initial="initial"
-                animate="animate"
-                exit="exit"
-                transition={transitions.fast}
-                className="flex items-center gap-2.5"
-              >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <i
-                    className={providerIconCollapsed(activeProfile.provider)}
-                  />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate font-medium text-sm leading-tight">
-                    {activeProfile.name}
+          {activeProfile ? (
+            <div className="flex items-center gap-2.5">
+              {(() => {
+                const ProviderIcon = providerIcon(activeProfile.provider);
+                return (
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <ProviderIcon className="size-4" />
                   </div>
-                  <div className="truncate text-[11px] text-base-content/40">
-                    {PROVIDER_LABELS[activeProfile.provider]}
-                    {selectedBucket && (
-                      <>
-                        <span className="mx-1">·</span>
-                        <i className="fa-solid fa-bucket mr-0.5 text-[10px]" />
-                        {selectedBucket}
-                      </>
-                    )}
-                  </div>
+                );
+              })()}
+              <div className="min-w-0 flex-1">
+                <div className="truncate font-medium text-sm leading-tight">
+                  {activeProfile.name}
                 </div>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="no-profile"
-                variants={fadeVariants}
-                initial="initial"
-                animate="animate"
-                exit="exit"
-                transition={transitions.fast}
-                className="flex items-center gap-2.5 text-base-content/40"
-              >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-base-content/20 border-dashed">
-                  <i className="fa-solid fa-user text-xs" />
+                <div className="truncate text-[11px] text-foreground/40">
+                  {PROVIDER_LABELS[activeProfile.provider]}
+                  {selectedBucket && (
+                    <>
+                      <span className="mx-1">·</span>
+                      <IconBucket className="mr-0.5 inline size-[10px]" />
+                      {selectedBucket}
+                    </>
+                  )}
                 </div>
-                <span className="text-xs">Select a profile</span>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2.5 text-foreground/40">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-foreground/20 border-dashed">
+                <IconUser className="size-3" />
+              </div>
+              <span className="text-xs">Select a profile</span>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Scrollable content area with favorites + profiles + buckets */}
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
         {/* Favorites section (cross-profile pinned buckets) */}
-        <AnimatePresence>
-          {favoriteEntries.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={transitions.fast}
-            >
-              <SectionHeader
-                icon="fa-solid fa-star"
-                label="Favorites"
-                count={favoriteEntries.length}
-              />
-              <ul className="menu menu-sm w-full px-1">
-                {favoriteEntries.map((fav) => {
-                  const profile = profiles.find((p) => p.id === fav.profileId);
-                  const isActive =
-                    activeProfile?.id === fav.profileId &&
-                    selectedBucket === fav.bucket;
-                  return (
-                    <li key={`${fav.profileId}:${fav.bucket}`}>
-                      <div
-                        className={`group/fav flex w-full items-center gap-1 text-sm ${
-                          isActive ? "active" : ""
-                        }`}
+        {favoriteEntries.length > 0 && (
+          <div>
+            <SectionHeader
+              icon={<IconStar className="size-[11px]" />}
+              label="Favorites"
+              count={favoriteEntries.length}
+            />
+            <ul className="w-full px-1">
+              {favoriteEntries.map((fav) => {
+                const profile = profiles.find((p) => p.id === fav.profileId);
+                const isActive =
+                  activeProfile?.id === fav.profileId &&
+                  selectedBucket === fav.bucket;
+                return (
+                  <li key={`${fav.profileId}:${fav.bucket}`}>
+                    <div
+                      className={`group/fav flex w-full items-center gap-1 rounded-md px-1 py-0.5 text-sm ${
+                        isActive ? "bg-muted" : ""
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        className="flex flex-1 items-center gap-2 overflow-hidden rounded-sm px-1 py-1 hover:bg-muted"
+                        onClick={() =>
+                          selectFavoriteBucket(fav.profileId, fav.bucket)
+                        }
                       >
-                        <button
-                          type="button"
-                          className="flex flex-1 items-center gap-2 overflow-hidden"
-                          onClick={() =>
-                            selectFavoriteBucket(fav.profileId, fav.bucket)
-                          }
-                        >
-                          <i className="fa-solid fa-bucket shrink-0" />
-                          <div className="min-w-0 flex-1 text-left">
-                            <span className="block truncate">{fav.bucket}</span>
-                            {profile && (
-                              <span className="block truncate text-[11px] text-base-content/40">
-                                {profile.name}
-                              </span>
-                            )}
-                          </div>
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-ghost btn-sm shrink-0 text-warning"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleFavorite(fav.profileId, fav.bucket);
-                          }}
-                          title="Unpin bucket"
-                        >
-                          <i className="fa-solid fa-star fa-xs" />
-                        </button>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                        <IconBucket className="size-3 shrink-0" />
+                        <div className="min-w-0 flex-1 text-left">
+                          <span className="block truncate">{fav.bucket}</span>
+                          {profile && (
+                            <span className="block truncate text-[11px] text-foreground/40">
+                              {profile.name}
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        className="shrink-0 text-warning"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleFavorite(fav.profileId, fav.bucket);
+                        }}
+                        title="Unpin bucket"
+                      >
+                        <IconStar className="size-3" />
+                      </Button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
 
         {/* Profiles section */}
         <div>
           <SectionHeader
-            icon="fa-solid fa-user-group"
+            icon={<IconUserGroup className="size-[11px]" />}
             label="Profiles"
             count={profiles.length}
             action={
-              <button
-                type="button"
-                className="btn btn-ghost btn-sm text-base-content/40 hover:text-primary"
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="text-foreground/40 hover:text-primary"
                 onClick={() => setAddingProfile(true)}
                 title="Add Profile"
               >
-                <i className="fa-solid fa-plus text-[11px]" />
-              </button>
+                <IconPlus className="size-[11px]" />
+              </Button>
             }
           />
           <ProfileList
@@ -306,67 +294,61 @@ export function Sidebar({ collapsed, width = 256 }: SidebarProps) {
         </div>
 
         {/* Buckets section (when profile selected) */}
-        <AnimatePresence>
-          {activeProfile && (
-            <motion.div
-              className="mt-auto"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 8 }}
-              transition={transitions.fast}
-            >
-              <SectionHeader
-                icon="fa-solid fa-bucket"
-                label="Buckets"
-                count={buckets.length}
-                action={
-                  <button
-                    type="button"
-                    className="btn btn-ghost btn-sm text-base-content/40 hover:text-primary"
-                    onClick={refreshBuckets}
-                    title="Refresh Buckets"
-                  >
-                    <i className="fa-solid fa-arrows-rotate text-[11px]" />
-                  </button>
-                }
-              />
-              <BucketList
-                buckets={buckets}
-                loading={bucketsLoading}
-                selectedBucket={selectedBucket}
-                profileId={activeProfile?.id ?? null}
-                onSelect={selectBucket}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {activeProfile && (
+          <div className="mt-auto">
+            <SectionHeader
+              icon={<IconBucket className="size-[11px]" />}
+              label="Buckets"
+              count={buckets.length}
+              action={
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className="text-foreground/40 hover:text-primary"
+                  onClick={refreshBuckets}
+                  title="Refresh Buckets"
+                >
+                  <IconArrowsRotate className="size-[11px]" />
+                </Button>
+              }
+            />
+            <BucketList
+              buckets={buckets}
+              loading={bucketsLoading}
+              selectedBucket={selectedBucket}
+              profileId={activeProfile?.id ?? null}
+              onSelect={selectBucket}
+            />
+          </div>
+        )}
 
         {/* Empty state when no profiles */}
         {profiles.length === 0 && (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
-              <i className="fa-solid fa-cloud-arrow-up text-lg text-primary" />
+              <IconCloudArrowUp className="size-5 text-primary" />
             </div>
             <div className="text-center">
               <p className="font-medium text-sm">No profiles yet</p>
-              <p className="mt-0.5 text-base-content/50 text-xs">
+              <p className="mt-0.5 text-foreground/50 text-xs">
                 Add an S3-compatible profile to get started
               </p>
             </div>
-            <button
-              type="button"
-              className="btn btn-primary btn-sm btn-outline mt-1"
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-1"
               onClick={() => setAddingProfile(true)}
             >
-              <i className="fa-solid fa-plus" /> Add Profile
-            </button>
+              <IconPlus className="size-3" /> Add Profile
+            </Button>
           </div>
         )}
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between border-base-300 border-t px-3 py-2">
-        <div className="text-[11px] text-base-content/35">
+      <div className="flex items-center justify-between border-border border-t px-3 py-2">
+        <div className="text-[11px] text-foreground/35">
           {profiles.length} profile{profiles.length !== 1 ? "s" : ""}
           {buckets.length > 0 && (
             <>
@@ -376,15 +358,16 @@ export function Sidebar({ collapsed, width = 256 }: SidebarProps) {
           )}
         </div>
         <div className="flex items-center gap-1">
-          <button
-            type="button"
-            className="btn btn-ghost btn-sm text-base-content/40 hover:text-error"
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-foreground/40 hover:text-destructive"
             onClick={lock}
             title="Lock Vault"
           >
-            <i className="fa-solid fa-lock text-sm" />
+            <IconLock className="size-4" />
             <span className="text-[11px]">Lock</span>
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -421,7 +404,7 @@ export function Sidebar({ collapsed, width = 256 }: SidebarProps) {
         onConfirm={handleDeleteProfile}
         onClose={() => setDeletingProfile(null)}
       />
-    </motion.aside>
+    </aside>
   );
 }
 
@@ -432,20 +415,20 @@ function SectionHeader({
   count,
   action,
 }: {
-  icon: string;
+  icon: React.ReactNode;
   label: string;
   count: number;
   action?: React.ReactNode;
 }) {
   return (
-    <div className="sticky top-0 z-10 flex items-center justify-between border-base-300 border-b bg-base-200 px-3 py-2">
-      <div className="flex items-center gap-1.5 text-base-content/50">
-        <i className={`${icon} text-[11px]`} />
+    <div className="sticky top-0 z-10 flex items-center justify-between border-border border-b bg-card px-3 py-2">
+      <div className="flex items-center gap-1.5 text-foreground/50">
+        {icon}
         <span className="font-semibold text-[11px] uppercase tracking-wider">
           {label}
         </span>
         {count > 0 && (
-          <span className="rounded-full bg-base-300 px-1.5 py-px text-[10px] text-base-content/40 tabular-nums">
+          <span className="rounded-full bg-muted px-1.5 py-px text-[10px] text-foreground/40 tabular-nums">
             {count}
           </span>
         )}
@@ -455,15 +438,18 @@ function SectionHeader({
   );
 }
 
-function providerIconCollapsed(provider: string): string {
-  const map: Record<string, string> = {
-    aws: "fa-brands fa-aws text-warning",
-    r2: "fa-solid fa-cloud text-accent",
-    spaces: "fa-brands fa-digital-ocean text-info",
-    minio: "fa-solid fa-server text-error",
-    gcs: "fa-brands fa-google text-success",
-    backblaze: "fa-solid fa-fire text-base-content",
-    custom: "fa-solid fa-gear text-base-content/60",
+/* ── Provider icon map ── */
+type LucideIconComponent = React.ComponentType<{ className?: string }>;
+
+function providerIcon(provider: string): LucideIconComponent {
+  const map: Record<string, LucideIconComponent> = {
+    aws: IconAws,
+    r2: IconCloud,
+    spaces: IconDigitalOcean,
+    minio: IconServer,
+    gcs: IconGoogle,
+    backblaze: IconFire,
+    custom: IconGear,
   };
-  return map[provider] ?? "fa-solid fa-cloud";
+  return map[provider] ?? IconCloud;
 }
