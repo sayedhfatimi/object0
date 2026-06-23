@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -18,6 +17,7 @@ import { CONCURRENCY_OPTIONS, PAGE_SIZES } from "@/lib/constants";
 import { IconGear, IconSpinner, IconTrashCan, IconXmark } from "@/lib/icons";
 import { rpcCall } from "@/lib/rpc-client";
 import { useShareHistoryStore, useThemeStore, useUIStore } from "@/stores";
+import { useKeychainStatus } from "./useKeychainStatus";
 
 export function SettingsPanel() {
   const settingsOpen = useUIStore((s) => s.settingsOpen);
@@ -35,94 +35,17 @@ export function SettingsPanel() {
   const jobConcurrency = useUIStore((s) => s.jobConcurrency);
   const setJobConcurrency = useUIStore((s) => s.setJobConcurrency);
   const clearShareHistory = useShareHistoryStore((s) => s.clearAll);
-  const [hasStoredPassphrase, setHasStoredPassphrase] = useState<
-    boolean | null
-  >(null);
-  const [keychainAvailable, setKeychainAvailable] = useState<boolean | null>(
-    null,
-  );
-  const [keychainBusy, setKeychainBusy] = useState(false);
-  const [keychainMessage, setKeychainMessage] = useState<string | null>(null);
-  const [keychainError, setKeychainError] = useState<string | null>(null);
-  const keychainStatusText =
-    keychainAvailable === false
-      ? "OS keychain unavailable"
-      : hasStoredPassphrase === null
-        ? "Checking OS keychain..."
-        : hasStoredPassphrase
-          ? "Saved in OS keychain"
-          : "Not saved in OS keychain";
-  const keychainBadge = keychainBusy
-    ? { label: "Working" }
-    : keychainAvailable === false
-      ? { label: "Unavailable" }
-      : hasStoredPassphrase === null
-        ? { label: "Checking" }
-        : hasStoredPassphrase
-          ? { label: "Stored" }
-          : { label: "Not Stored" };
-
-  const keychainBadgeClass = keychainBusy
-    ? "bg-info/15 text-info"
-    : keychainAvailable === false
-      ? "bg-destructive/15 text-destructive"
-      : hasStoredPassphrase === null
-        ? "bg-muted text-foreground/55"
-        : hasStoredPassphrase
-          ? "bg-success/15 text-success"
-          : "bg-muted text-foreground/55";
-
-  useEffect(() => {
-    let mounted = true;
-    const loadKeychainStatus = async () => {
-      try {
-        const result = await rpcCall("vault:keychain-status", undefined);
-        if (mounted) {
-          setHasStoredPassphrase(result.hasStoredPassphrase);
-          setKeychainAvailable(result.available ?? true);
-          setKeychainError(result.error || null);
-        }
-      } catch {
-        if (mounted) {
-          setHasStoredPassphrase(false);
-          setKeychainAvailable(false);
-          setKeychainError("Unable to read OS keychain status");
-        }
-      }
-    };
-
-    loadKeychainStatus();
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  const handleForgetStoredPassphrase = async () => {
-    try {
-      setKeychainBusy(true);
-      setKeychainError(null);
-      setKeychainMessage(null);
-      const result = await rpcCall("vault:keychain-clear", undefined);
-      const status = await rpcCall("vault:keychain-status", undefined);
-      setHasStoredPassphrase(status.hasStoredPassphrase);
-      setKeychainAvailable(status.available ?? true);
-      setKeychainError(status.error || null);
-
-      if (result.success) {
-        setKeychainMessage(
-          result.hadStoredPassphrase
-            ? "Stored passphrase removed from OS keychain"
-            : "No stored passphrase found in OS keychain",
-        );
-      } else {
-        setKeychainError("Failed to clear OS keychain entry");
-      }
-    } catch {
-      setKeychainError("Failed to clear OS keychain entry");
-    } finally {
-      setKeychainBusy(false);
-    }
-  };
+  const {
+    hasStoredPassphrase,
+    keychainAvailable,
+    keychainBusy,
+    keychainMessage,
+    keychainError,
+    keychainStatusText,
+    keychainBadge,
+    keychainBadgeClass,
+    forgetStoredPassphrase,
+  } = useKeychainStatus();
 
   return (
     <Sheet
@@ -364,7 +287,7 @@ export function SettingsPanel() {
                         hasStoredPassphrase === null ||
                         !hasStoredPassphrase
                       }
-                      onClick={handleForgetStoredPassphrase}
+                      onClick={forgetStoredPassphrase}
                     >
                       {keychainBusy ? (
                         <IconSpinner className="size-3.5 animate-spin" />
