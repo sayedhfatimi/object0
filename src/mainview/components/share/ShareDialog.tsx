@@ -1,6 +1,5 @@
 import type { ShareRes } from "@shared/s3.types";
 import type { ExpirationUnit } from "@shared/share.types";
-import { QRCodeSVG } from "qrcode.react";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,19 +17,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  IconChevronDown,
-  IconCircleInfo,
-  IconClock,
-  IconCopy,
-  IconFile,
-  IconLink,
-  IconQrcode,
-  IconSpinner,
-} from "@/lib/icons";
+import { IconCircleInfo, IconFile, IconLink, IconSpinner } from "@/lib/icons";
 import { rpcCall } from "@/lib/rpc-client";
 import { useShareHistoryStore, useUIStore } from "@/stores";
 import { toast } from "../common/Toast";
+import { ShareResult } from "./ShareResult";
 
 interface ExpirationPreset {
   label: string;
@@ -271,74 +262,13 @@ export function ShareDialog() {
               </p>
             </>
           ) : (
-            <>
-              {/* Generated URL */}
-              <div className="space-y-2">
-                <span className="font-semibold text-foreground/70 text-xs">
-                  Shareable Link
-                </span>
-                <div className="flex gap-2">
-                  <Input
-                    type="text"
-                    readOnly
-                    value={shareResult.url}
-                    className="h-7 flex-1 font-mono text-xs"
-                    onClick={(e) => (e.target as HTMLInputElement).select()}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon-sm"
-                    onClick={handleCopy}
-                    title="Copy to clipboard"
-                  >
-                    <IconCopy className="size-3.5" />
-                  </Button>
-                </div>
-              </div>
-
-              {/* Expiration info */}
-              <div className="flex items-center gap-2 text-foreground/70 text-sm">
-                <IconClock className="size-4" />
-                <span>
-                  Expires in {formatExpiration(shareResult.expiresAt)}
-                </span>
-              </div>
-
-              {/* QR Code toggle */}
-              <div className="space-y-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => setShowQR(!showQR)}
-                >
-                  {showQR ? (
-                    <>
-                      <IconChevronDown className="size-3.5 mr-1" />
-                      Hide QR Code
-                    </>
-                  ) : (
-                    <>
-                      <IconQrcode className="size-3.5 mr-1" />
-                      Show QR Code
-                    </>
-                  )}
-                </Button>
-
-                {showQR && (
-                  <div className="flex justify-center rounded bg-white p-4">
-                    <QRCodeSVG
-                      value={shareResult.url}
-                      size={200}
-                      level="M"
-                      includeMargin
-                    />
-                  </div>
-                )}
-              </div>
-            </>
+            <ShareResult
+              url={shareResult.url}
+              expiresLabel={formatExpiration(shareResult.expiresAt)}
+              showQR={showQR}
+              onCopy={handleCopy}
+              onToggleQR={() => setShowQR(!showQR)}
+            />
           )}
         </div>
 
