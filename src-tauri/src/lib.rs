@@ -72,6 +72,14 @@ const TRAY_MENU_QUIT: &str = "tray-quit";
 const MULTIPART_THRESHOLD_BYTES: i64 = 5 * 1024 * 1024;
 const MULTIPART_PART_SIZE_BYTES: usize = 8 * 1024 * 1024;
 const JOB_HISTORY_MAX: usize = 100;
+const JOB_ORDER_MAX: usize = 200;
+const S3_LIST_MAX_KEYS: i32 = 1000;
+const FOLDER_SYNC_MIN_POLL_MS: i64 = 250;
+const FOLDER_SYNC_MAX_POLL_MS: i64 = 86_400_000;
+const MIN_JOB_CONCURRENCY: u8 = 1;
+const MAX_JOB_CONCURRENCY: u8 = 10;
+const MIN_SHARE_TTL_SECS: i64 = 1;
+const MAX_SHARE_TTL_SECS: i64 = 604_800;
 const UPDATE_CHECK_INITIAL_DELAY_SECS: u64 = 5;
 const UPDATE_CHECK_INTERVAL_SECS: u64 = 30 * 60;
 const DEFAULT_UPDATER_ENDPOINT: &str =
@@ -2211,7 +2219,7 @@ async fn s3_list_all_objects(
         let mut request = client
             .list_objects_v2()
             .bucket(bucket.to_string())
-            .max_keys(1000)
+            .max_keys(S3_LIST_MAX_KEYS)
             .prefix(prefix.to_string());
 
         if let Some(token) = continuation_token.as_deref() {
@@ -3080,8 +3088,8 @@ fn enqueue_job(
         jobs.jobs.insert(job_id.clone(), info.clone());
         jobs.order.retain(|id| id != &job_id);
         jobs.order.insert(0, job_id.clone());
-        if jobs.order.len() > 200 {
-            for removed in jobs.order.split_off(200) {
+        if jobs.order.len() > JOB_ORDER_MAX {
+            for removed in jobs.order.split_off(JOB_ORDER_MAX) {
                 if !jobs.running.contains(&removed) {
                     jobs.jobs.remove(&removed);
                 }
@@ -3375,7 +3383,8 @@ fn mark_folder_sync_last_change(app: &AppHandle, rule_id: &str, files_watching: 
 }
 
 async fn wait_for_folder_sync_wake(control: &FolderSyncTaskControl, poll_interval_ms: i64) {
-    let wait_ms = poll_interval_ms.clamp(250, 86_400_000) as u64;
+    let wait_ms =
+        poll_interval_ms.clamp(FOLDER_SYNC_MIN_POLL_MS, FOLDER_SYNC_MAX_POLL_MS) as u64;
     let (tx, rx) = oneshot::channel::<()>();
     if let Ok(mut slot) = control.wake_tx.lock() {
         *slot = Some(tx);
@@ -5340,7 +5349,8 @@ async fn rpc_request(
             let input: JobConcurrencyInput = parse_payload(payload)?;
             {
                 let mut jobs_runtime = lock(&state.jobs)?;
-                jobs_runtime.concurrency = input.concurrency.clamp(1, 10);
+                jobs_runtime.concurrency =
+                    input.concurrency.clamp(MIN_JOB_CONCURRENCY, MAX_JOB_CONCURRENCY);
             }
             try_start_queued_jobs(app.clone());
             let jobs_runtime = lock(&state.jobs)?;
@@ -5356,7 +5366,7 @@ async fn rpc_request(
 
         RpcMethod::ShareGenerate => {
             let input: ShareGenerateInput = parse_payload(payload)?;
-            let ttl = input.expires_in.clamp(1, 604_800);
+            let ttl = input.expires_in.clamp(MIN_SHARE_TTL_SECS, MAX_SHARE_TTL_SECS);
             let expires_at = (Utc::now() + Duration::seconds(ttl)).to_rfc3339();
             let profile = profile_for_id(&state, &input.profile_id)?;
             let client = to_s3_client(&profile)?;
