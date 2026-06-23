@@ -1436,6 +1436,13 @@ fn profile_for_id(state: &AppState, profile_id: &str) -> Result<Profile, String>
         .ok_or_else(|| format!("Profile not found: {profile_id}"))
 }
 
+// Convenience for the common "look up the profile, then build its S3 client" pair.
+// Use the two-step form directly when the profile itself is needed afterwards.
+fn s3_client_for_profile(state: &AppState, profile_id: &str) -> Result<S3Client, String> {
+    let profile = profile_for_id(state, profile_id)?;
+    to_s3_client(&profile)
+}
+
 fn expand_user_path(path: &str) -> PathBuf {
     if let Some(stripped) = path.strip_prefix("~/") {
         if let Ok(home) = std::env::var("HOME") {
@@ -4713,8 +4720,7 @@ async fn rpc_request(
 
         RpcMethod::ObjectsList => {
             let input: ObjectsListInput = parse_payload(payload)?;
-            let profile = profile_for_id(&state, &input.profile_id)?;
-            let client = to_s3_client(&profile)?;
+            let client = s3_client_for_profile(&state, &input.profile_id)?;
 
             let mut request = client
                 .list_objects_v2()
@@ -4771,8 +4777,7 @@ async fn rpc_request(
                 return Ok(Value::Null);
             }
 
-            let profile = profile_for_id(&state, &input.profile_id)?;
-            let client = to_s3_client(&profile)?;
+            let client = s3_client_for_profile(&state, &input.profile_id)?;
 
             if input.keys.len() == 1 {
                 client
@@ -4811,8 +4816,7 @@ async fn rpc_request(
         }
         RpcMethod::ObjectsRename => {
             let input: ObjectsRenameInput = parse_payload(payload)?;
-            let profile = profile_for_id(&state, &input.profile_id)?;
-            let client = to_s3_client(&profile)?;
+            let client = s3_client_for_profile(&state, &input.profile_id)?;
 
             let source_key = utf8_percent_encode(&input.old_key, COPY_SOURCE_ENCODE_SET);
             let copy_source = format!("{}/{}", input.bucket, source_key);
@@ -4838,8 +4842,7 @@ async fn rpc_request(
         }
         RpcMethod::ObjectsStat => {
             let input: ObjectsStatInput = parse_payload(payload)?;
-            let profile = profile_for_id(&state, &input.profile_id)?;
-            let client = to_s3_client(&profile)?;
+            let client = s3_client_for_profile(&state, &input.profile_id)?;
 
             let output = client
                 .head_object()
@@ -5009,8 +5012,7 @@ async fn rpc_request(
         }
         RpcMethod::TransferDownloadFolder => {
             let input: DownloadFolderInput = parse_payload(payload)?;
-            let profile = profile_for_id(&state, &input.profile_id)?;
-            let client = to_s3_client(&profile)?;
+            let client = s3_client_for_profile(&state, &input.profile_id)?;
             let Some(destination) = FileDialog::new().pick_folder() else {
                 return Err("No destination folder selected".to_string());
             };
@@ -5208,8 +5210,7 @@ async fn rpc_request(
         }
         RpcMethod::TransferDownloadArchive => {
             let input: DownloadArchiveInput = parse_payload(payload)?;
-            let profile = profile_for_id(&state, &input.profile_id)?;
-            let client = to_s3_client(&profile)?;
+            let client = s3_client_for_profile(&state, &input.profile_id)?;
 
             let mut resolved_keys = input.keys.clone();
             let prefix = input.prefix.unwrap_or_default();
@@ -5428,8 +5429,7 @@ async fn rpc_request(
             let input: ShareGenerateInput = parse_payload(payload)?;
             let ttl = input.expires_in.clamp(MIN_SHARE_TTL_SECS, MAX_SHARE_TTL_SECS);
             let expires_at = (Utc::now() + Duration::seconds(ttl)).to_rfc3339();
-            let profile = profile_for_id(&state, &input.profile_id)?;
-            let client = to_s3_client(&profile)?;
+            let client = s3_client_for_profile(&state, &input.profile_id)?;
 
             let config = PresigningConfig::expires_in(StdDuration::from_secs(ttl as u64))
                 .map_err(|err| format!("Invalid presign ttl: {err}"))?;
