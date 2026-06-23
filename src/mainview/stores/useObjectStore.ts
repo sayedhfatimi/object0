@@ -1,4 +1,10 @@
-import type { ObjectFilters, S3Object, S3Prefix } from "@shared/s3.types";
+import type {
+  ObjectFilters,
+  S3Object,
+  S3Prefix,
+  SortDirection,
+  SortField,
+} from "@shared/s3.types";
 import { create } from "zustand";
 import { DEFAULT_PAGE_SIZE } from "../lib/constants";
 import { rpcCall } from "../lib/rpc-client";
@@ -20,8 +26,8 @@ interface ObjectState {
   pageHistory: string[]; // stack of startAfter cursors
 
   // Sorting
-  sortField: "key" | "size" | "lastModified";
-  sortDir: "asc" | "desc";
+  sortField: SortField;
+  sortDir: SortDirection;
 
   // Filters
   filters: ObjectFilters;
@@ -39,7 +45,7 @@ interface ObjectState {
   ) => Promise<void>;
   navigateToPrefix: (prefix: string) => void;
   navigateBack: () => void;
-  setSort: (field: "key" | "size" | "lastModified") => void;
+  setSort: (field: SortField) => void;
   setFilters: (filters: Partial<ObjectFilters>) => void;
   toggleSelect: (key: string) => void;
   selectAll: () => void;

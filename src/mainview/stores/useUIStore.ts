@@ -1,7 +1,13 @@
+import type {
+  FolderSyncListDensity,
+  Platform,
+  SyncEntryPreference,
+} from "@shared/ui.types";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import type { ViewMode } from "../lib/constants";
 
+// Dialog-local UI targets — scoped to this store, not shared with the backend.
 interface ShareTarget {
   key: string;
   bucket: string;
@@ -13,9 +19,11 @@ interface TransferTarget {
   defaultMode?: "copy" | "move";
 }
 
-export type SyncEntryPreference = "object-sync" | "live-folder-sync";
-export type FolderSyncListDensity = "comfortable" | "compact";
-export type Platform = "macos" | "windows" | "linux";
+export type {
+  FolderSyncListDensity,
+  Platform,
+  SyncEntryPreference,
+} from "@shared/ui.types";
 
 interface UIState {
   sidebarCollapsed: boolean;

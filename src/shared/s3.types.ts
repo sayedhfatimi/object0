@@ -7,6 +7,10 @@ export interface S3Object {
   storageClass?: string;
 }
 
+// ── Object listing sort ──
+export type SortField = "key" | "size" | "lastModified";
+export type SortDirection = "asc" | "desc";
+
 // ── Common prefix (folder) ──
 export interface S3Prefix {
   prefix: string;

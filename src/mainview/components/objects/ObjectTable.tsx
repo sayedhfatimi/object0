@@ -1,4 +1,9 @@
-import type { S3Object, S3Prefix } from "@shared/s3.types";
+import type {
+  S3Object,
+  S3Prefix,
+  SortDirection,
+  SortField,
+} from "@shared/s3.types";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -26,11 +31,11 @@ interface ObjectTableProps {
   objects: S3Object[];
   prefixes: S3Prefix[];
   selectedKeys: Set<string>;
-  sortField: "key" | "size" | "lastModified";
-  sortDir: "asc" | "desc";
+  sortField: SortField;
+  sortDir: SortDirection;
   loading: boolean;
   onNavigate: (prefix: string) => void;
-  onSort: (field: "key" | "size" | "lastModified") => void;
+  onSort: (field: SortField) => void;
   onToggleSelect: (key: string) => void;
   onSelectAll: () => void;
   onClearSelection: () => void;

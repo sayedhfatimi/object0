@@ -1,4 +1,5 @@
 import type { ShareRes } from "@shared/s3.types";
+import type { ExpirationUnit } from "@shared/share.types";
 import { QRCodeSVG } from "qrcode.react";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -31,8 +32,6 @@ import { rpcCall } from "../../lib/rpc-client";
 import { useShareHistoryStore } from "../../stores/useShareHistoryStore";
 import { useUIStore } from "../../stores/useUIStore";
 import { toast } from "../common/Toast";
-
-type ExpirationUnit = "minutes" | "hours" | "days";
 
 interface ExpirationPreset {
   label: string;
