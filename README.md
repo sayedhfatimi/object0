@@ -9,14 +9,16 @@
 Manage objects across AWS S3, Cloudflare R2, DigitalOcean Spaces, MinIO, Backblaze B2, Google Cloud Storage, and any S3-compatible provider from a single, fast, cross-platform desktop app.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.2.0-green.svg)](https://github.com/sayedhfatimi/object0/releases)
+[![Version](https://img.shields.io/badge/version-1.3.1-green.svg)](https://github.com/sayedhfatimi/object0/releases)
 [![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey.svg)](#installation)
 
-Built with [Tauri](https://tauri.app) · [Rust](https://www.rust-lang.org) · [Bun](https://bun.sh) · [React](https://react.dev) · [Tailwind CSS](https://tailwindcss.com) · [daisyUI](https://daisyui.com) · [Zustand](https://zustand.docs.pmnd.rs)
+Built with [Tauri](https://tauri.app) · [Rust](https://www.rust-lang.org) · [Bun](https://bun.sh) · [React](https://react.dev) · [Tailwind CSS](https://tailwindcss.com) · [shadcn/ui](https://ui.shadcn.com) · [Zustand](https://zustand.docs.pmnd.rs)
 
 </div>
 
 ---
+
+> **📖 Just want to use the app?** Read the **[User Guide](docs/USER_GUIDE.md)** — a complete, screenshot-free walkthrough of connecting providers, browsing, transferring, syncing, sharing, and shortcuts. The rest of this README is aimed at developers and contributors.
 
 ## Highlights
 
@@ -167,7 +169,7 @@ bun run build:app
 │  │              │     │                  │   │
 │  │ • Vault      │     │ • Zustand stores │   │
 │  │ • S3 ops     │     │ • UI components  │   │
-│  │ • Job queue  │     │ • Tailwind/Daisy │   │
+│  │ • Job queue  │     │ • Tailwind/shadcn│   │
 │  │ • Sync logic │     │                  │   │
 │  └──────────────┘     └──────────────────┘   │
 └──────────────────────────────────────────────┘
