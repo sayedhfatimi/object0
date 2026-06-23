@@ -81,8 +81,9 @@ export function MainLayout() {
         {/* Shadcn Sidebar primitive — collapse wired to useUIStore */}
         <Sidebar />
 
-        {/* Main content area */}
-        <SidebarInset className="flex flex-col overflow-hidden">
+        {/* Main content area — slightly translucent so the ambient particle
+            background shows faintly through the file/folder view. */}
+        <SidebarInset className="flex flex-col overflow-hidden bg-background/85">
           <TopBar />
           {hasTabs && <TabBar />}
           <div className="flex flex-1 overflow-hidden">
