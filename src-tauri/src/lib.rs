@@ -130,12 +130,68 @@ enum VaultFileDisk {
     V3(VaultFileV3),
 }
 
+// ── Closed-set domain enums (serde-renamed to preserve the existing wire format
+// shared with the frontend; see src/shared/*.types.ts) ──
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+enum S3Provider {
+    Aws,
+    R2,
+    Spaces,
+    Minio,
+    Gcs,
+    Backblaze,
+    Custom,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+enum SyncDirection {
+    Bidirectional,
+    LocalToRemote,
+    RemoteToLocal,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+enum ConflictResolution {
+    NewerWins,
+    LocalWins,
+    RemoteWins,
+    KeepBoth,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "lowercase")]
+enum FolderSyncStatus {
+    Idle,
+    Syncing,
+    Watching,
+    Error,
+    Paused,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+enum SyncMode {
+    Mirror,
+    Additive,
+    Overwrite,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+enum TransferMode {
+    Copy,
+    Move,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct Profile {
     id: String,
     name: String,
-    provider: String,
+    provider: S3Provider,
     access_key_id: String,
     secret_access_key: String,
     session_token: Option<String>,
@@ -156,7 +212,7 @@ struct VaultData {
 struct ProfileInfo {
     id: String,
     name: String,
-    provider: String,
+    provider: S3Provider,
     endpoint: Option<String>,
     region: Option<String>,
     default_bucket: Option<String>,
@@ -313,9 +369,9 @@ struct FolderSyncRuleRecord {
     bucket: String,
     bucket_prefix: String,
     local_path: String,
-    direction: String,
+    direction: SyncDirection,
     enabled: bool,
-    conflict_resolution: String,
+    conflict_resolution: ConflictResolution,
     poll_interval_ms: i64,
     exclude_patterns: Vec<String>,
     last_sync_at: Option<String>,
@@ -340,7 +396,7 @@ struct FolderSyncFileRecord {
 #[serde(rename_all = "camelCase")]
 struct FolderSyncStateRecord {
     rule_id: String,
-    status: String,
+    status: FolderSyncStatus,
     files_watching: i64,
     last_change: Option<String>,
     current_file: Option<String>,
@@ -360,7 +416,7 @@ struct FolderSyncProgress {
 #[serde(rename_all = "camelCase")]
 struct FolderSyncStatusEventPayload {
     rule_id: String,
-    status: String,
+    status: FolderSyncStatus,
     files_watching: i64,
     last_change: Option<String>,
     current_file: Option<String>,
@@ -549,7 +605,7 @@ struct ChangePassphraseInput {
 #[serde(rename_all = "camelCase")]
 struct ProfileInput {
     name: String,
-    provider: String,
+    provider: S3Provider,
     access_key_id: String,
     secret_access_key: String,
     session_token: Option<String>,
@@ -563,7 +619,7 @@ struct ProfileInput {
 struct ProfileUpdateInput {
     id: String,
     name: String,
-    provider: String,
+    provider: S3Provider,
     access_key_id: Option<String>,
     secret_access_key: Option<String>,
     session_token: Option<Option<String>>,
@@ -575,7 +631,7 @@ struct ProfileUpdateInput {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct ProfileTestInput {
-    provider: String,
+    provider: S3Provider,
     endpoint: Option<String>,
     region: String,
     access_key_id: String,
@@ -700,7 +756,7 @@ struct CrossBucketInput {
     dest_profile_id: String,
     dest_bucket: String,
     dest_prefix: String,
-    mode: String,
+    mode: TransferMode,
 }
 
 #[derive(Debug, Deserialize)]
@@ -722,7 +778,7 @@ struct SyncInput {
     dest_profile_id: String,
     dest_bucket: String,
     dest_prefix: String,
-    mode: String,
+    mode: SyncMode,
 }
 
 #[derive(Debug, Deserialize)]
@@ -1352,7 +1408,7 @@ fn to_s3_client(profile: &Profile) -> Result<S3Client, String> {
         config_builder = config_builder.endpoint_url(endpoint.to_string());
     }
 
-    if matches!(profile.provider.as_str(), "minio" | "custom") {
+    if matches!(profile.provider, S3Provider::Minio | S3Provider::Custom) {
         config_builder = config_builder.force_path_style(true);
     }
 
@@ -1525,18 +1581,18 @@ fn parse_iso_millis(value: &str) -> Option<i64> {
 fn resolve_folder_sync_conflict(
     local: &LocalFileInfo,
     remote: &RemoteFileInfo,
-    conflict_resolution: &str,
+    conflict_resolution: ConflictResolution,
 ) -> (String, String) {
     match conflict_resolution {
-        "local-wins" => (
+        ConflictResolution::LocalWins => (
             "upload".to_string(),
             "Conflict resolved: local wins".to_string(),
         ),
-        "remote-wins" => (
+        ConflictResolution::RemoteWins => (
             "download".to_string(),
             "Conflict resolved: remote wins".to_string(),
         ),
-        "newer-wins" => match parse_iso_millis(&remote.last_modified) {
+        ConflictResolution::NewerWins => match parse_iso_millis(&remote.last_modified) {
             Some(remote_ms) if local.mtime_ms >= remote_ms => (
                 "upload".to_string(),
                 "Conflict resolved: local is newer".to_string(),
@@ -1559,8 +1615,8 @@ fn resolve_folder_sync_action(
     local: Option<&LocalFileInfo>,
     remote: Option<&RemoteFileInfo>,
     known: Option<&FolderSyncFileRecord>,
-    direction: &str,
-    conflict_resolution: &str,
+    direction: SyncDirection,
+    conflict_resolution: ConflictResolution,
 ) -> Option<(String, String)> {
     match (local, remote) {
         (Some(local), Some(remote)) => {
@@ -1575,14 +1631,14 @@ fn resolve_folder_sync_action(
                 }
 
                 if local_changed && !remote_changed {
-                    if direction == "remote-to-local" {
+                    if direction == SyncDirection::RemoteToLocal {
                         return None;
                     }
                     return Some(("upload".to_string(), "Local file changed".to_string()));
                 }
 
                 if !local_changed && remote_changed {
-                    if direction == "local-to-remote" {
+                    if direction == SyncDirection::LocalToRemote {
                         return None;
                     }
                     return Some(("download".to_string(), "Remote file changed".to_string()));
@@ -1605,7 +1661,7 @@ fn resolve_folder_sync_action(
         }
         (Some(_local), None) => {
             if known.is_some() {
-                if direction == "local-to-remote" {
+                if direction == SyncDirection::LocalToRemote {
                     Some((
                         "upload".to_string(),
                         "Re-upload (remote deleted)".to_string(),
@@ -1613,7 +1669,7 @@ fn resolve_folder_sync_action(
                 } else {
                     Some(("delete-local".to_string(), "Remote deleted".to_string()))
                 }
-            } else if direction == "remote-to-local" {
+            } else if direction == SyncDirection::RemoteToLocal {
                 None
             } else {
                 Some(("upload".to_string(), "New local file".to_string()))
@@ -1621,7 +1677,7 @@ fn resolve_folder_sync_action(
         }
         (None, Some(_remote)) => {
             if known.is_some() {
-                if direction == "remote-to-local" {
+                if direction == SyncDirection::RemoteToLocal {
                     Some((
                         "download".to_string(),
                         "Re-download (local deleted)".to_string(),
@@ -1629,7 +1685,7 @@ fn resolve_folder_sync_action(
                 } else {
                     Some(("delete-remote".to_string(), "Local deleted".to_string()))
                 }
-            } else if direction == "local-to-remote" {
+            } else if direction == SyncDirection::LocalToRemote {
                 None
             } else {
                 Some(("download".to_string(), "New remote file".to_string()))
@@ -1717,8 +1773,8 @@ async fn generate_folder_sync_diff_for_rule(
             local,
             remote,
             known,
-            &rule.direction,
-            &rule.conflict_resolution,
+            rule.direction,
+            rule.conflict_resolution,
         ) else {
             diff.unchanged += 1;
             continue;
@@ -1750,7 +1806,7 @@ async fn generate_folder_sync_diff_for_rule(
 fn folder_sync_status_payload(status: &FolderSyncStateRecord) -> FolderSyncStatusEventPayload {
     FolderSyncStatusEventPayload {
         rule_id: status.rule_id.clone(),
-        status: status.status.clone(),
+        status: status.status,
         files_watching: status.files_watching,
         last_change: status.last_change.clone(),
         current_file: status.current_file.clone(),
@@ -1792,7 +1848,7 @@ fn emit_folder_sync_conflict_event(
 fn set_and_emit_folder_sync_status(
     app: &AppHandle,
     rule_id: &str,
-    status: &str,
+    status: FolderSyncStatus,
     files_watching: i64,
     last_change: Option<String>,
     current_file: Option<String>,
@@ -1800,7 +1856,7 @@ fn set_and_emit_folder_sync_status(
 ) -> Result<(), String> {
     let record = FolderSyncStateRecord {
         rule_id: rule_id.to_string(),
-        status: status.to_string(),
+        status,
         files_watching: files_watching.max(0),
         last_change,
         current_file,
@@ -1810,9 +1866,9 @@ fn set_and_emit_folder_sync_status(
     let status_changed = {
         let state = app.state::<AppState>();
         let mut runtime = lock_state(&state.folder_sync)?;
-        let prev = runtime.statuses.get(rule_id).map(|r| r.status.clone());
+        let prev = runtime.statuses.get(rule_id).map(|r| r.status);
         runtime.statuses.insert(rule_id.to_string(), record.clone());
-        prev.as_deref() != Some(status)
+        prev != Some(status)
     };
 
     emit_folder_sync_status_event(app, &record);
@@ -3226,7 +3282,7 @@ async fn generate_sync_diff(state: &AppState, input: &SyncInput) -> Result<SyncD
         }
     }
 
-    if input.mode == "mirror" {
+    if input.mode == SyncMode::Mirror {
         let mut dest_only: Vec<String> = dest_map
             .keys()
             .filter(|key| !source_map.contains_key(*key))
@@ -3251,7 +3307,7 @@ async fn generate_sync_diff(state: &AppState, input: &SyncInput) -> Result<SyncD
         }
     }
 
-    if input.mode == "overwrite" {
+    if input.mode == SyncMode::Overwrite {
         return Ok(SyncDiffRecord {
             to_add: Vec::new(),
             to_update,
@@ -3366,7 +3422,7 @@ fn mark_folder_sync_last_change(app: &AppHandle, rule_id: &str, files_watching: 
                     .entry(rule_id.to_string())
                     .or_insert(FolderSyncStateRecord {
                         rule_id: rule_id.to_string(),
-                        status: "watching".to_string(),
+                        status: FolderSyncStatus::Watching,
                         files_watching: files_watching.max(0),
                         last_change: None,
                         current_file: None,
@@ -3417,7 +3473,7 @@ async fn run_folder_sync_once(
         + diff.downloads.len()
         + diff.delete_local.len()
         + diff.delete_remote.len();
-    let files_watching = if rule.direction == "remote-to-local" {
+    let files_watching = if rule.direction == SyncDirection::RemoteToLocal {
         0
     } else {
         1
@@ -3453,7 +3509,7 @@ async fn run_folder_sync_once(
         set_and_emit_folder_sync_status(
             app,
             &rule.id,
-            "syncing",
+            FolderSyncStatus::Syncing,
             files_watching,
             Some(now_iso()),
             current_file,
@@ -3766,8 +3822,8 @@ fn start_folder_sync_rule(app: &AppHandle, rule_id: &str) -> Result<(), String> 
     let _ = set_and_emit_folder_sync_status(
         app,
         &rule.id,
-        "idle",
-        if rule.direction == "remote-to-local" {
+        FolderSyncStatus::Idle,
+        if rule.direction == SyncDirection::RemoteToLocal {
             0
         } else {
             1
@@ -3777,7 +3833,7 @@ fn start_folder_sync_rule(app: &AppHandle, rule_id: &str) -> Result<(), String> 
         None,
     );
 
-    if rule.direction != "remote-to-local" {
+    if rule.direction != SyncDirection::RemoteToLocal {
         let local_watch_path = expand_user_path(&rule.local_path);
         if let Err(err) = fs::create_dir_all(&local_watch_path) {
             emit_folder_sync_error_event(
@@ -3864,7 +3920,7 @@ fn start_folder_sync_rule(app: &AppHandle, rule_id: &str) -> Result<(), String> 
                 break;
             }
 
-            let files_watching = if rule.direction == "remote-to-local" {
+            let files_watching = if rule.direction == SyncDirection::RemoteToLocal {
                 0
             } else {
                 1
@@ -3873,7 +3929,7 @@ fn start_folder_sync_rule(app: &AppHandle, rule_id: &str) -> Result<(), String> 
                 let _ = set_and_emit_folder_sync_status(
                     &app_handle,
                     &rule_id,
-                    "paused",
+                    FolderSyncStatus::Paused,
                     files_watching,
                     Some(now_iso()),
                     None,
@@ -3886,9 +3942,9 @@ fn start_folder_sync_rule(app: &AppHandle, rule_id: &str) -> Result<(), String> 
             match run_folder_sync_once(&app_handle, &rule, &control).await {
                 Ok(()) => {
                     let status = if control.pause_flag.load(Ordering::SeqCst) {
-                        "paused"
+                        FolderSyncStatus::Paused
                     } else {
-                        "watching"
+                        FolderSyncStatus::Watching
                     };
                     let _ = set_and_emit_folder_sync_status(
                         &app_handle,
@@ -3907,7 +3963,7 @@ fn start_folder_sync_rule(app: &AppHandle, rule_id: &str) -> Result<(), String> 
                     let _ = set_and_emit_folder_sync_status(
                         &app_handle,
                         &rule_id,
-                        "error",
+                        FolderSyncStatus::Error,
                         files_watching,
                         Some(now_iso()),
                         None,
@@ -3933,7 +3989,7 @@ fn start_folder_sync_rule(app: &AppHandle, rule_id: &str) -> Result<(), String> 
             let _ = set_and_emit_folder_sync_status(
                 &app_handle,
                 &rule_id,
-                "idle",
+                FolderSyncStatus::Idle,
                 0,
                 Some(now_iso()),
                 None,
@@ -3977,7 +4033,7 @@ fn stop_all_folder_sync_rules(app: &AppHandle) {
 
     for rule_id in task_ids {
         stop_folder_sync_rule(app, &rule_id);
-        let _ = set_and_emit_folder_sync_status(app, &rule_id, "idle", 0, Some(now_iso()), None, None);
+        let _ = set_and_emit_folder_sync_status(app, &rule_id, FolderSyncStatus::Idle, 0, Some(now_iso()), None, None);
     }
 }
 
@@ -4046,10 +4102,10 @@ fn folder_sync_has_active_tasks(app: &AppHandle) -> bool {
 
 fn folder_sync_status_counts(app: &AppHandle) -> (usize, usize, usize, usize) {
     let statuses = folder_sync_statuses_snapshot(app);
-    let syncing = statuses.iter().filter(|s| s.status == "syncing").count();
-    let watching = statuses.iter().filter(|s| s.status == "watching").count();
-    let paused = statuses.iter().filter(|s| s.status == "paused").count();
-    let errors = statuses.iter().filter(|s| s.status == "error").count();
+    let syncing = statuses.iter().filter(|s| s.status == FolderSyncStatus::Syncing).count();
+    let watching = statuses.iter().filter(|s| s.status == FolderSyncStatus::Watching).count();
+    let paused = statuses.iter().filter(|s| s.status == FolderSyncStatus::Paused).count();
+    let errors = statuses.iter().filter(|s| s.status == FolderSyncStatus::Error).count();
     (syncing, watching, paused, errors)
 }
 
@@ -5092,7 +5148,7 @@ async fn rpc_request(
                 }
             }
 
-            let is_move = input.mode == "move";
+            let is_move = input.mode == TransferMode::Move;
             let mut job_ids = Vec::new();
             for source_key in unique_keys {
                 let relative_path = if source_key.starts_with(&input.source_prefix) {
@@ -5510,7 +5566,7 @@ async fn rpc_request(
                     let _ = set_and_emit_folder_sync_status(
                         &app,
                         &input.id,
-                        "idle",
+                        FolderSyncStatus::Idle,
                         0,
                         Some(now_iso()),
                         None,
@@ -5801,5 +5857,94 @@ mod tests {
         write_atomic(&path, b"[1,2,3]").unwrap();
         assert_eq!(fs::read_to_string(&path).unwrap(), "[1,2,3]");
         let _ = fs::remove_dir_all(&dir);
+    }
+
+    // Lock the exact wire strings for the domain enums. These must stay byte-identical
+    // to the frontend unions in src/shared/*.types.ts and to any persisted vault/sync
+    // JSON; a rename here would silently break deserialization of existing data.
+    fn assert_wire<T>(value: T, expected: &str)
+    where
+        T: Serialize + serde::de::DeserializeOwned + PartialEq + std::fmt::Debug,
+    {
+        let json = serde_json::to_string(&value).unwrap();
+        assert_eq!(json, format!("\"{expected}\""));
+        let back: T = serde_json::from_str(&json).unwrap();
+        assert_eq!(back, value);
+    }
+
+    #[test]
+    fn s3_provider_wire_format_is_stable() {
+        assert_wire(S3Provider::Aws, "aws");
+        assert_wire(S3Provider::R2, "r2");
+        assert_wire(S3Provider::Spaces, "spaces");
+        assert_wire(S3Provider::Minio, "minio");
+        assert_wire(S3Provider::Gcs, "gcs");
+        assert_wire(S3Provider::Backblaze, "backblaze");
+        assert_wire(S3Provider::Custom, "custom");
+    }
+
+    #[test]
+    fn sync_direction_wire_format_is_stable() {
+        assert_wire(SyncDirection::Bidirectional, "bidirectional");
+        assert_wire(SyncDirection::LocalToRemote, "local-to-remote");
+        assert_wire(SyncDirection::RemoteToLocal, "remote-to-local");
+    }
+
+    #[test]
+    fn conflict_resolution_wire_format_is_stable() {
+        assert_wire(ConflictResolution::NewerWins, "newer-wins");
+        assert_wire(ConflictResolution::LocalWins, "local-wins");
+        assert_wire(ConflictResolution::RemoteWins, "remote-wins");
+        assert_wire(ConflictResolution::KeepBoth, "keep-both");
+    }
+
+    #[test]
+    fn folder_sync_status_serializes_to_stable_strings() {
+        // Serialize-only enum (emitted to the frontend, never deserialized).
+        assert_eq!(
+            serde_json::to_string(&FolderSyncStatus::Idle).unwrap(),
+            "\"idle\""
+        );
+        assert_eq!(
+            serde_json::to_string(&FolderSyncStatus::Syncing).unwrap(),
+            "\"syncing\""
+        );
+        assert_eq!(
+            serde_json::to_string(&FolderSyncStatus::Watching).unwrap(),
+            "\"watching\""
+        );
+        assert_eq!(
+            serde_json::to_string(&FolderSyncStatus::Error).unwrap(),
+            "\"error\""
+        );
+        assert_eq!(
+            serde_json::to_string(&FolderSyncStatus::Paused).unwrap(),
+            "\"paused\""
+        );
+    }
+
+    #[test]
+    fn sync_and_transfer_mode_deserialize_from_stable_strings() {
+        // Deserialize-only enums (transient RPC inputs from the frontend).
+        assert_eq!(
+            serde_json::from_str::<SyncMode>("\"mirror\"").unwrap(),
+            SyncMode::Mirror
+        );
+        assert_eq!(
+            serde_json::from_str::<SyncMode>("\"additive\"").unwrap(),
+            SyncMode::Additive
+        );
+        assert_eq!(
+            serde_json::from_str::<SyncMode>("\"overwrite\"").unwrap(),
+            SyncMode::Overwrite
+        );
+        assert_eq!(
+            serde_json::from_str::<TransferMode>("\"copy\"").unwrap(),
+            TransferMode::Copy
+        );
+        assert_eq!(
+            serde_json::from_str::<TransferMode>("\"move\"").unwrap(),
+            TransferMode::Move
+        );
     }
 }
