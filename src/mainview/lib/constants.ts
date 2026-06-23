@@ -1,4 +1,4 @@
-import type { Provider } from "../../shared/profile.types";
+import type { Provider } from "@shared/profile.types";
 
 export const PAGE_SIZES = [25, 50, 100, 250] as const;
 export const DEFAULT_PAGE_SIZE = 100;

@@ -1,4 +1,5 @@
 import { Progress as ProgressPrimitive } from "@base-ui/react/progress";
+import type { JobInfo } from "@shared/job.types";
 import { memo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,7 +23,6 @@ import {
   IconXmark,
 } from "@/lib/icons";
 import { cn } from "@/lib/utils";
-import type { JobInfo } from "../../../shared/job.types";
 import {
   formatBytes,
   formatDate,

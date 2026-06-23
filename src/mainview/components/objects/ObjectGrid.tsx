@@ -1,3 +1,4 @@
+import type { S3Object, S3Prefix } from "@shared/s3.types";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,7 +10,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { IconArrowUpRightFromSquare } from "@/lib/icons";
-import type { S3Object, S3Prefix } from "../../../shared/s3.types";
 import { formatBytes, getFileName } from "../../lib/formatters";
 import { rpcCall } from "../../lib/rpc-client";
 import { useBucketStore } from "../../stores/useBucketStore";

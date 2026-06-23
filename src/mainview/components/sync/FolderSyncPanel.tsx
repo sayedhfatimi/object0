@@ -1,3 +1,7 @@
+import type {
+  FolderSyncRule,
+  FolderSyncRuleStatus,
+} from "@shared/folder-sync.types";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,10 +39,6 @@ import {
   IconTriangleExclamation,
   IconXmark,
 } from "@/lib/icons";
-import type {
-  FolderSyncRule,
-  FolderSyncRuleStatus,
-} from "../../../shared/folder-sync.types";
 import { formatBytes } from "../../lib/formatters";
 import { useFolderSyncStore } from "../../stores/useFolderSyncStore";
 import { useUIStore } from "../../stores/useUIStore";

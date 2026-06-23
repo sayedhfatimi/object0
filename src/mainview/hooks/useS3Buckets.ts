@@ -1,5 +1,5 @@
+import type { ProfileInfo } from "@shared/profile.types";
 import { useCallback } from "react";
-import type { ProfileInfo } from "../../shared/profile.types";
 import { useBucketStore } from "../stores/useBucketStore";
 import { useObjectStore } from "../stores/useObjectStore";
 import { useProfileStore } from "../stores/useProfileStore";

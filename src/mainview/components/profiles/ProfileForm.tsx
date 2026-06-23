@@ -1,3 +1,5 @@
+import type { ProfileInfo, ProfileInput } from "@shared/profile.types";
+import { PROVIDER_ENDPOINTS, PROVIDER_REGIONS } from "@shared/profile.types";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,11 +20,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { IconSpinner } from "@/lib/icons";
-import type { ProfileInfo, ProfileInput } from "../../../shared/profile.types";
-import {
-  PROVIDER_ENDPOINTS,
-  PROVIDER_REGIONS,
-} from "../../../shared/profile.types";
 import { PROVIDERS } from "../../lib/constants";
 import { rpcCall } from "../../lib/rpc-client";
 import { useVaultStore } from "../../stores/useVaultStore";

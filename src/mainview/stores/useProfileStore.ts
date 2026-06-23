@@ -1,6 +1,6 @@
+import type { ProfileInfo } from "@shared/profile.types";
+import type { BucketInfo } from "@shared/s3.types";
 import { create } from "zustand";
-import type { ProfileInfo } from "../../shared/profile.types";
-import type { BucketInfo } from "../../shared/s3.types";
 import { rpcCall } from "../lib/rpc-client";
 
 interface ProfileState {

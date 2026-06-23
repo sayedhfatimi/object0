@@ -1,3 +1,4 @@
+import type { SyncDiff, SyncMode } from "@shared/s3.types";
 import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,7 +19,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { IconSpinner, IconTriangleExclamation } from "@/lib/icons";
-import type { SyncDiff, SyncMode } from "../../../shared/s3.types";
 import { rpcCall } from "../../lib/rpc-client";
 import { useBucketStore } from "../../stores/useBucketStore";
 import { useObjectStore } from "../../stores/useObjectStore";

@@ -1,3 +1,4 @@
+import type { S3Object, S3Prefix } from "@shared/s3.types";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -8,7 +9,6 @@ import {
   TableHead,
   TableHeader,
 } from "@/components/ui/table";
-import type { S3Object, S3Prefix } from "../../../shared/s3.types";
 import {
   formatBytes,
   formatRelativeDate,

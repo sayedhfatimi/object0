@@ -1,5 +1,5 @@
+import type { ObjectFilters, S3Object, S3Prefix } from "@shared/s3.types";
 import { create } from "zustand";
-import type { ObjectFilters, S3Object, S3Prefix } from "../../shared/s3.types";
 import { DEFAULT_PAGE_SIZE } from "../lib/constants";
 import { rpcCall } from "../lib/rpc-client";
 import { useUIStore } from "./useUIStore";

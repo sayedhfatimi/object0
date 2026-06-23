@@ -1,6 +1,6 @@
+import type { ShareHistoryEntry } from "@shared/s3.types";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import type { ShareHistoryEntry } from "../../shared/s3.types";
 import { useUIStore } from "./useUIStore";
 
 interface ShareHistoryState {

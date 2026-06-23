@@ -1,3 +1,4 @@
+import type { ShareRes } from "@shared/s3.types";
 import { QRCodeSVG } from "qrcode.react";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -26,7 +27,6 @@ import {
   IconQrcode,
   IconSpinner,
 } from "@/lib/icons";
-import type { ShareRes } from "../../../shared/s3.types";
 import { rpcCall } from "../../lib/rpc-client";
 import { useShareHistoryStore } from "../../stores/useShareHistoryStore";
 import { useUIStore } from "../../stores/useUIStore";

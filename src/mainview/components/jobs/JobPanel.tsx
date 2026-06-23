@@ -1,3 +1,4 @@
+import type { JobInfo } from "@shared/job.types";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useEffect, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,6 @@ import {
   IconPlay,
   IconXmark,
 } from "@/lib/icons";
-import type { JobInfo } from "../../../shared/job.types";
 import { formatBytes, formatSpeed } from "../../lib/formatters";
 import { useJobStore } from "../../stores/useJobStore";
 import { useUIStore } from "../../stores/useUIStore";

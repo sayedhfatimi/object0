@@ -1,9 +1,9 @@
-import { create } from "zustand";
 import type {
   JobCompleteEvent,
   JobInfo,
   ProgressEvent,
-} from "../../shared/job.types";
+} from "@shared/job.types";
+import { create } from "zustand";
 import { rpcCall } from "../lib/rpc-client";
 
 interface JobState {

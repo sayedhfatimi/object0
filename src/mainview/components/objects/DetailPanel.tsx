@@ -1,3 +1,4 @@
+import type { S3StatResult } from "@shared/s3.types";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,7 +14,6 @@ import {
   IconImage,
   IconXmark,
 } from "@/lib/icons";
-import type { S3StatResult } from "../../../shared/s3.types";
 import {
   formatBytes,
   formatDate,

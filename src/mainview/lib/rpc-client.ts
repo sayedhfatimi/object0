@@ -1,6 +1,6 @@
+import type { RPCEvents, RPCSchema } from "@shared/rpc-schema";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-import type { RPCEvents, RPCSchema } from "../../shared/rpc-schema";
 
 type EventHandler<E extends keyof RPCEvents> = (data: RPCEvents[E]) => void;
 

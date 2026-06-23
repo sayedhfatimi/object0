@@ -1,3 +1,4 @@
+import type { TransferMode } from "@shared/s3.types";
 import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,7 +26,6 @@ import {
   IconSpinner,
   IconTriangleExclamation,
 } from "@/lib/icons";
-import type { TransferMode } from "../../../shared/s3.types";
 import { rpcCall } from "../../lib/rpc-client";
 import { useBucketStore } from "../../stores/useBucketStore";
 import { useObjectStore } from "../../stores/useObjectStore";

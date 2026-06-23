@@ -1,4 +1,6 @@
 import { ContextMenu as ContextMenuPrimitive } from "@base-ui/react/context-menu";
+import type { ProfileInfo } from "@shared/profile.types";
+import { PROVIDER_LABELS } from "@shared/profile.types";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -16,8 +18,6 @@ import {
   IconServer,
   IconTrashCan,
 } from "@/lib/icons";
-import type { ProfileInfo } from "../../../shared/profile.types";
-import { PROVIDER_LABELS } from "../../../shared/profile.types";
 
 interface ProfileListProps {
   profiles: ProfileInfo[];

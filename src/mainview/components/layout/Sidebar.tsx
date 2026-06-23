@@ -1,6 +1,6 @@
+import type { ProfileInfo } from "@shared/profile.types";
+import { PROVIDER_LABELS } from "@shared/profile.types";
 import { useMemo, useState } from "react";
-import type { ProfileInfo } from "../../../shared/profile.types";
-import { PROVIDER_LABELS } from "../../../shared/profile.types";
 import { useS3Buckets } from "../../hooks/useS3Buckets";
 import {
   IconArrowsRotate,

@@ -13,6 +13,7 @@ export default defineConfig(async () => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src/mainview"),
+      "@shared": path.resolve(__dirname, "./src/shared"),
     },
   },
   plugins: [react(), tailwindcss()],
