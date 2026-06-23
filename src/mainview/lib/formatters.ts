@@ -42,17 +42,6 @@ export function formatDuration(startIso: string, endIso?: string): string {
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
-// ── Format time only (HH:MM:SS) ──
-export function formatTime(isoDate: string): string {
-  if (!isoDate) return "—";
-  const d = new Date(isoDate);
-  return d.toLocaleTimeString(undefined, {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
-}
-
 // ── Relative date display ──
 export function formatRelativeDate(isoDate: string): string {
   const date = new Date(isoDate);
@@ -98,11 +87,4 @@ export function getExtension(key: string): string {
 export function getFileName(key: string): string {
   const parts = key.split("/");
   return parts[parts.length - 1] || key;
-}
-
-// ── Get folder name from prefix ──
-export function getFolderName(prefix: string): string {
-  const clean = prefix.endsWith("/") ? prefix.slice(0, -1) : prefix;
-  const parts = clean.split("/");
-  return parts[parts.length - 1] || prefix;
 }

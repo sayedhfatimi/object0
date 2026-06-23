@@ -271,8 +271,6 @@ enum JobTaskKind {
 #[derive(Clone, Debug)]
 struct JobTask {
     id: String,
-    #[allow(dead_code)]
-    created_at: String,
     kind: JobTaskKind,
 }
 
@@ -3054,7 +3052,6 @@ fn enqueue_job(
     kind: JobTaskKind,
 ) -> Result<String, String> {
     let job_id = Uuid::new_v4().to_string();
-    let created_at = now_iso();
     let info = JobInfo {
         id: job_id.clone(),
         job_type,
@@ -3067,14 +3064,13 @@ fn enqueue_job(
         speed: 0,
         eta: 0,
         error: None,
-        created_at: created_at.clone(),
+        created_at: now_iso(),
         started_at: None,
         completed_at: None,
     };
 
     let task = JobTask {
         id: job_id.clone(),
-        created_at,
         kind,
     };
 
