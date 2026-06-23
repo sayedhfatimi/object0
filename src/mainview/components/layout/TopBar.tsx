@@ -19,6 +19,7 @@ import { ObjectToolbar } from "../objects/ObjectToolbar";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { KeyboardShortcutsDialog } from "./KeyboardShortcutsDialog";
 
 const JobPanel = lazy(() =>
   import("../jobs/JobPanel").then((m) => ({ default: m.JobPanel })),
@@ -147,6 +148,8 @@ export function TopBar() {
             </Badge>
           )}
         </div>
+
+        <KeyboardShortcutsDialog />
 
         <Button
           variant="ghost"

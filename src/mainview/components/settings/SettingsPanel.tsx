@@ -1,9 +1,4 @@
 import { useEffect, useState } from "react";
-import { CONCURRENCY_OPTIONS, PAGE_SIZES } from "../../lib/constants";
-import { rpcCall } from "../../lib/rpc-client";
-import { useShareHistoryStore } from "../../stores/useShareHistoryStore";
-import { useThemeStore } from "../../stores/useThemeStore";
-import { useUIStore } from "../../stores/useUIStore";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -20,6 +15,11 @@ import {
 } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
 import { IconGear, IconSpinner, IconTrashCan, IconXmark } from "@/lib/icons";
+import { CONCURRENCY_OPTIONS, PAGE_SIZES } from "../../lib/constants";
+import { rpcCall } from "../../lib/rpc-client";
+import { useShareHistoryStore } from "../../stores/useShareHistoryStore";
+import { useThemeStore } from "../../stores/useThemeStore";
+import { useUIStore } from "../../stores/useUIStore";
 
 export function SettingsPanel() {
   const settingsOpen = useUIStore((s) => s.settingsOpen);
@@ -395,41 +395,9 @@ export function SettingsPanel() {
                 </div>
               </div>
             </section>
-
-            {/* Keyboard Shortcuts */}
-            <section>
-              <h4 className="mb-3 font-semibold text-foreground/50 text-xs uppercase tracking-wider">
-                Keyboard Shortcuts
-              </h4>
-              <div className="flex flex-col gap-1.5 text-sm">
-                <ShortcutRow combo="Ctrl+K" label="Command Palette" />
-                <ShortcutRow combo="Ctrl+B" label="Toggle Sidebar" />
-                <ShortcutRow combo="Ctrl+J" label="Toggle Job Panel" />
-                <ShortcutRow combo="Ctrl+\" label="Toggle Theme" />
-                <ShortcutRow combo="Ctrl+," label="Open Settings" />
-                <ShortcutRow combo="↑ / ↓" label="Navigate rows" />
-                <ShortcutRow combo="Space" label="Toggle selection" />
-                <ShortcutRow combo="Enter" label="Open folder" />
-                <ShortcutRow combo="F2" label="Rename file" />
-                <ShortcutRow combo="Ctrl+A" label="Select all" />
-                <ShortcutRow combo="Esc" label="Clear selection" />
-                <ShortcutRow combo="Backspace" label="Go back" />
-              </div>
-            </section>
           </div>
         </div>
       </SheetContent>
     </Sheet>
-  );
-}
-
-function ShortcutRow({ combo, label }: { combo: string; label: string }) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className="text-foreground/60">{label}</span>
-      <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px] text-foreground/70">
-        {combo}
-      </kbd>
-    </div>
   );
 }
