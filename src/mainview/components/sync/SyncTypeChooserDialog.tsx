@@ -1,6 +1,4 @@
 import { useEffect, useState } from "react";
-import type { SyncEntryPreference } from "../../stores/useUIStore";
-import { useUIStore } from "../../stores/useUIStore";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -11,6 +9,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { IconFolderOpen, IconRotate } from "@/lib/icons";
+import type { SyncEntryPreference } from "../../stores/useUIStore";
+import { useUIStore } from "../../stores/useUIStore";
 
 function optionCopy(preference: SyncEntryPreference) {
   if (preference === "object-sync") {

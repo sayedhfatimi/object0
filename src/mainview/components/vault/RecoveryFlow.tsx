@@ -1,24 +1,24 @@
 import type React from "react";
 import { useState } from "react";
-import { useVaultStore } from "../../stores/useVaultStore";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  IconArrowLeft,
   IconKey,
+  IconSpinner,
   IconTrashCan,
   IconTriangleExclamation,
-  IconArrowLeft,
-  IconSpinner,
 } from "@/lib/icons";
+import { useVaultStore } from "../../stores/useVaultStore";
 
 type RecoveryTab = "recovery-key" | "reset";
 

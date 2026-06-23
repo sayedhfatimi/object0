@@ -1,3 +1,4 @@
+import type { LucideIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Command,
@@ -9,10 +10,6 @@ import {
   CommandList,
   CommandShortcut,
 } from "@/components/ui/command";
-import {
-  dispatchObjectToolbarEvent,
-  OBJECT_TOOLBAR_EVENTS,
-} from "../../lib/object-toolbar-events";
 import {
   IconArrowRightArrowLeft,
   IconArrowsRotate,
@@ -36,7 +33,10 @@ import {
   IconTableList,
   IconTrashCan,
 } from "@/lib/icons";
-import type { LucideIcon } from "lucide-react";
+import {
+  dispatchObjectToolbarEvent,
+  OBJECT_TOOLBAR_EVENTS,
+} from "../../lib/object-toolbar-events";
 import { useBucketStore } from "../../stores/useBucketStore";
 import { useObjectStore } from "../../stores/useObjectStore";
 import { useProfileStore } from "../../stores/useProfileStore";

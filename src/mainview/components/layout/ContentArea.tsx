@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { IconBoxOpen, IconCloud } from "../../lib/icons";
 import { useBucketStore } from "../../stores/useBucketStore";
 import { useObjectStore } from "../../stores/useObjectStore";
 import { useProfileStore } from "../../stores/useProfileStore";
@@ -7,7 +8,6 @@ import { useVaultStore } from "../../stores/useVaultStore";
 import { EmptyState } from "../common/EmptyState";
 import { DropZone } from "../objects/DropZone";
 import { ObjectBrowser } from "../objects/ObjectBrowser";
-import { IconBoxOpen, IconCloud } from "../../lib/icons";
 
 export function ContentArea() {
   const activeProfile = useProfileStore((s) => s.activeProfile);

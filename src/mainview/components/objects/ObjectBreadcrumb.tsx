@@ -1,17 +1,17 @@
 import { useState } from "react";
-import { useObjectStore } from "../../stores/useObjectStore";
-import { useProfileStore } from "../../stores/useProfileStore";
 import {
   Breadcrumb,
-  BreadcrumbList,
+  BreadcrumbEllipsis,
   BreadcrumbItem,
   BreadcrumbLink,
+  BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-  BreadcrumbEllipsis,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import { IconCloud, IconBucket, IconCheck, IconCopy } from "@/lib/icons";
+import { IconBucket, IconCheck, IconCloud, IconCopy } from "@/lib/icons";
+import { useObjectStore } from "../../stores/useObjectStore";
+import { useProfileStore } from "../../stores/useProfileStore";
 
 interface ObjectBreadcrumbProps {
   profileName: string;

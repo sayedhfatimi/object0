@@ -1,17 +1,6 @@
-import { memo, useState } from "react";
-import type { JobInfo } from "../../../shared/job.types";
-import {
-  formatBytes,
-  formatDate,
-  formatDuration,
-  formatETA,
-  formatRelativeDate,
-  formatSpeed,
-} from "../../lib/formatters";
-import { useJobStore } from "../../stores/useJobStore";
-import { Button } from "@/components/ui/button";
 import { Progress as ProgressPrimitive } from "@base-ui/react/progress";
-import { cn } from "@/lib/utils";
+import { memo, useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   IconArrowsRotate,
   IconBan,
@@ -32,6 +21,17 @@ import {
   IconTriangleExclamation,
   IconXmark,
 } from "@/lib/icons";
+import { cn } from "@/lib/utils";
+import type { JobInfo } from "../../../shared/job.types";
+import {
+  formatBytes,
+  formatDate,
+  formatDuration,
+  formatETA,
+  formatRelativeDate,
+  formatSpeed,
+} from "../../lib/formatters";
+import { useJobStore } from "../../stores/useJobStore";
 
 interface JobItemProps {
   job: JobInfo;

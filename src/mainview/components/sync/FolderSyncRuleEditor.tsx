@@ -1,14 +1,4 @@
 import { useCallback, useEffect, useState } from "react";
-import type {
-  ConflictResolution,
-  FolderSyncRule,
-  FolderSyncRuleInput,
-  SyncDirection,
-} from "../../../shared/folder-sync.types";
-import { rpcCall } from "../../lib/rpc-client";
-import { useFolderSyncStore } from "../../stores/useFolderSyncStore";
-import { useVaultStore } from "../../stores/useVaultStore";
-import { toast } from "../common/Toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +11,16 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { IconFolderOpen, IconSpinner } from "@/lib/icons";
+import type {
+  ConflictResolution,
+  FolderSyncRule,
+  FolderSyncRuleInput,
+  SyncDirection,
+} from "../../../shared/folder-sync.types";
+import { rpcCall } from "../../lib/rpc-client";
+import { useFolderSyncStore } from "../../stores/useFolderSyncStore";
+import { useVaultStore } from "../../stores/useVaultStore";
+import { toast } from "../common/Toast";
 
 interface FolderSyncRuleEditorProps {
   editRule?: FolderSyncRule;

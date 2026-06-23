@@ -1,27 +1,27 @@
-import type { ReactNode } from "react";
 import { ContextMenu as ContextMenuPrimitive } from "@base-ui/react/context-menu";
-import { rpcCall } from "../../lib/rpc-client";
-import { useBucketStore } from "../../stores/useBucketStore";
-import { useObjectStore } from "../../stores/useObjectStore";
-import { useProfileStore } from "../../stores/useProfileStore";
-import { useUIStore } from "../../stores/useUIStore";
+import type { ReactNode } from "react";
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuSeparator,
 } from "@/components/ui/context-menu";
-import { toast } from "../common/Toast";
 import {
-  IconCircleInfo,
-  IconCloudArrowDown,
-  IconShareNodes,
-  IconPen,
-  IconCopy,
   IconArrowRightArrowLeft,
+  IconCircleInfo,
   IconClipboard,
+  IconCloudArrowDown,
+  IconCopy,
+  IconPen,
+  IconShareNodes,
   IconTrashCan,
 } from "@/lib/icons";
+import { rpcCall } from "../../lib/rpc-client";
+import { useBucketStore } from "../../stores/useBucketStore";
+import { useObjectStore } from "../../stores/useObjectStore";
+import { useProfileStore } from "../../stores/useProfileStore";
+import { useUIStore } from "../../stores/useUIStore";
+import { toast } from "../common/Toast";
 
 interface ObjectContextMenuProps {
   /** The object key or folder prefix for this item */

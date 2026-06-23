@@ -1,7 +1,7 @@
+import { IconBucket, IconXmark } from "../../lib/icons";
 import { useTabStore } from "../../stores/useTabStore";
 import { Button } from "../ui/button";
 import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
-import { IconBucket, IconXmark } from "../../lib/icons";
 
 export function TabBar() {
   const tabs = useTabStore((s) => s.tabs);

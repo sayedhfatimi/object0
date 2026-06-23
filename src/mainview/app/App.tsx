@@ -1,8 +1,8 @@
 import { Loader2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Toast } from "../components/common/Toast";
 import { ErrorBoundary } from "../components/common/ErrorBoundary";
 import { ParticleBackground } from "../components/common/ParticleBackground";
+import { Toast } from "../components/common/Toast";
 import { MainLayout } from "../components/layout/MainLayout";
 import { ChangePassphraseDialog } from "../components/vault/ChangePassphraseDialog";
 import { RecoveryFlow } from "../components/vault/RecoveryFlow";

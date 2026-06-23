@@ -1,4 +1,18 @@
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  IconCircleInfo,
+  IconClipboard,
+  IconImage,
+  IconXmark,
+} from "@/lib/icons";
 import type { S3StatResult } from "../../../shared/s3.types";
 import {
   formatBytes,
@@ -10,21 +24,7 @@ import { rpcCall } from "../../lib/rpc-client";
 import { useBucketStore } from "../../stores/useBucketStore";
 import { useProfileStore } from "../../stores/useProfileStore";
 import { useUIStore } from "../../stores/useUIStore";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { FileIcon } from "../common/FileIcon";
-import {
-  IconImage,
-  IconClipboard,
-  IconCircleInfo,
-  IconXmark,
-} from "@/lib/icons";
 
 const PREVIEWABLE_IMAGES = new Set([
   "png",

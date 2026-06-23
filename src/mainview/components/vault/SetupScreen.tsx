@@ -1,18 +1,18 @@
 import type React from "react";
 import { useState } from "react";
-import { useVaultStore } from "../../stores/useVaultStore";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { IconVault, IconSpinner } from "@/lib/icons";
+import { IconSpinner, IconVault } from "@/lib/icons";
+import { useVaultStore } from "../../stores/useVaultStore";
 
 export function SetupScreen() {
   const [passphrase, setPassphrase] = useState("");

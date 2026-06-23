@@ -1,17 +1,17 @@
 import { useEffect, useMemo } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  IconArrowLeft,
+  IconFolderOpen,
+  IconMagnifyingGlass,
+  IconTriangleExclamation,
+} from "@/lib/icons";
 import { useS3Objects } from "../../hooks/useS3Objects";
 import { getFileName } from "../../lib/formatters";
 import { useBucketStore } from "../../stores/useBucketStore";
 import { useProfileStore } from "../../stores/useProfileStore";
 import { useTabStore } from "../../stores/useTabStore";
 import { useUIStore } from "../../stores/useUIStore";
-import { Button } from "@/components/ui/button";
-import {
-  IconTriangleExclamation,
-  IconFolderOpen,
-  IconArrowLeft,
-  IconMagnifyingGlass,
-} from "@/lib/icons";
 import { EmptyState } from "../common/EmptyState";
 import { ObjectGrid } from "./ObjectGrid";
 import { ObjectTable } from "./ObjectTable";

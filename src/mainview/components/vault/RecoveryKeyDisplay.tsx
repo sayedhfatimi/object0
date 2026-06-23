@@ -1,15 +1,15 @@
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { IconKey, IconCheck, IconCopy, IconDownload } from "@/lib/icons";
+import { IconCheck, IconCopy, IconDownload, IconKey } from "@/lib/icons";
 
 interface RecoveryKeyDisplayProps {
   recoveryKey: string;
