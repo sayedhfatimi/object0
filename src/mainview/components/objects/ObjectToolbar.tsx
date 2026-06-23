@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -37,12 +37,7 @@ import {
 import { ConfirmDialog } from "../common/ConfirmDialog";
 import { toast } from "../common/Toast";
 import { CreateFolderDialog } from "./CreateFolderDialog";
-
-// Pending delete that can be undone
-interface PendingDelete {
-  keys: string[];
-  timerId: ReturnType<typeof setTimeout>;
-}
+import { usePendingDelete } from "./usePendingDelete";
 
 export function ObjectToolbar() {
   const profileId = useProfileStore((s) => s.activeProfileId);
@@ -58,7 +53,14 @@ export function ObjectToolbar() {
 
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [createFolderOpen, setCreateFolderOpen] = useState(false);
-  const pendingDeleteRef = useRef<PendingDelete | null>(null);
+
+  const requestDelete = usePendingDelete({
+    profileId,
+    bucket,
+    selectedKeys,
+    clearSelection,
+    refresh,
+  });
 
   const selected = Array.from(selectedKeys);
   const singleSelectedKey = selected.length === 1 ? selected[0] : null;
@@ -126,67 +128,6 @@ export function ObjectToolbar() {
       toast.error(`Folder upload failed: ${msg}`);
     }
   }, [profileId, bucket]);
-
-  const commitPendingDelete = useCallback(
-    async (keys: string[]) => {
-      if (!profileId || !bucket) return;
-      try {
-        await rpcCall("objects:delete", { profileId, bucket, keys });
-        toast.success(`Deleted ${keys.length} object(s)`);
-        refresh();
-      } catch (err: unknown) {
-        toast.error(err instanceof Error ? err.message : "Unknown error");
-      }
-    },
-    [profileId, bucket, refresh],
-  );
-
-  const requestDelete = useCallback(async () => {
-    if (!profileId || !bucket || selectedKeys.size === 0) return;
-
-    const keysToDelete = Array.from(selectedKeys);
-    const count = keysToDelete.length;
-    clearSelection();
-
-    // Cancel any previous pending delete
-    if (pendingDeleteRef.current) {
-      clearTimeout(pendingDeleteRef.current.timerId);
-      // Execute the previous pending delete immediately
-      const prev = pendingDeleteRef.current;
-      pendingDeleteRef.current = null;
-      void commitPendingDelete(prev.keys);
-    }
-
-    // Show undo toast; actual delete happens after timeout
-    const timerId = setTimeout(() => {
-      pendingDeleteRef.current = null;
-      void commitPendingDelete(keysToDelete);
-    }, 5000);
-
-    pendingDeleteRef.current = { keys: keysToDelete, timerId };
-
-    toast.warning(`Deleting ${count} object(s)...`, {
-      duration: 5000,
-      action: {
-        label: "Undo",
-        onClick: () => {
-          if (pendingDeleteRef.current?.timerId === timerId) {
-            clearTimeout(timerId);
-            pendingDeleteRef.current = null;
-            toast.info("Delete cancelled");
-            refresh();
-          }
-        },
-      },
-    });
-  }, [
-    profileId,
-    bucket,
-    selectedKeys,
-    clearSelection,
-    commitPendingDelete,
-    refresh,
-  ]);
 
   const handleDownload = useCallback(async () => {
     if (!profileId || !bucket || selectedKeys.size === 0) return;
@@ -321,14 +262,6 @@ export function ObjectToolbar() {
     handleTransfer,
     handleShare,
   ]);
-
-  useEffect(() => {
-    return () => {
-      if (pendingDeleteRef.current) {
-        clearTimeout(pendingDeleteRef.current.timerId);
-      }
-    };
-  }, []);
 
   return (
     <div className="no-drag flex items-center gap-2 border-t border-border px-3 py-2">
