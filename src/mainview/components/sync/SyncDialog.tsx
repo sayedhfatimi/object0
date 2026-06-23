@@ -1,16 +1,9 @@
 import { useCallback, useState } from "react";
-import type { SyncDiff, SyncMode } from "../../../shared/s3.types";
-import { rpcCall } from "../../lib/rpc-client";
-import { useBucketStore } from "../../stores/useBucketStore";
-import { useObjectStore } from "../../stores/useObjectStore";
-import { useProfileStore } from "../../stores/useProfileStore";
-import { useUIStore } from "../../stores/useUIStore";
-import { useVaultStore } from "../../stores/useVaultStore";
-import { toast } from "../common/Toast";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -25,6 +18,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { IconSpinner, IconTriangleExclamation } from "@/lib/icons";
+import type { SyncDiff, SyncMode } from "../../../shared/s3.types";
+import { rpcCall } from "../../lib/rpc-client";
+import { useBucketStore } from "../../stores/useBucketStore";
+import { useObjectStore } from "../../stores/useObjectStore";
+import { useProfileStore } from "../../stores/useProfileStore";
+import { useUIStore } from "../../stores/useUIStore";
+import { useVaultStore } from "../../stores/useVaultStore";
+import { toast } from "../common/Toast";
 
 export function SyncDialog() {
   const open = useUIStore((s) => s.syncDialogOpen);
@@ -118,33 +119,29 @@ export function SyncDialog() {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && setOpen(false)}>
-      <DialogContent showCloseButton={false} className="max-w-lg">
+      <DialogContent showCloseButton={false} className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Object Sync (One-time)</DialogTitle>
+          <DialogDescription>
+            Copy one bucket/prefix to another profile or bucket. Runs once, then
+            stops.
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-3">
-          <div className="rounded border border-info/30 bg-info/10 p-2.5 text-xs">
-            <div className="flex items-start justify-between gap-3">
-              <div className="space-y-0.5">
-                <p className="font-semibold text-info">Runs once, then stops</p>
-                <p className="text-foreground/70">
-                  Use this to copy one bucket/prefix to another profile or
-                  bucket.
-                </p>
-                <p className="text-foreground/50">
-                  Need continuous local folder sync? Use Live Folder Sync.
-                </p>
-              </div>
-              <Button
-                variant="ghost"
-                size="xs"
-                className="whitespace-nowrap"
-                onClick={handleOpenLiveFolderSync}
-              >
-                Open Live Sync
-              </Button>
-            </div>
+        <div className="space-y-4">
+          <div className="space-y-2 rounded border border-info/30 bg-info/10 p-2.5 text-xs">
+            <p className="text-foreground/70">
+              Need a continuous local folder sync that keeps watching for
+              changes instead?
+            </p>
+            <Button
+              variant="outline"
+              size="xs"
+              className="w-full"
+              onClick={handleOpenLiveFolderSync}
+            >
+              Open Live Folder Sync
+            </Button>
           </div>
 
           {/* Source info */}

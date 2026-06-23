@@ -37,6 +37,7 @@ interface UIState {
   sidebarWidth: number;
   folderSyncPanelOpen: boolean;
   folderSyncListDensity: FolderSyncListDensity;
+  objectSearchOpen: boolean;
 
   toggleSidebar: () => void;
   setViewMode: (mode: ViewMode) => void;
@@ -60,6 +61,7 @@ interface UIState {
   setSidebarWidth: (width: number) => void;
   setFolderSyncPanelOpen: (open: boolean) => void;
   setFolderSyncListDensity: (density: FolderSyncListDensity) => void;
+  setObjectSearchOpen: (open: boolean) => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -85,6 +87,7 @@ export const useUIStore = create<UIState>()(
       sidebarWidth: 256,
       folderSyncPanelOpen: false,
       folderSyncListDensity: "comfortable",
+      objectSearchOpen: false,
 
       toggleSidebar: () =>
         set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
@@ -124,6 +127,7 @@ export const useUIStore = create<UIState>()(
       setFolderSyncPanelOpen: (open) => set({ folderSyncPanelOpen: open }),
       setFolderSyncListDensity: (density) =>
         set({ folderSyncListDensity: density }),
+      setObjectSearchOpen: (open) => set({ objectSearchOpen: open }),
     }),
     {
       name: "object0-ui",

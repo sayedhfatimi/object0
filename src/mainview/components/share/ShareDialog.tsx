@@ -1,10 +1,5 @@
 import { QRCodeSVG } from "qrcode.react";
 import { useCallback, useEffect, useState } from "react";
-import type { ShareRes } from "../../../shared/s3.types";
-import { rpcCall } from "../../lib/rpc-client";
-import { useShareHistoryStore } from "../../stores/useShareHistoryStore";
-import { useUIStore } from "../../stores/useUIStore";
-import { toast } from "../common/Toast";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -31,6 +26,11 @@ import {
   IconQrcode,
   IconSpinner,
 } from "@/lib/icons";
+import type { ShareRes } from "../../../shared/s3.types";
+import { rpcCall } from "../../lib/rpc-client";
+import { useShareHistoryStore } from "../../stores/useShareHistoryStore";
+import { useUIStore } from "../../stores/useUIStore";
+import { toast } from "../common/Toast";
 
 type ExpirationUnit = "minutes" | "hours" | "days";
 
@@ -152,7 +152,7 @@ export function ShareDialog() {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && closeDialog()}>
-      <DialogContent showCloseButton={false} className="max-w-lg">
+      <DialogContent showCloseButton={false} className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Share File</DialogTitle>
         </DialogHeader>

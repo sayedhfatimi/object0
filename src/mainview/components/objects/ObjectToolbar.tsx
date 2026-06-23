@@ -1,4 +1,30 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  IconArrowRightArrowLeft,
+  IconArrowsRotate,
+  IconChevronDown,
+  IconCloudArrowDown,
+  IconCloudArrowUp,
+  IconFileZipper,
+  IconFolder,
+  IconFolderOpen,
+  IconFolderPlus,
+  IconGrip,
+  IconMagnifyingGlass,
+  IconRotate,
+  IconShareNodes,
+  IconTableList,
+  IconTrashCan,
+  IconXmark,
+} from "@/lib/icons";
 import { useS3Objects } from "../../hooks/useS3Objects";
 import { OBJECT_TOOLBAR_EVENTS } from "../../lib/object-toolbar-events";
 import { rpcCall } from "../../lib/rpc-client";
@@ -6,33 +32,6 @@ import { useBucketStore } from "../../stores/useBucketStore";
 import { useObjectStore } from "../../stores/useObjectStore";
 import { useProfileStore } from "../../stores/useProfileStore";
 import { useUIStore } from "../../stores/useUIStore";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import {
-  IconCloudArrowUp,
-  IconFolder,
-  IconCloudArrowDown,
-  IconArrowsRotate,
-  IconTrashCan,
-  IconChevronDown,
-  IconFolderPlus,
-  IconFileZipper,
-  IconArrowRightArrowLeft,
-  IconShareNodes,
-  IconMagnifyingGlass,
-  IconXmark,
-  IconTableList,
-  IconGrip,
-  IconFolderOpen,
-  IconRotate,
-} from "@/lib/icons";
 import { ConfirmDialog } from "../common/ConfirmDialog";
 import { toast } from "../common/Toast";
 import { CreateFolderDialog } from "./CreateFolderDialog";
@@ -56,9 +55,7 @@ export function ObjectToolbar() {
   const openTransferDialog = useUIStore((s) => s.openTransferDialog);
 
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
   const [createFolderOpen, setCreateFolderOpen] = useState(false);
-  const searchRef = useRef<HTMLInputElement>(null);
   const pendingDeleteRef = useRef<PendingDelete | null>(null);
 
   const selected = Array.from(selectedKeys);
@@ -83,8 +80,7 @@ export function ObjectToolbar() {
       : "Open your default sync type (use Command Palette to change)";
 
   const openSearch = useCallback(() => {
-    setSearchOpen(true);
-    requestAnimationFrame(() => searchRef.current?.focus());
+    useUIStore.getState().setObjectSearchOpen(true);
   }, []);
 
   const handleUpload = useCallback(async () => {
@@ -102,10 +98,9 @@ export function ObjectToolbar() {
         toast.success(`Uploading ${result.jobIds.length} file(s)`);
       }
     } catch (err: unknown) {
-      if (err instanceof Error && err.message === "No files selected") return;
-      toast.error(
-        `Upload failed: ${err instanceof Error ? err.message : "Unknown error"}`,
-      );
+      // Tauri rejects with the raw error string, not an Error instance.
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error(`Upload failed: ${msg}`);
     }
   }, [profileId, bucket]);
 
@@ -124,10 +119,9 @@ export function ObjectToolbar() {
         toast.success(`Uploading ${result.jobIds.length} file(s) from folder`);
       }
     } catch (err: unknown) {
-      if (err instanceof Error && err.message === "No folder selected") return;
-      toast.error(
-        `Folder upload failed: ${err instanceof Error ? err.message : "Unknown error"}`,
-      );
+      // Tauri rejects with the raw error string, not an Error instance.
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error(`Folder upload failed: ${msg}`);
     }
   }, [profileId, bucket]);
 
@@ -280,12 +274,6 @@ export function ObjectToolbar() {
   }, [selectedKeys.size]);
 
   useEffect(() => {
-    if (searchOpen) {
-      searchRef.current?.focus();
-    }
-  }, [searchOpen]);
-
-  useEffect(() => {
     // Keep event-driven toolbar actions centralized for shortcuts and command palette.
     const registrations = [
       [OBJECT_TOOLBAR_EVENTS.OPEN_SEARCH, openSearch],
@@ -419,62 +407,29 @@ export function ObjectToolbar() {
       </div>
 
       <div className="ml-auto flex items-center gap-1.5">
-        {searchOpen ? (
-          <div className="flex items-center gap-1">
-            <div className="relative">
-              <IconMagnifyingGlass className="absolute top-1/2 left-2 size-3 -translate-y-1/2 text-foreground/40" />
-              <Input
-                ref={searchRef}
-                type="text"
-                className="h-7 w-56 pl-7 font-mono text-xs"
-                placeholder="Filter by name..."
-                value={filters.search}
-                onChange={(e) => setFilters({ search: e.target.value })}
-                onKeyDown={(e) => {
-                  if (e.key === "Escape") {
-                    setFilters({ search: "" });
-                    setSearchOpen(false);
-                  }
-                }}
-              />
-              {filters.search && (
-                <button
-                  type="button"
-                  className="absolute top-1/2 right-1.5 -translate-y-1/2 text-foreground/40 hover:text-foreground"
-                  onClick={() => {
-                    setFilters({ search: "" });
-                    searchRef.current?.focus();
-                  }}
-                  aria-label="Clear search"
-                >
-                  <IconXmark className="size-3" />
-                </button>
-              )}
-            </div>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={() => {
-                setFilters({ search: "" });
-                setSearchOpen(false);
-              }}
-              title="Close search"
-              aria-label="Close search"
-            >
-              <IconXmark />
-            </Button>
-          </div>
-        ) : (
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={openSearch}
-            title="Search objects (Ctrl+F)"
-            aria-label="Search objects"
+        {filters.search && (
+          <button
+            type="button"
+            className="flex h-7 items-center gap-1.5 rounded-md bg-muted px-2 text-foreground/80 text-xs hover:bg-muted/70"
+            onClick={() => setFilters({ search: "" })}
+            title="Clear filter"
+            aria-label="Clear filter"
           >
-            <IconMagnifyingGlass />
-          </Button>
+            <span className="max-w-32 truncate font-mono">
+              {filters.search}
+            </span>
+            <IconXmark className="size-3 shrink-0" />
+          </button>
         )}
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          onClick={openSearch}
+          title="Search objects (Ctrl+F)"
+          aria-label="Search objects"
+        >
+          <IconMagnifyingGlass />
+        </Button>
 
         <Button
           variant="ghost"

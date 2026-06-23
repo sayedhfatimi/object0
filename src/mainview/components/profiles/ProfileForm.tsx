@@ -1,14 +1,13 @@
 import { useState } from "react";
-import type { ProfileInfo, ProfileInput } from "../../../shared/profile.types";
-import {
-  PROVIDER_ENDPOINTS,
-  PROVIDER_REGIONS,
-} from "../../../shared/profile.types";
-import { PROVIDERS } from "../../lib/constants";
-import { rpcCall } from "../../lib/rpc-client";
-import { useVaultStore } from "../../stores/useVaultStore";
-import { toast } from "../common/Toast";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -19,15 +18,25 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { IconSpinner } from "@/lib/icons";
+import type { ProfileInfo, ProfileInput } from "../../../shared/profile.types";
+import {
+  PROVIDER_ENDPOINTS,
+  PROVIDER_REGIONS,
+} from "../../../shared/profile.types";
+import { PROVIDERS } from "../../lib/constants";
+import { rpcCall } from "../../lib/rpc-client";
+import { useVaultStore } from "../../stores/useVaultStore";
+import { toast } from "../common/Toast";
 
 interface ProfileFormProps {
-  onDone: () => void;
+  open: boolean;
+  onClose: () => void;
   editProfile?: ProfileInfo;
 }
 
 type Provider = ProfileInput["provider"];
 
-export function ProfileForm({ onDone, editProfile }: ProfileFormProps) {
+export function ProfileForm({ open, onClose, editProfile }: ProfileFormProps) {
   const refreshProfiles = useVaultStore((s) => s.refreshProfiles);
   const isEditing = !!editProfile;
 
@@ -205,7 +214,7 @@ export function ProfileForm({ onDone, editProfile }: ProfileFormProps) {
         await refreshProfiles();
         toast.success(`Profile "${trimmedName}" added`);
       }
-      onDone();
+      onClose();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Unknown error");
     }
@@ -213,201 +222,237 @@ export function ProfileForm({ onDone, editProfile }: ProfileFormProps) {
   };
 
   return (
-    <div className="space-y-3">
-      {/* Provider */}
-      <div className="space-y-1.5">
-        <Label htmlFor="pf-provider" className="text-xs">
-          Provider
-        </Label>
-        <Select
-          value={provider}
-          onValueChange={(v) => handleProviderChange(v as Provider)}
-        >
-          <SelectTrigger id="pf-provider" className="h-8 text-sm">
-            <SelectValue>
-              {(value) =>
-                PROVIDERS.find((p) => p.value === value)?.label ??
-                (value as string)
-              }
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {PROVIDERS.map((p) => (
-              <SelectItem key={p.value} value={p.value}>
-                {p.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>
+            {isEditing ? "Edit Profile" : "Add Profile"}
+          </DialogTitle>
+          <DialogDescription>
+            Connect an S3-compatible bucket by entering its provider and
+            credentials.
+          </DialogDescription>
+        </DialogHeader>
 
-      {/* Name */}
-      <div className="space-y-1.5">
-        <Label htmlFor="pf-name" className="text-xs">
-          Profile Name
-        </Label>
-        <Input
-          id="pf-name"
-          className="h-8 text-sm"
-          placeholder="My AWS Account"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-        <p className="text-xs text-muted-foreground/50">
-          A friendly name to identify this connection
-        </p>
-      </div>
+        <div className="space-y-4">
+          {/* Name */}
+          <div className="space-y-1.5">
+            <Label htmlFor="pf-name" className="text-xs">
+              Profile Name
+            </Label>
+            <Input
+              id="pf-name"
+              className="h-8 text-sm"
+              placeholder="My AWS Account"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground/50">
+              A friendly name to identify this connection
+            </p>
+          </div>
 
-      {/* Access Key */}
-      <div className="space-y-1.5">
-        <Label htmlFor="pf-access-key" className="text-xs">
-          Access Key ID
-        </Label>
-        <Input
-          id="pf-access-key"
-          className="h-8 text-sm font-mono"
-          placeholder={isEditing ? "Enter new key to change" : "AKIA..."}
-          value={accessKeyId}
-          onChange={(e) => setAccessKeyId(e.target.value)}
-        />
-        {hints?.accessKey && (
-          <p className="text-xs text-muted-foreground/50">{hints.accessKey}</p>
-        )}
-        {isEditing && (
-          <p className="text-xs text-muted-foreground/50">
-            Leave blank to keep the current value
-          </p>
-        )}
-      </div>
+          {/* ── Connection ── */}
+          <div className="space-y-3 rounded-lg border border-border/60 p-3">
+            <p className="font-semibold text-[11px] text-foreground/50 uppercase tracking-wider">
+              Connection
+            </p>
 
-      {/* Secret Key */}
-      <div className="space-y-1.5">
-        <Label htmlFor="pf-secret-key" className="text-xs">
-          Secret Access Key
-        </Label>
-        <Input
-          id="pf-secret-key"
-          type="password"
-          className="h-8 text-sm font-mono"
-          placeholder={isEditing ? "Enter new secret to change" : "••••••••"}
-          value={secretAccessKey}
-          onChange={(e) => setSecretAccessKey(e.target.value)}
-        />
-        {hints?.secretKey && (
-          <p className="text-xs text-muted-foreground/50">{hints.secretKey}</p>
-        )}
-        {isEditing && (
-          <p className="text-xs text-muted-foreground/50">
-            Leave blank to keep the current value
-          </p>
-        )}
-      </div>
+            {/* Provider */}
+            <div className="space-y-1.5">
+              <Label htmlFor="pf-provider" className="text-xs">
+                Provider
+              </Label>
+              <Select
+                value={provider}
+                onValueChange={(v) => handleProviderChange(v as Provider)}
+              >
+                <SelectTrigger id="pf-provider" className="h-8 w-full text-sm">
+                  <SelectValue>
+                    {(value) =>
+                      PROVIDERS.find((p) => p.value === value)?.label ??
+                      (value as string)
+                    }
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {PROVIDERS.map((p) => (
+                    <SelectItem key={p.value} value={p.value}>
+                      {p.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-      {/* Endpoint (conditional) */}
-      {needsEndpoint && (
-        <div className="space-y-1.5">
-          <Label htmlFor="pf-endpoint" className="text-xs">
-            Endpoint URL
-          </Label>
-          <Input
-            id="pf-endpoint"
-            className="h-8 text-sm font-mono"
-            placeholder="https://..."
-            value={endpoint}
-            onChange={(e) => setEndpoint(e.target.value)}
-          />
-          {hints?.endpoint && (
-            <p className="text-xs text-muted-foreground/50">{hints.endpoint}</p>
+            {/* Endpoint (conditional) */}
+            {needsEndpoint && (
+              <div className="space-y-1.5">
+                <Label htmlFor="pf-endpoint" className="text-xs">
+                  Endpoint URL
+                </Label>
+                <Input
+                  id="pf-endpoint"
+                  className="h-8 font-mono text-sm"
+                  placeholder="https://..."
+                  value={endpoint}
+                  onChange={(e) => setEndpoint(e.target.value)}
+                />
+                {hints?.endpoint && (
+                  <p className="text-xs text-muted-foreground/50">
+                    {hints.endpoint}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Region + Default Bucket */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="pf-region" className="text-xs">
+                  Region
+                </Label>
+                <Input
+                  id="pf-region"
+                  className="h-8 text-sm"
+                  placeholder="us-east-1"
+                  value={region}
+                  onChange={(e) => setRegion(e.target.value)}
+                />
+                {hints?.region && (
+                  <p className="text-xs text-muted-foreground/50">
+                    {hints.region}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="pf-default-bucket" className="text-xs">
+                  Default Bucket{" "}
+                  <span className="font-normal opacity-40">optional</span>
+                </Label>
+                <Input
+                  id="pf-default-bucket"
+                  className="h-8 text-sm"
+                  placeholder="my-bucket"
+                  value={defaultBucket}
+                  onChange={(e) => setDefaultBucket(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground/50">
+                  {provider === "r2"
+                    ? "Required for R2 tokens scoped to a specific bucket"
+                    : "Bucket to select by default"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Credentials ── */}
+          <div className="space-y-3 rounded-lg border border-border/60 p-3">
+            <p className="font-semibold text-[11px] text-foreground/50 uppercase tracking-wider">
+              Credentials
+            </p>
+
+            {/* Access Key */}
+            <div className="space-y-1.5">
+              <Label htmlFor="pf-access-key" className="text-xs">
+                Access Key ID
+              </Label>
+              <Input
+                id="pf-access-key"
+                className="h-8 font-mono text-sm"
+                placeholder={isEditing ? "Enter new key to change" : "AKIA..."}
+                value={accessKeyId}
+                onChange={(e) => setAccessKeyId(e.target.value)}
+              />
+              {hints?.accessKey && (
+                <p className="text-xs text-muted-foreground/50">
+                  {hints.accessKey}
+                </p>
+              )}
+              {isEditing && (
+                <p className="text-xs text-muted-foreground/50">
+                  Leave blank to keep the current value
+                </p>
+              )}
+            </div>
+
+            {/* Secret Key */}
+            <div className="space-y-1.5">
+              <Label htmlFor="pf-secret-key" className="text-xs">
+                Secret Access Key
+              </Label>
+              <Input
+                id="pf-secret-key"
+                type="password"
+                className="h-8 font-mono text-sm"
+                placeholder={
+                  isEditing ? "Enter new secret to change" : "••••••••"
+                }
+                value={secretAccessKey}
+                onChange={(e) => setSecretAccessKey(e.target.value)}
+              />
+              {hints?.secretKey && (
+                <p className="text-xs text-muted-foreground/50">
+                  {hints.secretKey}
+                </p>
+              )}
+              {isEditing && (
+                <p className="text-xs text-muted-foreground/50">
+                  Leave blank to keep the current value
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Test result */}
+          {testResult && (
+            <div
+              className={`rounded-lg border p-2 text-xs ${
+                testResult.ok
+                  ? "border-success/30 bg-success/10 text-success"
+                  : "border-destructive/30 bg-destructive/10 text-destructive"
+              }`}
+            >
+              {testResult.msg}
+            </div>
           )}
         </div>
-      )}
 
-      {/* Region */}
-      <div className="space-y-1.5">
-        <Label htmlFor="pf-region" className="text-xs">
-          Region
-        </Label>
-        <Input
-          id="pf-region"
-          className="h-8 text-sm"
-          placeholder="us-east-1"
-          value={region}
-          onChange={(e) => setRegion(e.target.value)}
-        />
-        {hints?.region && (
-          <p className="text-xs text-muted-foreground/50">{hints.region}</p>
-        )}
-      </div>
-
-      {/* Default Bucket (optional — required for bucket-scoped tokens) */}
-      <div className="space-y-1.5">
-        <Label htmlFor="pf-default-bucket" className="text-xs">
-          Default Bucket{" "}
-          <span className="font-normal opacity-40">optional</span>
-        </Label>
-        <Input
-          id="pf-default-bucket"
-          className="h-8 text-sm"
-          placeholder="my-bucket"
-          value={defaultBucket}
-          onChange={(e) => setDefaultBucket(e.target.value)}
-        />
-        <p className="text-xs text-muted-foreground/50">
-          {provider === "r2"
-            ? "Required for R2 tokens scoped to a specific bucket"
-            : "Bucket to select by default when using this profile"}
-        </p>
-      </div>
-
-      {/* Test result */}
-      {testResult && (
-        <div
-          className={`rounded-lg border p-2 text-xs ${
-            testResult.ok
-              ? "border-success/30 bg-success/10 text-success"
-              : "border-destructive/30 bg-destructive/10 text-destructive"
-          }`}
-        >
-          {testResult.msg}
-        </div>
-      )}
-
-      {/* Actions */}
-      <div className="flex gap-2 pt-2">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="flex-1"
-          onClick={handleTest}
-          disabled={testing || !accessKeyId || !secretAccessKey}
-        >
-          {testing ? (
-            <IconSpinner className="size-3.5 animate-spin" />
-          ) : (
-            "Test Connection"
-          )}
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          className="flex-1"
-          onClick={handleSave}
-          disabled={
-            saving ||
-            !name.trim() ||
-            (!isEditing && (!accessKeyId || !secretAccessKey))
-          }
-        >
-          {saving ? (
-            <IconSpinner className="size-3.5 animate-spin" />
-          ) : isEditing ? (
-            "Update"
-          ) : (
-            "Save"
-          )}
-        </Button>
-      </div>
-    </div>
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleTest}
+            disabled={testing || !accessKeyId || !secretAccessKey}
+          >
+            {testing ? (
+              <IconSpinner className="size-3.5 animate-spin" />
+            ) : (
+              "Test Connection"
+            )}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleSave}
+            disabled={
+              saving ||
+              !name.trim() ||
+              (!isEditing && (!accessKeyId || !secretAccessKey))
+            }
+          >
+            {saving ? (
+              <IconSpinner className="size-3.5 animate-spin" />
+            ) : isEditing ? (
+              "Update"
+            ) : (
+              "Save"
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

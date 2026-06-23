@@ -1,16 +1,9 @@
 import { useCallback, useState } from "react";
-import type { TransferMode } from "../../../shared/s3.types";
-import { rpcCall } from "../../lib/rpc-client";
-import { useBucketStore } from "../../stores/useBucketStore";
-import { useObjectStore } from "../../stores/useObjectStore";
-import { useProfileStore } from "../../stores/useProfileStore";
-import { useUIStore } from "../../stores/useUIStore";
-import { useVaultStore } from "../../stores/useVaultStore";
-import { toast } from "../common/Toast";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -32,6 +25,14 @@ import {
   IconSpinner,
   IconTriangleExclamation,
 } from "@/lib/icons";
+import type { TransferMode } from "../../../shared/s3.types";
+import { rpcCall } from "../../lib/rpc-client";
+import { useBucketStore } from "../../stores/useBucketStore";
+import { useObjectStore } from "../../stores/useObjectStore";
+import { useProfileStore } from "../../stores/useProfileStore";
+import { useUIStore } from "../../stores/useUIStore";
+import { useVaultStore } from "../../stores/useVaultStore";
+import { toast } from "../common/Toast";
 
 export function TransferDialog() {
   const open = useUIStore((s) => s.transferDialogOpen);
@@ -132,12 +133,17 @@ export function TransferDialog() {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
-      <DialogContent showCloseButton={false} className="max-w-lg">
+      <DialogContent showCloseButton={false} className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{`${effectiveMode === "move" ? "Move" : "Copy"} to Bucket`}</DialogTitle>
+          <DialogDescription>
+            {effectiveMode === "move"
+              ? "Move the selected items to another bucket, deleting the originals after a successful transfer."
+              : "Copy the selected items to another bucket, keeping the originals."}
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-3">
+        <div className="space-y-4">
           {/* Source summary */}
           <div className="rounded bg-muted p-2 text-xs">
             <span className="font-semibold">Source:</span> {currentBucket}

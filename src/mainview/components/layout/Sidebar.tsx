@@ -2,12 +2,28 @@ import { useMemo, useState } from "react";
 import type { ProfileInfo } from "../../../shared/profile.types";
 import { PROVIDER_LABELS } from "../../../shared/profile.types";
 import { useS3Buckets } from "../../hooks/useS3Buckets";
+import {
+  IconArrowsRotate,
+  IconAws,
+  IconBucket,
+  IconCloud,
+  IconCloudArrowUp,
+  IconDigitalOcean,
+  IconFire,
+  IconGear,
+  IconGoogle,
+  IconLock,
+  IconPlus,
+  IconServer,
+  IconStar,
+  IconUser,
+  IconUserGroup,
+} from "../../lib/icons";
 import { rpcCall } from "../../lib/rpc-client";
 import { useFavoritesStore } from "../../stores/useFavoritesStore";
 import { useVaultStore } from "../../stores/useVaultStore";
 import { BucketList } from "../buckets/BucketList";
 import { ConfirmDialog } from "../common/ConfirmDialog";
-import { Modal } from "../common/Modal";
 import { toast } from "../common/Toast";
 import { ProfileForm } from "../profiles/ProfileForm";
 import { ProfileList } from "../profiles/ProfileList";
@@ -22,27 +38,10 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  Sidebar as SidebarPrimitive,
   SidebarRail,
   SidebarTrigger,
-  Sidebar as SidebarPrimitive,
 } from "../ui/sidebar";
-import {
-  IconArrowsRotate,
-  IconAws,
-  IconBucket,
-  IconCloud,
-  IconCloudArrowUp,
-  IconDigitalOcean,
-  IconFire,
-  IconGear,
-  IconLock,
-  IconPlus,
-  IconServer,
-  IconStar,
-  IconUser,
-  IconUserGroup,
-  IconGoogle,
-} from "../../lib/icons";
 
 export function Sidebar() {
   const profiles = useVaultStore((s) => s.profiles);
@@ -163,7 +162,7 @@ export function Sidebar() {
                     <SidebarMenuButton
                       isActive={isActive}
                       tooltip={fav.bucket}
-                      className="rounded-none px-3"
+                      className="h-auto rounded-none px-3 py-1.5"
                       onClick={() =>
                         selectFavoriteBucket(fav.profileId, fav.bucket)
                       }
@@ -180,13 +179,13 @@ export function Sidebar() {
                     </SidebarMenuButton>
                     <SidebarGroupAction
                       title="Unpin bucket"
-                      className="text-warning"
+                      className="group/fav-star top-1/2 right-3 -translate-y-1/2 text-warning"
                       onClick={(e) => {
                         e.stopPropagation();
                         toggleFavorite(fav.profileId, fav.bucket);
                       }}
                     >
-                      <IconStar className="size-3" />
+                      <IconStar className="size-3 fill-current group-hover/fav-star:fill-none" />
                     </SidebarGroupAction>
                   </SidebarMenuItem>
                 );
@@ -321,26 +320,20 @@ export function Sidebar() {
       <SidebarRail />
 
       {/* ── Modals ── */}
-      <Modal
+      <ProfileForm
         open={addingProfile}
         onClose={() => setAddingProfile(false)}
-        title="Add Profile"
-      >
-        <ProfileForm onDone={() => setAddingProfile(false)} />
-      </Modal>
+      />
 
-      <Modal
-        open={!!editingProfile}
-        onClose={() => setEditingProfile(null)}
-        title="Edit Profile"
-      >
-        {editingProfile && (
-          <ProfileForm
-            editProfile={editingProfile}
-            onDone={() => setEditingProfile(null)}
-          />
-        )}
-      </Modal>
+      {/* Mounted per-profile so the form initializes from the edited profile. */}
+      {editingProfile && (
+        <ProfileForm
+          key={editingProfile.id}
+          open
+          editProfile={editingProfile}
+          onClose={() => setEditingProfile(null)}
+        />
+      )}
 
       <ConfirmDialog
         open={!!deletingProfile}

@@ -1780,13 +1780,24 @@ fn set_folder_sync_status(
         progress,
     };
 
-    {
+    let status_changed = {
         let state = app.state::<AppState>();
         let mut runtime = lock(&state.folder_sync)?;
+        let prev = runtime.statuses.get(rule_id).map(|r| r.status.clone());
         runtime.statuses.insert(rule_id.to_string(), record.clone());
-    }
+        prev.as_deref() != Some(status)
+    };
 
     emit_folder_sync_status_event(app, &record);
+
+    // Worker threads can transition a rule (e.g. → "paused") without going through an
+    // RPC handler, which is where the tray menu is normally rebuilt. Refresh the tray
+    // on a status transition so its context menu doesn't go stale. Guarded on a real
+    // status change to avoid rebuilding the menu on every progress tick.
+    if status_changed {
+        refresh_tray_menu(app);
+    }
+
     Ok(())
 }
 
@@ -4816,10 +4827,11 @@ async fn rpc_request(
         RpcMethod::TransferPickAndUpload => {
             let input: PickUploadInput = parse_payload(payload)?;
             let Some(paths) = FileDialog::new().pick_files() else {
-                return Err("No files selected".to_string());
+                // User cancelled the native dialog — not an error.
+                return Ok(json!({ "jobIds": [] }));
             };
             if paths.is_empty() {
-                return Err("No files selected".to_string());
+                return Ok(json!({ "jobIds": [] }));
             }
 
             let mut job_ids = Vec::new();
@@ -4855,7 +4867,8 @@ async fn rpc_request(
         RpcMethod::TransferPickAndUploadFolder => {
             let input: PickUploadInput = parse_payload(payload)?;
             let Some(dir_path) = FileDialog::new().pick_folder() else {
-                return Err("No folder selected".to_string());
+                // User cancelled the native dialog — not an error.
+                return Ok(json!({ "jobIds": [] }));
             };
             let dir_name = dir_path
                 .file_name()

@@ -53,6 +53,11 @@ const CommandPalette = lazy(() =>
     default: module.CommandPalette,
   })),
 );
+const ObjectSearchDialog = lazy(() =>
+  import("../objects/ObjectSearchDialog").then((module) => ({
+    default: module.ObjectSearchDialog,
+  })),
+);
 
 export function MainLayout() {
   const sidebarCollapsed = useUIStore((s) => s.sidebarCollapsed);
@@ -148,6 +153,9 @@ export function MainLayout() {
       </Suspense>
       <Suspense fallback={null}>
         <CommandPalette />
+      </Suspense>
+      <Suspense fallback={null}>
+        <ObjectSearchDialog />
       </Suspense>
     </SidebarProvider>
   );

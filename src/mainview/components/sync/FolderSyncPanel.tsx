@@ -1,13 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type {
-  FolderSyncRule,
-  FolderSyncRuleStatus,
-} from "../../../shared/folder-sync.types";
-import { formatBytes } from "../../lib/formatters";
-import { useFolderSyncStore } from "../../stores/useFolderSyncStore";
-import { useUIStore } from "../../stores/useUIStore";
-import { ConfirmDialog } from "../common/ConfirmDialog";
-import { toast } from "../common/Toast";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -29,7 +20,9 @@ import {
   IconArrowUp,
   IconBroom,
   IconBucket,
+  IconCheck,
   IconExclamationCircle,
+  IconExclamationTriangle,
   IconEye,
   IconFolder,
   IconFolderOpen,
@@ -41,9 +34,16 @@ import {
   IconTrash,
   IconTriangleExclamation,
   IconXmark,
-  IconCheck,
-  IconExclamationTriangle,
 } from "@/lib/icons";
+import type {
+  FolderSyncRule,
+  FolderSyncRuleStatus,
+} from "../../../shared/folder-sync.types";
+import { formatBytes } from "../../lib/formatters";
+import { useFolderSyncStore } from "../../stores/useFolderSyncStore";
+import { useUIStore } from "../../stores/useUIStore";
+import { ConfirmDialog } from "../common/ConfirmDialog";
+import { toast } from "../common/Toast";
 import { FolderSyncRuleEditor } from "./FolderSyncRuleEditor";
 
 function StatusIconDisplay({ status }: { status: FolderSyncRuleStatus }) {
@@ -641,7 +641,7 @@ export function FolderSyncPanel() {
         open={addDialogOpen}
         onOpenChange={(o) => !o && setAddDialogOpen(false)}
       >
-        <DialogContent className="max-w-lg" showCloseButton={false}>
+        <DialogContent className="sm:max-w-lg" showCloseButton={false}>
           <DialogHeader>
             <DialogTitle>Add Live Folder Sync Rule</DialogTitle>
           </DialogHeader>
@@ -659,7 +659,7 @@ export function FolderSyncPanel() {
         open={!!editingRule}
         onOpenChange={(o) => !o && setEditingRule(null)}
       >
-        <DialogContent className="max-w-lg" showCloseButton={false}>
+        <DialogContent className="sm:max-w-lg" showCloseButton={false}>
           <DialogHeader>
             <DialogTitle>Edit Live Folder Sync Rule</DialogTitle>
           </DialogHeader>

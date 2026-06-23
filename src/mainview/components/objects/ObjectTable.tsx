@@ -1,4 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+} from "@/components/ui/table";
 import type { S3Object, S3Prefix } from "../../../shared/s3.types";
 import {
   formatBytes,
@@ -9,15 +18,6 @@ import { rpcCall } from "../../lib/rpc-client";
 import { useBucketStore } from "../../stores/useBucketStore";
 import { useObjectStore } from "../../stores/useObjectStore";
 import { useProfileStore } from "../../stores/useProfileStore";
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableHead,
-  TableCell,
-} from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import { FileIcon } from "../common/FileIcon";
 import { toast } from "../common/Toast";
 import { ObjectContextMenu } from "./ObjectContextMenu";
@@ -406,7 +406,7 @@ export function ObjectTable({
                   className={`cursor-pointer transition-colors duration-150 ${
                     selectedKeys.has(p.prefix)
                       ? "border-l-2 border-l-primary bg-primary/10"
-                      : "border-l-2 border-l-transparent"
+                      : "border-l-2 border-l-transparent hover:bg-muted/50"
                   } ${focusedIndex === i ? "outline outline-1 outline-primary/60" : ""}`}
                   onDoubleClick={() => onNavigate(p.prefix)}
                   onClick={() => setFocusedIndex(i)}
@@ -450,10 +450,10 @@ export function ObjectTable({
                   <tr
                     data-row-index={rowIdx}
                     aria-selected={selectedKeys.has(obj.key)}
-                    className={`transition-colors duration-150 ${
+                    className={`cursor-pointer transition-colors duration-150 ${
                       selectedKeys.has(obj.key)
                         ? "border-l-2 border-l-primary bg-primary/10"
-                        : "border-l-2 border-l-transparent"
+                        : "border-l-2 border-l-transparent hover:bg-muted/50"
                     } ${focusedIndex === rowIdx ? "outline outline-1 outline-primary/60" : ""}`}
                     onClick={() => setFocusedIndex(rowIdx)}
                   />
