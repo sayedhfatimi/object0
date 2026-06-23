@@ -54,6 +54,10 @@ const defaultFilters: ObjectFilters = {
   search: "",
 };
 
+// Monotonic token guarding against out-of-order objects:list responses. Each
+// loadObjects call claims the next value; only the latest may commit its result.
+let loadGeneration = 0;
+
 export const useObjectStore = create<ObjectState>()((set, get) => ({
   objects: [],
   prefixes: [],
@@ -70,6 +74,7 @@ export const useObjectStore = create<ObjectState>()((set, get) => ({
   selectedKeys: new Set(),
 
   loadObjects: async (profileId, bucket, prefix, pageSize, startAfter) => {
+    const generation = ++loadGeneration;
     try {
       set({ loading: true, error: null });
       const resolvedPageSize =
@@ -83,6 +88,11 @@ export const useObjectStore = create<ObjectState>()((set, get) => ({
         startAfter,
       });
 
+      // A newer load started while this request was in flight — drop the stale
+      // result so it can't overwrite the newer view (e.g. wrong bucket on a fast
+      // tab switch).
+      if (generation !== loadGeneration) return;
+
       set({
         objects: result.objects,
         prefixes: result.prefixes,
@@ -92,6 +102,8 @@ export const useObjectStore = create<ObjectState>()((set, get) => ({
         selectedKeys: new Set(),
       });
     } catch (err: unknown) {
+      // Stale failure must not clobber a newer load's state either.
+      if (generation !== loadGeneration) return;
       set({
         error: err instanceof Error ? err.message : "Unknown error",
         loading: false,

@@ -36,7 +36,9 @@ export function useJobProgress() {
         new Notification(title, { body, silent: true });
       }
 
-      // Auto-refresh object listing when a mutating job completes
+      // Best-effort refresh: JobCompleteEvent carries no bucket/profile/type, so
+      // we cannot tell whether this job touched the visible bucket. The
+      // generation guard in loadObjects makes a possibly-irrelevant refresh safe.
       if (data.success) {
         const profileId = useProfileStore.getState().activeProfileId;
         const bucket = useBucketStore.getState().selectedBucket;
