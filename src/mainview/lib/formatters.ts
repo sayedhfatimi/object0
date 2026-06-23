@@ -1,10 +1,11 @@
+const BYTES_PER_KIB = 1024;
+
 // ── Human-readable byte sizes ──
 export function formatBytes(bytes: number, decimals: number = 1): string {
   if (bytes === 0) return "0 B";
-  const k = 1024;
   const sizes = ["B", "KB", "MB", "GB", "TB", "PB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / k ** i).toFixed(decimals))} ${sizes[i]}`;
+  const i = Math.floor(Math.log(bytes) / Math.log(BYTES_PER_KIB));
+  return `${parseFloat((bytes / BYTES_PER_KIB ** i).toFixed(decimals))} ${sizes[i]}`;
 }
 
 // ── Human-readable speed ──

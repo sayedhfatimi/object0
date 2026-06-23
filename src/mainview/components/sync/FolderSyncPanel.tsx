@@ -46,6 +46,8 @@ import { ConfirmDialog } from "../common/ConfirmDialog";
 import { toast } from "../common/Toast";
 import { FolderSyncRuleEditor } from "./FolderSyncRuleEditor";
 
+const RECENT_CONFLICTS_LIMIT = 20;
+
 function StatusIconDisplay({ status }: { status: FolderSyncRuleStatus }) {
   const cls = "text-xs";
   switch (status) {
@@ -187,7 +189,10 @@ export function FolderSyncPanel() {
 
   const activeCount = getActiveCount();
   const isCompact = folderSyncListDensity === "compact";
-  const recentConflicts = useMemo(() => conflicts.slice(0, 20), [conflicts]);
+  const recentConflicts = useMemo(
+    () => conflicts.slice(0, RECENT_CONFLICTS_LIMIT),
+    [conflicts],
+  );
   const conflictCountByRule = useMemo(() => {
     const counts = new Map<string, number>();
     for (const conflict of conflicts) {

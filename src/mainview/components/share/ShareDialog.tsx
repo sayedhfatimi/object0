@@ -39,12 +39,25 @@ interface ExpirationPreset {
   seconds: number;
 }
 
+const MINUTE_SECONDS = 60;
+const HOUR_SECONDS = 60 * MINUTE_SECONDS;
+const DAY_SECONDS = 24 * HOUR_SECONDS;
+const MS_PER_MINUTE = MINUTE_SECONDS * 1000;
+const MS_PER_HOUR = HOUR_SECONDS * 1000;
+const MS_PER_DAY = DAY_SECONDS * 1000;
+
 const EXPIRATION_PRESETS: ExpirationPreset[] = [
-  { label: "1 hour", seconds: 3600 },
-  { label: "6 hours", seconds: 21600 },
-  { label: "24 hours", seconds: 86400 },
-  { label: "7 days", seconds: 604800 },
+  { label: "1 hour", seconds: HOUR_SECONDS },
+  { label: "6 hours", seconds: 6 * HOUR_SECONDS },
+  { label: "24 hours", seconds: DAY_SECONDS },
+  { label: "7 days", seconds: 7 * DAY_SECONDS },
 ];
+
+const EXPIRATION_UNIT_SECONDS: Record<ExpirationUnit, number> = {
+  minutes: MINUTE_SECONDS,
+  hours: HOUR_SECONDS,
+  days: DAY_SECONDS,
+};
 
 export function ShareDialog() {
   const open = useUIStore((s) => s.shareDialogOpen);
@@ -78,12 +91,7 @@ export function ShareDialog() {
     if (expirationMode === "preset") {
       return EXPIRATION_PRESETS[selectedPreset].seconds;
     }
-    const multipliers: Record<ExpirationUnit, number> = {
-      minutes: 60,
-      hours: 3600,
-      days: 86400,
-    };
-    return customValue * multipliers[customUnit];
+    return customValue * EXPIRATION_UNIT_SECONDS[customUnit];
   }, [expirationMode, selectedPreset, customValue, customUnit]);
 
   const handleGenerate = async () => {
@@ -136,15 +144,15 @@ export function ShareDialog() {
     const now = new Date();
     const diff = date.getTime() - now.getTime();
 
-    if (diff < 3600000) {
-      const mins = Math.round(diff / 60000);
+    if (diff < MS_PER_HOUR) {
+      const mins = Math.round(diff / MS_PER_MINUTE);
       return `${mins} minute${mins !== 1 ? "s" : ""}`;
     }
-    if (diff < 86400000) {
-      const hours = Math.round(diff / 3600000);
+    if (diff < MS_PER_DAY) {
+      const hours = Math.round(diff / MS_PER_HOUR);
       return `${hours} hour${hours !== 1 ? "s" : ""}`;
     }
-    const days = Math.round(diff / 86400000);
+    const days = Math.round(diff / MS_PER_DAY);
     return `${days} day${days !== 1 ? "s" : ""}`;
   };
 

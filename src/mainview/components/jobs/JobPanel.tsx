@@ -18,6 +18,8 @@ import { useUIStore } from "../../stores/useUIStore";
 import { JobItem } from "./JobItem";
 
 const VIRTUALIZE_AFTER_COUNT = 80;
+const VIRTUAL_SECTION_HEIGHT = 26;
+const VIRTUAL_JOB_HEIGHT = 56;
 
 type VirtualJobRow =
   | {
@@ -157,7 +159,10 @@ export function JobPanel() {
   const rowVirtualizer = useVirtualizer({
     count: shouldVirtualize ? virtualRows.length : 0,
     getScrollElement: () => listRef.current,
-    estimateSize: (index) => (virtualRows[index]?.kind === "section" ? 26 : 56),
+    estimateSize: (index) =>
+      virtualRows[index]?.kind === "section"
+        ? VIRTUAL_SECTION_HEIGHT
+        : VIRTUAL_JOB_HEIGHT,
     getItemKey: (index) => virtualRows[index]?.id ?? index,
     overscan: 8,
   });

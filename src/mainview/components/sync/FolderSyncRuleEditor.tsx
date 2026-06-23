@@ -22,6 +22,14 @@ import { useFolderSyncStore } from "../../stores/useFolderSyncStore";
 import { useVaultStore } from "../../stores/useVaultStore";
 import { toast } from "../common/Toast";
 
+const DEFAULT_POLL_INTERVAL_MS = 30000;
+const DEFAULT_EXCLUDE_PATTERNS = [
+  ".DS_Store",
+  "Thumbs.db",
+  ".object0-tmp",
+  "desktop.ini",
+];
+
 interface FolderSyncRuleEditorProps {
   editRule?: FolderSyncRule;
   onDone: () => void;
@@ -48,11 +56,11 @@ export function FolderSyncRuleEditor({
   const [conflictResolution, setConflictResolution] =
     useState<ConflictResolution>(editRule?.conflictResolution ?? "newer-wins");
   const [pollIntervalMs, setPollIntervalMs] = useState(
-    editRule?.pollIntervalMs ?? 30000,
+    editRule?.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS,
   );
   const [excludePatterns, setExcludePatterns] = useState(
     editRule?.excludePatterns?.join("\n") ??
-      ".DS_Store\nThumbs.db\n.object0-tmp\ndesktop.ini",
+      DEFAULT_EXCLUDE_PATTERNS.join("\n"),
   );
 
   const [buckets, setBuckets] = useState<string[]>([]);
