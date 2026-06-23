@@ -1,23 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { IconArrowUpRightFromSquare } from "@/lib/icons";
 import type { S3Object, S3Prefix } from "../../../shared/s3.types";
 import { formatBytes, getFileName } from "../../lib/formatters";
 import { rpcCall } from "../../lib/rpc-client";
 import { useBucketStore } from "../../stores/useBucketStore";
 import { useObjectStore } from "../../stores/useObjectStore";
 import { useProfileStore } from "../../stores/useProfileStore";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { FileIcon } from "../common/FileIcon";
 import { toast } from "../common/Toast";
-import { IconArrowUpRightFromSquare } from "@/lib/icons";
 import { ObjectContextMenu } from "./ObjectContextMenu";
 
 interface ObjectGridProps {
@@ -106,7 +105,7 @@ export function ObjectGrid({
 
   return (
     <>
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,140px))] gap-2 p-3">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] content-start gap-2 p-3">
         {prefixes.map((p) => {
           const folderName =
             p.prefix.split("/").filter(Boolean).pop() ?? p.prefix;
@@ -119,11 +118,11 @@ export function ObjectGrid({
               onRename={startRename}
             >
               <div className="group/folder relative">
-                <Card
-                  className={`cursor-pointer p-2 transition-all duration-150 rounded-lg ring-1 ${
+                <div
+                  className={`relative flex h-24 w-full flex-col items-center justify-center gap-1 overflow-hidden rounded-lg p-2 text-center ring-1 transition-all duration-150 ${
                     isSelected
-                      ? "ring-2 ring-primary bg-primary/20 scale-[1.02] shadow-sm"
-                      : "ring-transparent hover:ring-border"
+                      ? "bg-primary/20 shadow-sm ring-2 ring-primary"
+                      : "bg-card ring-transparent hover:ring-border"
                   }`}
                 >
                   <Button
@@ -139,16 +138,16 @@ export function ObjectGrid({
 
                   <button
                     type="button"
-                    className="flex w-full cursor-pointer flex-col items-center gap-1 pt-4 text-center"
+                    className="flex w-full min-w-0 cursor-pointer flex-col items-center gap-1 text-center"
                     onDoubleClick={() => onNavigate(p.prefix)}
                     onClick={() => onToggleSelect(p.prefix)}
                   >
                     <FileIcon name="" isFolder className="text-2xl" />
-                    <span className="w-full truncate text-xs">
+                    <span className="block w-full truncate px-1 text-xs">
                       {folderName}/
                     </span>
                   </button>
-                </Card>
+                </div>
               </div>
             </ObjectContextMenu>
           );
@@ -165,22 +164,20 @@ export function ObjectGrid({
             >
               <button
                 type="button"
-                className={`cursor-pointer rounded-lg p-2 text-left transition-all duration-150 ring-1 ${
+                className={`flex h-24 w-full min-w-0 cursor-pointer flex-col items-center justify-center gap-1 overflow-hidden rounded-lg p-2 text-center ring-1 transition-all duration-150 ${
                   isSelected
-                    ? "ring-2 ring-primary bg-primary/20 scale-[1.02] shadow-sm"
+                    ? "bg-primary/20 shadow-sm ring-2 ring-primary"
                     : "bg-card ring-transparent hover:ring-border"
                 }`}
                 onClick={() => onToggleSelect(obj.key)}
               >
-                <div className="flex flex-col items-center gap-1 text-center">
-                  <FileIcon name={obj.key} className="text-2xl" />
-                  <span className="w-full truncate text-xs">
-                    {getFileName(obj.key)}
-                  </span>
-                  <span className="text-[11px] text-foreground/40">
-                    {formatBytes(obj.size)}
-                  </span>
-                </div>
+                <FileIcon name={obj.key} className="text-2xl" />
+                <span className="block w-full truncate px-1 text-xs">
+                  {getFileName(obj.key)}
+                </span>
+                <span className="block w-full truncate text-[11px] text-foreground/40">
+                  {formatBytes(obj.size)}
+                </span>
               </button>
             </ObjectContextMenu>
           );

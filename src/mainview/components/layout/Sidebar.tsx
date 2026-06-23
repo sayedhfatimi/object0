@@ -140,7 +140,7 @@ export function Sidebar() {
         {/* Favorites section */}
         {favoriteEntries.length > 0 && (
           <SidebarGroup className="p-0">
-            <SidebarGroupLabel className="sticky top-0 z-10 flex items-center justify-between rounded-none border-border border-b bg-card px-3 text-foreground/50">
+            <SidebarGroupLabel className="sticky top-0 z-10 flex items-center justify-between rounded-none border-border border-b bg-card px-3 text-foreground/50 group-data-[collapsible=icon]:pointer-events-none">
               <div className="flex items-center gap-1.5">
                 <IconStar className="size-[11px]" />
                 <span className="font-semibold text-[11px] uppercase tracking-wider">
@@ -162,13 +162,13 @@ export function Sidebar() {
                     <SidebarMenuButton
                       isActive={isActive}
                       tooltip={fav.bucket}
-                      className="h-auto rounded-none px-3 py-1.5"
+                      className="h-auto rounded-none px-3 py-1.5 group-data-[collapsible=icon]:h-auto! group-data-[collapsible=icon]:w-full! group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-2!"
                       onClick={() =>
                         selectFavoriteBucket(fav.profileId, fav.bucket)
                       }
                     >
                       <IconBucket className="size-3 shrink-0" />
-                      <div className="min-w-0 flex-1 text-left">
+                      <div className="min-w-0 flex-1 text-left group-data-[collapsible=icon]:hidden">
                         <span className="block truncate">{fav.bucket}</span>
                         {profile && (
                           <span className="block truncate text-[11px] text-foreground/40">
@@ -195,8 +195,8 @@ export function Sidebar() {
         )}
 
         {/* Profiles section */}
-        <SidebarGroup className="p-0">
-          <SidebarGroupLabel className="sticky top-0 z-10 flex items-center justify-between rounded-none border-border border-b bg-card px-3 text-foreground/50">
+        <SidebarGroup className="p-0 group-data-[collapsible=icon]:mt-1 group-data-[collapsible=icon]:border-border group-data-[collapsible=icon]:border-t group-data-[collapsible=icon]:pt-1">
+          <SidebarGroupLabel className="sticky top-0 z-10 flex items-center justify-between rounded-none border-border border-b bg-card px-3 text-foreground/50 group-data-[collapsible=icon]:pointer-events-none">
             <div className="flex items-center gap-1.5">
               <IconUserGroup className="size-[11px]" />
               <span className="font-semibold text-[11px] uppercase tracking-wider">
@@ -253,8 +253,8 @@ export function Sidebar() {
 
         {/* Buckets section (when profile selected) — pinned to the bottom */}
         {activeProfile && (
-          <SidebarGroup className="mt-auto p-0">
-            <SidebarGroupLabel className="sticky top-0 z-10 flex items-center justify-between rounded-none border-border border-b bg-card px-3 text-foreground/50">
+          <SidebarGroup className="mt-auto p-0 group-data-[collapsible=icon]:border-border group-data-[collapsible=icon]:border-t group-data-[collapsible=icon]:pt-1">
+            <SidebarGroupLabel className="sticky top-0 z-10 flex items-center justify-between rounded-none border-border border-b bg-card px-3 text-foreground/50 group-data-[collapsible=icon]:pointer-events-none">
               <div className="flex items-center gap-1.5">
                 <IconBucket className="size-[11px]" />
                 <span className="font-semibold text-[11px] uppercase tracking-wider">
@@ -276,15 +276,13 @@ export function Sidebar() {
                 <IconArrowsRotate className="size-[11px]" />
               </Button>
             </SidebarGroupLabel>
-            <div className="group-data-[collapsible=icon]:hidden">
-              <BucketList
-                buckets={buckets}
-                loading={bucketsLoading}
-                selectedBucket={selectedBucket}
-                profileId={activeProfile?.id ?? null}
-                onSelect={selectBucket}
-              />
-            </div>
+            <BucketList
+              buckets={buckets}
+              loading={bucketsLoading}
+              selectedBucket={selectedBucket}
+              profileId={activeProfile?.id ?? null}
+              onSelect={selectBucket}
+            />
           </SidebarGroup>
         )}
       </SidebarContent>

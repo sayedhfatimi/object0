@@ -1,8 +1,8 @@
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { IconBucket, IconStar } from "@/lib/icons";
 import type { BucketInfo } from "../../../shared/s3.types";
 import { useFavoritesStore } from "../../stores/useFavoritesStore";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
-import { IconBucket, IconStar } from "@/lib/icons";
 
 interface BucketListProps {
   buckets: BucketInfo[];
@@ -60,18 +60,21 @@ export function BucketList({
       >
         <button
           type="button"
-          className="flex flex-1 items-center gap-2 overflow-hidden rounded-none px-3 py-1.5 transition-colors hover:bg-accent hover:text-accent-foreground"
+          title={b.name}
+          className="flex flex-1 items-center gap-2 overflow-hidden rounded-none px-3 py-1.5 transition-colors hover:bg-accent hover:text-accent-foreground group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2"
           onClick={() => onSelect(b.name)}
         >
           <IconBucket className="size-3.5 shrink-0" />
-          <span className="truncate">{b.name}</span>
+          <span className="truncate group-data-[collapsible=icon]:hidden">
+            {b.name}
+          </span>
         </button>
         {profileId && (
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            className={`size-6 shrink-0 ${
+            className={`size-6 shrink-0 group-data-[collapsible=icon]:hidden ${
               showStar
                 ? "text-warning"
                 : "opacity-0 group-hover/bucket:opacity-100 text-muted-foreground"
@@ -94,13 +97,13 @@ export function BucketList({
       {/* Pinned section */}
       {pinned.length > 0 && (
         <>
-          <li className="flex items-center gap-1 px-3 py-1 text-[10px] text-muted-foreground/60">
+          <li className="flex items-center gap-1 px-3 py-1 text-[10px] text-muted-foreground/60 group-data-[collapsible=icon]:hidden">
             <IconStar className="size-2.5" />
             Pinned
           </li>
           {pinned.map((b) => renderBucket(b, true))}
           {unpinned.length > 0 && (
-            <li className="px-3 py-1 text-[10px] text-muted-foreground/60">
+            <li className="px-3 py-1 text-[10px] text-muted-foreground/60 group-data-[collapsible=icon]:hidden">
               All Buckets
             </li>
           )}

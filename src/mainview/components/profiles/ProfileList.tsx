@@ -1,6 +1,4 @@
 import { ContextMenu as ContextMenuPrimitive } from "@base-ui/react/context-menu";
-import type { ProfileInfo } from "../../../shared/profile.types";
-import { PROVIDER_LABELS } from "../../../shared/profile.types";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -8,16 +6,18 @@ import {
   ContextMenuSeparator,
 } from "@/components/ui/context-menu";
 import {
-  IconPenToSquare,
-  IconTrashCan,
   IconAws,
   IconCloud,
   IconDigitalOcean,
-  IconServer,
-  IconGoogle,
   IconFire,
   IconGear,
+  IconGoogle,
+  IconPenToSquare,
+  IconServer,
+  IconTrashCan,
 } from "@/lib/icons";
+import type { ProfileInfo } from "../../../shared/profile.types";
+import { PROVIDER_LABELS } from "../../../shared/profile.types";
 
 interface ProfileListProps {
   profiles: ProfileInfo[];
@@ -53,7 +53,8 @@ export function ProfileList({
           >
             <button
               type="button"
-              className={`flex w-full items-center gap-2 rounded-none px-3 py-1.5 text-sm transition-colors duration-150 hover:bg-accent hover:text-accent-foreground ${
+              title={p.name}
+              className={`flex w-full items-center gap-2 rounded-none px-3 py-1.5 text-sm transition-colors duration-150 hover:bg-accent hover:text-accent-foreground group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2 ${
                 p.id === activeId
                   ? "bg-accent text-accent-foreground"
                   : "text-foreground"
@@ -63,8 +64,8 @@ export function ProfileList({
               <span className="text-base shrink-0">
                 <ProviderIcon provider={p.provider} />
               </span>
-              <div className="flex flex-col items-start min-w-0">
-                <span className="font-medium text-sm truncate w-full">
+              <div className="flex min-w-0 flex-col items-start group-data-[collapsible=icon]:hidden">
+                <span className="w-full truncate font-medium text-sm">
                   {p.name}
                 </span>
                 <span

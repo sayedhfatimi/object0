@@ -274,7 +274,7 @@ export function TransferDialog() {
           )}
         </div>
 
-        <DialogFooter className="pt-0">
+        <DialogFooter>
           <Button variant="outline" size="sm" onClick={handleClose}>
             Cancel
           </Button>
