@@ -66,7 +66,7 @@ function StatusIconDisplay({ status }: { status: FolderSyncRuleStatus }) {
   }
 }
 
-function statusChipClass(status: FolderSyncRuleStatus): string {
+function getStatusChipClassName(status: FolderSyncRuleStatus): string {
   switch (status) {
     case "syncing":
       return "bg-info/15 text-info";
@@ -163,7 +163,7 @@ export function FolderSyncPanel() {
     setDeletingRule(null);
   }, [deletingRule, removeRule]);
 
-  const handleSyncNow = useCallback(
+  const syncRuleNow = useCallback(
     async (id: string) => {
       try {
         await syncNow(id);
@@ -442,7 +442,7 @@ export function FolderSyncPanel() {
                         <span
                           className={`inline-flex rounded-full px-1.5 py-px text-[9px] ${
                             isCompact ? "mt-0.5" : "mt-1"
-                          } ${statusChipClass(status)}`}
+                          } ${getStatusChipClassName(status)}`}
                         >
                           {statusLabel(status)}
                         </span>
@@ -569,7 +569,7 @@ export function FolderSyncPanel() {
                             ? "h-5 min-h-5 text-[9px]"
                             : "h-6 min-h-6 text-[10px]"
                         }`}
-                        onClick={() => handleSyncNow(rule.id)}
+                        onClick={() => syncRuleNow(rule.id)}
                         title="Sync now"
                         disabled={status === "syncing"}
                       >

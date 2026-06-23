@@ -125,7 +125,7 @@ export function ObjectToolbar() {
     }
   }, [profileId, bucket]);
 
-  const executeDelete = useCallback(
+  const commitPendingDelete = useCallback(
     async (keys: string[]) => {
       if (!profileId || !bucket) return;
       try {
@@ -139,7 +139,7 @@ export function ObjectToolbar() {
     [profileId, bucket, refresh],
   );
 
-  const handleDelete = useCallback(async () => {
+  const requestDelete = useCallback(async () => {
     if (!profileId || !bucket || selectedKeys.size === 0) return;
 
     const keysToDelete = Array.from(selectedKeys);
@@ -152,13 +152,13 @@ export function ObjectToolbar() {
       // Execute the previous pending delete immediately
       const prev = pendingDeleteRef.current;
       pendingDeleteRef.current = null;
-      void executeDelete(prev.keys);
+      void commitPendingDelete(prev.keys);
     }
 
     // Show undo toast; actual delete happens after timeout
     const timerId = setTimeout(() => {
       pendingDeleteRef.current = null;
-      void executeDelete(keysToDelete);
+      void commitPendingDelete(keysToDelete);
     }, 5000);
 
     pendingDeleteRef.current = { keys: keysToDelete, timerId };
@@ -177,7 +177,14 @@ export function ObjectToolbar() {
         },
       },
     });
-  }, [profileId, bucket, selectedKeys, clearSelection, executeDelete, refresh]);
+  }, [
+    profileId,
+    bucket,
+    selectedKeys,
+    clearSelection,
+    commitPendingDelete,
+    refresh,
+  ]);
 
   const handleDownload = useCallback(async () => {
     if (!profileId || !bucket || selectedKeys.size === 0) return;
@@ -468,7 +475,7 @@ export function ObjectToolbar() {
       <ConfirmDialog
         open={confirmDelete}
         onClose={() => setConfirmDelete(false)}
-        onConfirm={() => void handleDelete()}
+        onConfirm={() => void requestDelete()}
         title="Delete Objects"
         message={`Are you sure you want to delete ${selectedKeys.size} object(s)? This action cannot be undone.`}
         confirmLabel="Delete"

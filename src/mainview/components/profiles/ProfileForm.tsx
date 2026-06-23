@@ -124,7 +124,7 @@ export function ProfileForm({ open, onClose, editProfile }: ProfileFormProps) {
     setTestResult(null);
   };
 
-  const handleTest = async () => {
+  const testConnection = async () => {
     setTesting(true);
     setTestResult(null);
     try {
@@ -421,7 +421,7 @@ export function ProfileForm({ open, onClose, editProfile }: ProfileFormProps) {
             type="button"
             variant="outline"
             size="sm"
-            onClick={handleTest}
+            onClick={testConnection}
             disabled={testing || !accessKeyId || !secretAccessKey}
           >
             {testing ? (

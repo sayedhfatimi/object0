@@ -79,7 +79,7 @@ export function TransferDialog() {
     }
   };
 
-  const handleTransfer = async () => {
+  const runCrossBucketTransfer = async () => {
     if (!currentProfileId || !currentBucket || !destProfileId || !destBucket)
       return;
     if (keys.length === 0) return;
@@ -280,7 +280,7 @@ export function TransferDialog() {
           </Button>
           <Button
             size="sm"
-            onClick={handleTransfer}
+            onClick={runCrossBucketTransfer}
             disabled={
               transferring || !destProfileId || !destBucket || keys.length === 0
             }

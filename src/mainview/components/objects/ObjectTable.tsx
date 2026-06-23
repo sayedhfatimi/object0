@@ -303,7 +303,7 @@ export function ObjectTable({
     setRenamingKey(null);
   };
 
-  const sortIcon = (field: string) => {
+  const getSortIndicator = (field: string) => {
     if (sortField !== field) return "";
     return sortDir === "asc" ? " ↑" : " ↓";
   };
@@ -346,7 +346,7 @@ export function ObjectTable({
                 onClick={() => onSort("key")}
               >
                 Name
-                <span aria-hidden>{sortIcon("key")}</span>
+                <span aria-hidden>{getSortIndicator("key")}</span>
               </button>
             </TableHead>
             <TableHead
@@ -366,7 +366,7 @@ export function ObjectTable({
                 onClick={() => onSort("size")}
               >
                 Size
-                <span aria-hidden>{sortIcon("size")}</span>
+                <span aria-hidden>{getSortIndicator("size")}</span>
               </button>
             </TableHead>
             <TableHead
@@ -386,7 +386,7 @@ export function ObjectTable({
                 onClick={() => onSort("lastModified")}
               >
                 Modified
-                <span aria-hidden>{sortIcon("lastModified")}</span>
+                <span aria-hidden>{getSortIndicator("lastModified")}</span>
               </button>
             </TableHead>
           </tr>

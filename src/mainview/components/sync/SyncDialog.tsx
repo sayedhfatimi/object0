@@ -71,7 +71,7 @@ export function SyncDialog() {
     }
   };
 
-  const handlePreview = async () => {
+  const previewSyncDiff = async () => {
     if (!currentProfileId || !currentBucket || !destProfileId || !destBucket)
       return;
 
@@ -296,7 +296,7 @@ export function SyncDialog() {
           <Button
             variant="outline"
             size="sm"
-            onClick={handlePreview}
+            onClick={previewSyncDiff}
             disabled={previewing || !destProfileId || !destBucket}
           >
             {previewing ? (
