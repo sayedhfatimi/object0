@@ -1384,17 +1384,24 @@ fn expand_user_path(path: &str) -> PathBuf {
 }
 
 fn sanitize_relative_path(relative_path: &str) -> Option<PathBuf> {
-    let candidate = Path::new(relative_path);
-    if candidate.is_absolute() {
+    // Reject backslashes outright. On non-Windows builds `\` is NOT a path
+    // separator, so a key like `..\..\secret` would slip past the component
+    // check below yet still traverse when the same key is handled on Windows.
+    if relative_path.contains('\\') {
         return None;
     }
+    let candidate = Path::new(relative_path);
+    // Require every component to be a plain file/dir name. This rejects, in one
+    // check: absolute paths, the root dir, the `.`/`..` segments, and Windows
+    // drive prefixes (e.g. `C:foo`, which parses as a `Prefix` component there).
     if candidate
         .components()
-        .any(|c| matches!(c, Component::ParentDir))
+        .all(|component| matches!(component, Component::Normal(_)))
     {
-        return None;
+        Some(candidate.to_path_buf())
+    } else {
+        None
     }
-    Some(candidate.to_path_buf())
 }
 
 fn normalize_slashes(path: &Path) -> String {
@@ -5724,9 +5731,19 @@ mod tests {
         assert!(sanitize_relative_path("../secret").is_none());
         assert!(sanitize_relative_path("/abs/path").is_none());
         assert!(sanitize_relative_path("a/../../b").is_none());
+        // Windows-style traversal: backslash separators and drive-rooted paths.
+        assert!(sanitize_relative_path("..\\..\\secret").is_none());
+        assert!(sanitize_relative_path("a\\b").is_none());
+        assert!(sanitize_relative_path("C:\\Windows\\System32").is_none());
+        // Leading current-dir segment is no longer treated as a plain name.
+        assert!(sanitize_relative_path("./file.txt").is_none());
         assert_eq!(
             sanitize_relative_path("ok/file.txt"),
             Some(PathBuf::from("ok/file.txt"))
+        );
+        assert_eq!(
+            sanitize_relative_path("a/b/c.txt"),
+            Some(PathBuf::from("a/b/c.txt"))
         );
     }
 
