@@ -10,9 +10,6 @@ import { StatusBar } from "./StatusBar";
 import { TabBar } from "./TabBar";
 import { TopBar } from "./TopBar";
 
-const JobPanel = lazy(() =>
-  import("../jobs/JobPanel").then((module) => ({ default: module.JobPanel })),
-);
 const SettingsPanel = lazy(() =>
   import("../settings/SettingsPanel").then((module) => ({
     default: module.SettingsPanel,
@@ -62,7 +59,6 @@ const ObjectSearchDialog = lazy(() =>
 export function MainLayout() {
   const sidebarCollapsed = useUIStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
-  const jobPanelOpen = useUIStore((s) => s.jobPanelOpen);
   const shareHistoryOpen = useUIStore((s) => s.shareHistoryOpen);
   const settingsOpen = useUIStore((s) => s.settingsOpen);
   const folderSyncPanelOpen = useUIStore((s) => s.folderSyncPanelOpen);
@@ -118,11 +114,6 @@ export function MainLayout() {
       <DetailPanel />
 
       {/* Right-side panel Sheets — each self-manages open state via useUIStore */}
-      {jobPanelOpen && (
-        <Suspense fallback={null}>
-          <JobPanel />
-        </Suspense>
-      )}
       {settingsOpen && (
         <Suspense fallback={null}>
           <SettingsPanel />

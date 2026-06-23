@@ -1,3 +1,12 @@
+import { lazy, Suspense } from "react";
+import {
+  IconClockRotateLeft,
+  IconFolderOpen,
+  IconGear,
+  IconListCheck,
+  IconMoon,
+  IconSun,
+} from "../../lib/icons";
 import { useBucketStore } from "../../stores/useBucketStore";
 import { useFolderSyncStore } from "../../stores/useFolderSyncStore";
 import { useJobStore } from "../../stores/useJobStore";
@@ -9,14 +18,11 @@ import { ObjectBreadcrumb } from "../objects/ObjectBreadcrumb";
 import { ObjectToolbar } from "../objects/ObjectToolbar";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
-import {
-  IconClockRotateLeft,
-  IconFolderOpen,
-  IconGear,
-  IconListCheck,
-  IconMoon,
-  IconSun,
-} from "../../lib/icons";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+
+const JobPanel = lazy(() =>
+  import("../jobs/JobPanel").then((m) => ({ default: m.JobPanel })),
+);
 
 export function TopBar() {
   const activeProfile = useProfileStore((s) => s.activeProfile);
@@ -92,22 +98,36 @@ export function TopBar() {
           )}
         </div>
 
-        <div className="no-drag relative">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => setJobPanelOpen(!jobPanelOpen)}
-            title="Toggle Jobs Panel (Ctrl+J)"
-            aria-label="Toggle jobs panel"
+        <Popover open={jobPanelOpen} onOpenChange={setJobPanelOpen}>
+          <div className="no-drag relative">
+            <PopoverTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  title="Toggle Jobs Panel (Ctrl+J)"
+                  aria-label="Toggle jobs panel"
+                >
+                  <IconListCheck className="size-4" />
+                </Button>
+              }
+            />
+            {activeJobCount > 0 && (
+              <Badge className="absolute -top-1 -right-1 min-w-4 border-transparent bg-info px-1 text-[10px] text-info-foreground">
+                {activeJobCount}
+              </Badge>
+            )}
+          </div>
+          <PopoverContent
+            align="end"
+            sideOffset={8}
+            className="flex w-[400px] flex-col gap-0 overflow-hidden p-0"
           >
-            <IconListCheck className="size-4" />
-          </Button>
-          {activeJobCount > 0 && (
-            <Badge className="absolute -top-1 -right-1 min-w-4 px-1 text-[10px] bg-info text-info-foreground border-transparent">
-              {activeJobCount}
-            </Badge>
-          )}
-        </div>
+            <Suspense fallback={null}>
+              <JobPanel />
+            </Suspense>
+          </PopoverContent>
+        </Popover>
 
         <div className="no-drag relative">
           <Button
