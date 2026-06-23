@@ -785,6 +785,21 @@ fn ensure_parent_dir(path: &Path) -> Result<(), String> {
     Ok(())
 }
 
+/// Write `contents` to `path` atomically: write a uniquely-named temp file in
+/// the same directory, then rename it over the target. Because the temp name is
+/// unique and `fs::rename` is atomic on one filesystem, a reader (or a crash, or
+/// a concurrent writer) never observes a torn/partial file.
+fn write_atomic(path: &Path, contents: &[u8]) -> Result<(), String> {
+    ensure_parent_dir(path)?;
+    let tmp = path.with_file_name(format!(".object0-{}.tmp", Uuid::new_v4()));
+    fs::write(&tmp, contents)
+        .map_err(|err| format!("Failed to write {}: {err}", tmp.display()))?;
+    fs::rename(&tmp, path).map_err(|err| {
+        let _ = fs::remove_file(&tmp); // best-effort cleanup of the orphan temp
+        format!("Failed to persist {}: {err}", path.display())
+    })
+}
+
 fn random_bytes<const N: usize>() -> [u8; N] {
     let mut bytes = [0u8; N];
     rand::thread_rng().fill_bytes(&mut bytes);
@@ -1089,10 +1104,9 @@ fn load_favorites_from_disk() -> Vec<String> {
 
 fn save_favorites_to_disk(favorites: &[String]) -> Result<(), String> {
     let path = favorites_path()?;
-    ensure_parent_dir(&path)?;
     let payload = serde_json::to_string(favorites)
         .map_err(|err| format!("Failed to serialize favorites: {err}"))?;
-    fs::write(&path, payload).map_err(|err| format!("Failed to write {}: {err}", path.display()))
+    write_atomic(&path, payload.as_bytes())
 }
 
 fn is_terminal_job_status(status: JobStatus) -> bool {
@@ -1126,10 +1140,9 @@ fn load_job_history_from_disk() -> Vec<JobInfo> {
 
 fn save_job_history_to_disk(history: &[JobInfo]) -> Result<(), String> {
     let path = job_history_path()?;
-    ensure_parent_dir(&path)?;
     let payload = serde_json::to_string(history)
         .map_err(|err| format!("Failed to serialize job history: {err}"))?;
-    fs::write(&path, payload).map_err(|err| format!("Failed to write {}: {err}", path.display()))
+    write_atomic(&path, payload.as_bytes())
 }
 
 fn load_folder_sync_rules_from_disk() -> Vec<Value> {
@@ -1148,10 +1161,9 @@ fn load_folder_sync_rules_from_disk() -> Vec<Value> {
 
 fn save_folder_sync_rules_to_disk(rules: &[Value]) -> Result<(), String> {
     let path = folder_sync_rules_path()?;
-    ensure_parent_dir(&path)?;
     let payload = serde_json::to_string_pretty(rules)
         .map_err(|err| format!("Failed to serialize folder sync rules: {err}"))?;
-    fs::write(&path, payload).map_err(|err| format!("Failed to write {}: {err}", path.display()))
+    write_atomic(&path, payload.as_bytes())
 }
 
 fn remove_folder_sync_file_records(rule_id: &str) {
@@ -1202,10 +1214,9 @@ fn save_folder_sync_file_records(
     records: &[FolderSyncFileRecord],
 ) -> Result<(), String> {
     let path = folder_sync_records_path(rule_id)?;
-    ensure_parent_dir(&path)?;
     let payload = serde_json::to_string(records)
         .map_err(|err| format!("Failed to serialize folder sync records: {err}"))?;
-    fs::write(&path, payload).map_err(|err| format!("Failed to write {}: {err}", path.display()))
+    write_atomic(&path, payload.as_bytes())
 }
 
 fn update_folder_sync_file_record(
@@ -5735,5 +5746,14 @@ mod tests {
         assert_eq!(normalize_prefix(""), "");
         assert_eq!(normalize_prefix("photos"), "photos/");
         assert_eq!(normalize_prefix("photos/"), "photos/");
+    }
+
+    #[test]
+    fn write_atomic_roundtrips_via_tempdir() {
+        let dir = std::env::temp_dir().join(format!("object0-test-{}", std::process::id()));
+        let path = dir.join("nested/data.json");
+        write_atomic(&path, b"[1,2,3]").unwrap();
+        assert_eq!(fs::read_to_string(&path).unwrap(), "[1,2,3]");
+        let _ = fs::remove_dir_all(&dir);
     }
 }
