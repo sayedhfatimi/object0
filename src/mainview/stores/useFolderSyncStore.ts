@@ -14,6 +14,19 @@ import { onEvent, rpcCall } from "../lib/rpc-client";
 
 const MAX_CONFLICTS = 200;
 
+// Immutable Map helpers — clone-then-mutate so React/Zustand sees a new reference.
+function mapWith<K, V>(map: Map<K, V>, key: K, value: V): Map<K, V> {
+  const next = new Map(map);
+  next.set(key, value);
+  return next;
+}
+
+function mapWithout<K, V>(map: Map<K, V>, key: K): Map<K, V> {
+  const next = new Map(map);
+  next.delete(key);
+  return next;
+}
+
 interface FolderSyncStore {
   // ── Data ──
   rules: FolderSyncRule[];
@@ -78,18 +91,16 @@ export const useFolderSyncStore = create<FolderSyncStore>()((set, get) => ({
 
     // Subscribe to folder-sync events from bun process
     onEvent("folder-sync:status", (data: FolderSyncStatusEvent) => {
-      set((state) => {
-        const newStatuses = new Map(state.statuses);
-        newStatuses.set(data.ruleId, {
+      set((state) => ({
+        statuses: mapWith(state.statuses, data.ruleId, {
           ruleId: data.ruleId,
           status: data.status,
           filesWatching: data.filesWatching,
           lastChange: data.lastChange,
           currentFile: data.currentFile,
           progress: data.progress,
-        });
-        return { statuses: newStatuses };
-      });
+        }),
+      }));
     });
 
     onEvent("folder-sync:conflict", (data: FolderSyncConflictEvent) => {
@@ -116,11 +127,9 @@ export const useFolderSyncStore = create<FolderSyncStore>()((set, get) => ({
     });
 
     onEvent("folder-sync:error", (data: FolderSyncErrorEvent) => {
-      set((state) => {
-        const newErrors = new Map(state.errors);
-        newErrors.set(data.ruleId, data.error);
-        return { errors: newErrors };
-      });
+      set((state) => ({
+        errors: mapWith(state.errors, data.ruleId, data.error),
+      }));
     });
   },
 
@@ -153,16 +162,8 @@ export const useFolderSyncStore = create<FolderSyncStore>()((set, get) => ({
     set((state) => ({
       rules: state.rules.filter((r) => r.id !== id),
       conflicts: state.conflicts.filter((conflict) => conflict.ruleId !== id),
-      errors: (() => {
-        const m = new Map(state.errors);
-        m.delete(id);
-        return m;
-      })(),
-      statuses: (() => {
-        const m = new Map(state.statuses);
-        m.delete(id);
-        return m;
-      })(),
+      errors: mapWithout(state.errors, id),
+      statuses: mapWithout(state.statuses, id),
     }));
   },
 
