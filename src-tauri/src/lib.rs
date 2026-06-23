@@ -1,7 +1,3 @@
-use aes_gcm::{
-    aead::{Aead, KeyInit},
-    Aes256Gcm, Nonce,
-};
 use aws_sdk_s3::{
     config::{Credentials, Region},
     presigning::PresigningConfig,
@@ -9,18 +5,14 @@ use aws_sdk_s3::{
     types::{CompletedMultipartUpload, CompletedPart, Delete, ObjectIdentifier},
     Client as S3Client,
 };
-use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 use chrono::{Duration, Utc};
 use flate2::{write::GzEncoder, Compression};
 use keyring::Entry;
 use notify::{recommended_watcher, RecursiveMode, Watcher};
-use pbkdf2::pbkdf2_hmac;
 use percent_encoding::{utf8_percent_encode, AsciiSet, NON_ALPHANUMERIC};
-use rand::RngCore;
 use rfd::FileDialog;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Map, Value};
-use sha2::Sha512;
 use std::{
     collections::{HashMap, HashSet, VecDeque},
     fs, io,
@@ -49,7 +41,13 @@ use uuid::Uuid;
 use walkdir::WalkDir;
 
 mod config_paths;
+mod crypto;
 mod rpc_method;
+
+use crypto::{
+    decode_base64, decrypt_payload, derive_key, encode_base64, encrypt_payload,
+    generate_recovery_key, random_bytes,
+};
 
 use config_paths::{
     favorites_path, folder_sync_records_path, folder_sync_rules_path, job_history_path, vault_path,
@@ -860,68 +858,6 @@ fn write_atomic(path: &Path, contents: &[u8]) -> Result<(), String> {
         let _ = fs::remove_file(&tmp); // best-effort cleanup of the orphan temp
         format!("Failed to persist {}: {err}", path.display())
     })
-}
-
-fn random_bytes<const N: usize>() -> [u8; N] {
-    let mut bytes = [0u8; N];
-    rand::thread_rng().fill_bytes(&mut bytes);
-    bytes
-}
-
-fn encode_base64(bytes: &[u8]) -> String {
-    BASE64.encode(bytes)
-}
-
-fn decode_base64(input: &str) -> Result<Vec<u8>, String> {
-    BASE64
-        .decode(input)
-        .map_err(|err| format!("Invalid base64 payload: {err}"))
-}
-
-fn derive_key(passphrase: &str, salt: &[u8]) -> [u8; KEY_BYTES] {
-    let mut key = [0u8; KEY_BYTES];
-    pbkdf2_hmac::<Sha512>(passphrase.as_bytes(), salt, PBKDF2_ITERATIONS, &mut key);
-    key
-}
-
-fn encrypt_payload(key: &[u8; KEY_BYTES], plaintext: &[u8]) -> Result<(Vec<u8>, Vec<u8>), String> {
-    let cipher =
-        Aes256Gcm::new_from_slice(key).map_err(|err| format!("Invalid encryption key: {err}"))?;
-    let iv = random_bytes::<IV_BYTES>();
-    let nonce = Nonce::from_slice(&iv);
-    let ciphertext = cipher
-        .encrypt(nonce, plaintext)
-        .map_err(|_| "Vault encryption failed".to_string())?;
-
-    Ok((iv.to_vec(), ciphertext))
-}
-
-fn decrypt_payload(key: &[u8; KEY_BYTES], iv: &[u8], ciphertext: &[u8]) -> Result<Vec<u8>, String> {
-    if iv.len() != IV_BYTES {
-        return Err("Invalid vault IV length".to_string());
-    }
-
-    let cipher =
-        Aes256Gcm::new_from_slice(key).map_err(|err| format!("Invalid encryption key: {err}"))?;
-    let nonce = Nonce::from_slice(iv);
-    cipher
-        .decrypt(nonce, ciphertext)
-        .map_err(|_| "Invalid passphrase".to_string())
-}
-
-fn generate_recovery_key() -> String {
-    const CHARS: &[u8] = b"ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    let bytes = random_bytes::<RECOVERY_KEY_LENGTH>();
-    let mut key = String::with_capacity(RECOVERY_KEY_LENGTH + (RECOVERY_KEY_LENGTH / 4));
-
-    for (idx, byte) in bytes.iter().enumerate() {
-        if idx > 0 && idx % 4 == 0 {
-            key.push('-');
-        }
-        key.push(CHARS[(*byte as usize) % CHARS.len()] as char);
-    }
-
-    key
 }
 
 fn read_vault_file(path: &Path) -> Result<VaultFileDisk, String> {
