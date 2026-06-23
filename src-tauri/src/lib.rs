@@ -73,6 +73,7 @@ const MULTIPART_THRESHOLD_BYTES: i64 = 5 * 1024 * 1024;
 const MULTIPART_PART_SIZE_BYTES: usize = 8 * 1024 * 1024;
 const JOB_HISTORY_MAX: usize = 100;
 const JOB_ORDER_MAX: usize = 200;
+const JOB_CANCELLED: &str = "Job cancelled";
 const S3_LIST_MAX_KEYS: i32 = 1000;
 const FOLDER_SYNC_MIN_POLL_MS: i64 = 250;
 const FOLDER_SYNC_MAX_POLL_MS: i64 = 86_400_000;
@@ -2261,7 +2262,7 @@ async fn s3_upload_file(
     mut on_progress: impl FnMut(i64, i64),
 ) -> Result<i64, String> {
     if cancel_flag.load(Ordering::SeqCst) {
-        return Err("Job cancelled".to_string());
+        return Err(JOB_CANCELLED.to_string());
     }
 
     let total = fs::metadata(local_path)
@@ -2309,7 +2310,7 @@ async fn s3_upload_file(
     let upload_result: Result<(), String> = async {
         loop {
             if cancel_flag.load(Ordering::SeqCst) {
-                return Err("Job cancelled".to_string());
+                return Err(JOB_CANCELLED.to_string());
             }
 
             let mut buffer = vec![0u8; MULTIPART_PART_SIZE_BYTES];
@@ -2398,7 +2399,7 @@ async fn s3_download_file(
     mut on_progress: impl FnMut(i64, i64),
 ) -> Result<i64, String> {
     if cancel_flag.load(Ordering::SeqCst) {
-        return Err("Job cancelled".to_string());
+        return Err(JOB_CANCELLED.to_string());
     }
 
     if let Some(parent) = local_path.parent() {
@@ -2429,7 +2430,7 @@ async fn s3_download_file(
     {
         if cancel_flag.load(Ordering::SeqCst) {
             let _ = tokio_fs::remove_file(local_path).await;
-            return Err("Job cancelled".to_string());
+            return Err(JOB_CANCELLED.to_string());
         }
 
         writer
@@ -2459,7 +2460,7 @@ async fn s3_download_archive_tar_gz(
     mut on_progress: impl FnMut(i64, i64),
 ) -> Result<i64, String> {
     if cancel_flag.load(Ordering::SeqCst) {
-        return Err("Job cancelled".to_string());
+        return Err(JOB_CANCELLED.to_string());
     }
     if keys.is_empty() {
         return Err("No objects selected for archive".to_string());
@@ -2490,7 +2491,7 @@ async fn s3_download_archive_tar_gz(
 
         for key in keys {
             if cancel_flag.load(Ordering::SeqCst) {
-                return Err("Job cancelled".to_string());
+                return Err(JOB_CANCELLED.to_string());
             }
 
             let relative = if !common_prefix.is_empty() && key.starts_with(common_prefix) {
@@ -2557,7 +2558,7 @@ async fn s3_download_archive_tar_gz(
                 .map_err(|err| format!("Download stream failed: {err}"))?
             {
                 if cancel_flag.load(Ordering::SeqCst) {
-                    return Err("Job cancelled".to_string());
+                    return Err(JOB_CANCELLED.to_string());
                 }
 
                 encoder.write_all(&bytes).map_err(|err| {
@@ -2607,7 +2608,7 @@ async fn s3_download_archive_tar_gz(
             .map_err(|err| format!("Failed finalizing gzip stream: {err}"))?;
 
         if cancel_flag.load(Ordering::SeqCst) {
-            return Err("Job cancelled".to_string());
+            return Err(JOB_CANCELLED.to_string());
         }
 
         Ok(transferred.max(total))
@@ -2632,7 +2633,7 @@ async fn s3_copy_object_via_temp_file(
     mut on_progress: impl FnMut(i64, i64),
 ) -> Result<i64, String> {
     if cancel_flag.load(Ordering::SeqCst) {
-        return Err("Job cancelled".to_string());
+        return Err(JOB_CANCELLED.to_string());
     }
 
     let head = source_client
@@ -2658,7 +2659,7 @@ async fn s3_copy_object_via_temp_file(
         .await?;
 
         if cancel_flag.load(Ordering::SeqCst) {
-            return Err("Job cancelled".to_string());
+            return Err(JOB_CANCELLED.to_string());
         }
 
         s3_upload_file(
@@ -2691,7 +2692,7 @@ async fn s3_copy_object(
     mut on_progress: impl FnMut(i64, i64),
 ) -> Result<i64, String> {
     if cancel_flag.load(Ordering::SeqCst) {
-        return Err("Job cancelled".to_string());
+        return Err(JOB_CANCELLED.to_string());
     }
 
     let head = source_client
@@ -2899,7 +2900,7 @@ fn try_start_queued_jobs(app: AppHandle) {
                             .await
                             {
                                 Ok(transferred) => Ok(transferred),
-                                Err(err) if err == "Job cancelled" => Err(err),
+                                Err(err) if err == JOB_CANCELLED => Err(err),
                                 Err(err) => s3_copy_object_via_temp_file(
                                     &src_client,
                                     source_bucket,
@@ -2957,7 +2958,7 @@ fn try_start_queued_jobs(app: AppHandle) {
                             .await
                             {
                                 Ok(transferred) => transferred,
-                                Err(err) if err == "Job cancelled" => return Err(err),
+                                Err(err) if err == JOB_CANCELLED => return Err(err),
                                 Err(err) => s3_copy_object_via_temp_file(
                                     &src_client,
                                     source_bucket,
@@ -2988,7 +2989,7 @@ fn try_start_queued_jobs(app: AppHandle) {
                         };
 
                         if cancel_flag.load(Ordering::SeqCst) {
-                            return Err("Job cancelled".to_string());
+                            return Err(JOB_CANCELLED.to_string());
                         }
 
                         s3_delete_keys(&src_client, source_bucket, &[source_key.clone()]).await?;
@@ -3040,7 +3041,7 @@ fn try_start_queued_jobs(app: AppHandle) {
                     None,
                     Some(bytes),
                 ),
-                Err(err) if err == "Job cancelled" => {
+                Err(err) if err == JOB_CANCELLED => {
                     finish_job(&app_handle, &task.id, JobStatus::Cancelled, Some(err), None)
                 }
                 Err(err) => finish_job(&app_handle, &task.id, JobStatus::Failed, Some(err), None),
@@ -3114,7 +3115,7 @@ fn cancel_job(app: &AppHandle, job_id: &str) {
                 jobs.queue.remove(index);
                 if let Some(job) = jobs.jobs.get_mut(job_id) {
                     job.status = JobStatus::Cancelled;
-                    job.error = Some("Job cancelled".to_string());
+                    job.error = Some(JOB_CANCELLED.to_string());
                     job.completed_at = Some(now_iso());
                     queued_cancel_snapshot = Some(job.clone());
                 }
@@ -3469,7 +3470,7 @@ async fn run_folder_sync_once(
 
     for entry in &diff.uploads {
         if control.cancel_flag.load(Ordering::SeqCst) {
-            return Err("Job cancelled".to_string());
+            return Err(JOB_CANCELLED.to_string());
         }
         if control.pause_flag.load(Ordering::SeqCst) {
             return Ok(());
@@ -3556,7 +3557,7 @@ async fn run_folder_sync_once(
 
     for entry in &diff.downloads {
         if control.cancel_flag.load(Ordering::SeqCst) {
-            return Err("Job cancelled".to_string());
+            return Err(JOB_CANCELLED.to_string());
         }
         if control.pause_flag.load(Ordering::SeqCst) {
             return Ok(());
@@ -3646,7 +3647,7 @@ async fn run_folder_sync_once(
 
     for entry in &diff.delete_local {
         if control.cancel_flag.load(Ordering::SeqCst) {
-            return Err("Job cancelled".to_string());
+            return Err(JOB_CANCELLED.to_string());
         }
         if control.pause_flag.load(Ordering::SeqCst) {
             return Ok(());
@@ -3675,7 +3676,7 @@ async fn run_folder_sync_once(
 
     if !diff.delete_remote.is_empty() {
         if control.cancel_flag.load(Ordering::SeqCst) {
-            return Err("Job cancelled".to_string());
+            return Err(JOB_CANCELLED.to_string());
         }
         if control.pause_flag.load(Ordering::SeqCst) {
             return Ok(());
@@ -3899,7 +3900,7 @@ fn start_folder_sync_rule(app: &AppHandle, rule_id: &str) -> Result<(), String> 
                         None,
                     );
                 }
-                Err(err) if err == "Job cancelled" => break,
+                Err(err) if err == JOB_CANCELLED => break,
                 Err(err) => {
                     let _ =
                         update_folder_sync_rule_result(&rule_id, Some("error"), Some(err.as_str()));
