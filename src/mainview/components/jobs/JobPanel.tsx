@@ -2,6 +2,7 @@ import type { JobInfo } from "@shared/job.types";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useEffect, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
+import { formatBytes, formatSpeed } from "@/lib/formatters";
 import {
   IconArrowsRotate,
   IconBroom,
@@ -12,9 +13,7 @@ import {
   IconPlay,
   IconXmark,
 } from "@/lib/icons";
-import { formatBytes, formatSpeed } from "../../lib/formatters";
-import { useJobStore } from "../../stores/useJobStore";
-import { useUIStore } from "../../stores/useUIStore";
+import { useJobStore, useUIStore } from "@/stores";
 import { JobItem } from "./JobItem";
 
 const VIRTUALIZE_AFTER_COUNT = 80;

@@ -14,12 +14,10 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
+import { CONCURRENCY_OPTIONS, PAGE_SIZES } from "@/lib/constants";
 import { IconGear, IconSpinner, IconTrashCan, IconXmark } from "@/lib/icons";
-import { CONCURRENCY_OPTIONS, PAGE_SIZES } from "../../lib/constants";
-import { rpcCall } from "../../lib/rpc-client";
-import { useShareHistoryStore } from "../../stores/useShareHistoryStore";
-import { useThemeStore } from "../../stores/useThemeStore";
-import { useUIStore } from "../../stores/useUIStore";
+import { rpcCall } from "@/lib/rpc-client";
+import { useShareHistoryStore, useThemeStore, useUIStore } from "@/stores";
 
 export function SettingsPanel() {
   const settingsOpen = useUIStore((s) => s.settingsOpen);

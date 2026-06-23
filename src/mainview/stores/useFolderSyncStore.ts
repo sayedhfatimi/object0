@@ -10,7 +10,7 @@ import type {
   FolderSyncStatusEvent,
 } from "@shared/folder-sync.types";
 import { create } from "zustand";
-import { onEvent, rpcCall } from "../lib/rpc-client";
+import { onEvent, rpcCall } from "@/lib/rpc-client";
 
 const MAX_CONFLICTS = 200;
 

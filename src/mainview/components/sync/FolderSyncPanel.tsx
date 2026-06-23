@@ -23,8 +23,7 @@ import {
   IconTriangleExclamation,
   IconXmark,
 } from "@/lib/icons";
-import { useFolderSyncStore } from "../../stores/useFolderSyncStore";
-import { useUIStore } from "../../stores/useUIStore";
+import { useFolderSyncStore, useUIStore } from "@/stores";
 import { ConfirmDialog } from "../common/ConfirmDialog";
 import { toast } from "../common/Toast";
 import { FolderSyncRuleEditor } from "./FolderSyncRuleEditor";

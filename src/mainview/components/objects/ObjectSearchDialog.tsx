@@ -8,12 +8,10 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { useS3Objects } from "@/hooks";
+import { getFileName } from "@/lib/formatters";
 import { IconFile, IconFolder, IconMagnifyingGlass } from "@/lib/icons";
-import { useS3Objects } from "../../hooks/useS3Objects";
-import { getFileName } from "../../lib/formatters";
-import { useBucketStore } from "../../stores/useBucketStore";
-import { useProfileStore } from "../../stores/useProfileStore";
-import { useUIStore } from "../../stores/useUIStore";
+import { useBucketStore, useProfileStore, useUIStore } from "@/stores";
 
 /**
  * Centered command-palette overlay for searching objects in the current view.

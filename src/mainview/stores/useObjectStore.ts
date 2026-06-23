@@ -6,8 +6,8 @@ import type {
   SortField,
 } from "@shared/s3.types";
 import { create } from "zustand";
-import { DEFAULT_PAGE_SIZE } from "../lib/constants";
-import { rpcCall } from "../lib/rpc-client";
+import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
+import { rpcCall } from "@/lib/rpc-client";
 import { useUIStore } from "./useUIStore";
 
 interface ObjectState {

@@ -5,7 +5,7 @@ import {
   IconWindowMinimize,
   IconWindowRestore,
   IconXmark,
-} from "../../lib/icons";
+} from "@/lib/icons";
 import { Button } from "../ui/button";
 
 // Custom window controls for Windows/Linux, where native decorations are off.

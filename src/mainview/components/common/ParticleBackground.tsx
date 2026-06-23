@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
-import { useThemeStore } from "../../stores/useThemeStore";
+import { useThemeStore } from "@/stores";
 
 interface Particle {
   x: number;

@@ -10,8 +10,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { IconBucket, IconCheck, IconCloud, IconCopy } from "@/lib/icons";
-import { useObjectStore } from "../../stores/useObjectStore";
-import { useProfileStore } from "../../stores/useProfileStore";
+import { useObjectStore, useProfileStore } from "@/stores";
 
 interface ObjectBreadcrumbProps {
   profileName: string;

@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import { getExtension } from "@/lib/formatters";
 import {
   IconCode,
   IconCss3Alt,
@@ -24,7 +25,6 @@ import {
   IconReact,
   IconTerminal,
 } from "@/lib/icons";
-import { getExtension } from "../../lib/formatters";
 
 const ICON_MAP: Record<string, LucideIcon> = {
   // Images

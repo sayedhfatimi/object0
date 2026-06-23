@@ -18,7 +18,7 @@ import {
   IconLock,
   IconSpinner,
 } from "@/lib/icons";
-import { useVaultStore } from "../../stores/useVaultStore";
+import { useVaultStore } from "@/stores";
 
 interface UnlockScreenProps {
   onForgotPassphrase: () => void;

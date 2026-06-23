@@ -7,6 +7,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useS3Objects } from "@/hooks";
 import {
   IconArrowRightArrowLeft,
   IconArrowsRotate,
@@ -25,13 +26,14 @@ import {
   IconTrashCan,
   IconXmark,
 } from "@/lib/icons";
-import { useS3Objects } from "../../hooks/useS3Objects";
-import { OBJECT_TOOLBAR_EVENTS } from "../../lib/object-toolbar-events";
-import { rpcCall } from "../../lib/rpc-client";
-import { useBucketStore } from "../../stores/useBucketStore";
-import { useObjectStore } from "../../stores/useObjectStore";
-import { useProfileStore } from "../../stores/useProfileStore";
-import { useUIStore } from "../../stores/useUIStore";
+import { OBJECT_TOOLBAR_EVENTS } from "@/lib/object-toolbar-events";
+import { rpcCall } from "@/lib/rpc-client";
+import {
+  useBucketStore,
+  useObjectStore,
+  useProfileStore,
+  useUIStore,
+} from "@/stores";
 import { ConfirmDialog } from "../common/ConfirmDialog";
 import { toast } from "../common/Toast";
 import { CreateFolderDialog } from "./CreateFolderDialog";

@@ -5,6 +5,7 @@ import type {
 } from "@shared/folder-sync.types";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { formatBytes } from "@/lib/formatters";
 import {
   IconArrowDown,
   IconArrowsLeftRight,
@@ -24,7 +25,6 @@ import {
   IconTriangleExclamation,
   IconXmark,
 } from "@/lib/icons";
-import { formatBytes } from "../../lib/formatters";
 
 function StatusIconDisplay({ status }: { status: FolderSyncRuleStatus }) {
   const cls = "text-xs";

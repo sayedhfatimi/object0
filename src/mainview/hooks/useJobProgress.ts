@@ -1,10 +1,12 @@
 import { useEffect } from "react";
-import { onEvent } from "../lib/rpc-client";
-import { useBucketStore } from "../stores/useBucketStore";
-import { useJobStore } from "../stores/useJobStore";
-import { useObjectStore } from "../stores/useObjectStore";
-import { useProfileStore } from "../stores/useProfileStore";
-import { useUIStore } from "../stores/useUIStore";
+import { onEvent } from "@/lib/rpc-client";
+import {
+  useBucketStore,
+  useJobStore,
+  useObjectStore,
+  useProfileStore,
+  useUIStore,
+} from "@/stores";
 
 /**
  * Subscribes to job:progress and job:complete events from the Bun process

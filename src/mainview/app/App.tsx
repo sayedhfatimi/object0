@@ -1,5 +1,19 @@
 import { Loader2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useJobProgress, useKeyboardShortcuts } from "@/hooks";
+import {
+  dispatchObjectToolbarEvent,
+  OBJECT_TOOLBAR_EVENTS,
+} from "@/lib/object-toolbar-events";
+import { rpcCall } from "@/lib/rpc-client";
+import {
+  useFavoritesStore,
+  useFolderSyncStore,
+  useShareHistoryStore,
+  useThemeStore,
+  useUIStore,
+  useVaultStore,
+} from "@/stores";
 import { ErrorBoundary } from "../components/common/ErrorBoundary";
 import { ParticleBackground } from "../components/common/ParticleBackground";
 import { Toast } from "../components/common/Toast";
@@ -11,19 +25,6 @@ import { RecoveryFlow } from "../components/vault/RecoveryFlow";
 import { RecoveryKeyDisplay } from "../components/vault/RecoveryKeyDisplay";
 import { SetupScreen } from "../components/vault/SetupScreen";
 import { UnlockScreen } from "../components/vault/UnlockScreen";
-import { useJobProgress } from "../hooks/useJobProgress";
-import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
-import {
-  dispatchObjectToolbarEvent,
-  OBJECT_TOOLBAR_EVENTS,
-} from "../lib/object-toolbar-events";
-import { rpcCall } from "../lib/rpc-client";
-import { useFavoritesStore } from "../stores/useFavoritesStore";
-import { useFolderSyncStore } from "../stores/useFolderSyncStore";
-import { useShareHistoryStore } from "../stores/useShareHistoryStore";
-import { useThemeStore } from "../stores/useThemeStore";
-import { useUIStore } from "../stores/useUIStore";
-import { useVaultStore } from "../stores/useVaultStore";
 import { ThemeProvider } from "./ThemeProvider";
 
 export default function App() {

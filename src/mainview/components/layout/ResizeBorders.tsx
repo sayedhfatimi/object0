@@ -1,5 +1,5 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { useUIStore } from "../../stores/useUIStore";
+import { useUIStore } from "@/stores";
 
 // Undecorated windows on Linux/WebKitGTK lose native edge resizing, and behavior
 // is WM-dependent. These invisible grips restore it everywhere by forwarding a

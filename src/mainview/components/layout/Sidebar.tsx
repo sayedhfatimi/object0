@@ -1,7 +1,7 @@
 import type { ProfileInfo } from "@shared/profile.types";
 import { PROVIDER_LABELS } from "@shared/profile.types";
 import { useMemo, useState } from "react";
-import { useS3Buckets } from "../../hooks/useS3Buckets";
+import { useS3Buckets } from "@/hooks";
 import {
   IconArrowsRotate,
   IconAws,
@@ -18,10 +18,9 @@ import {
   IconStar,
   IconUser,
   IconUserGroup,
-} from "../../lib/icons";
-import { rpcCall } from "../../lib/rpc-client";
-import { useFavoritesStore } from "../../stores/useFavoritesStore";
-import { useVaultStore } from "../../stores/useVaultStore";
+} from "@/lib/icons";
+import { rpcCall } from "@/lib/rpc-client";
+import { useFavoritesStore, useVaultStore } from "@/stores";
 import { BucketList } from "../buckets/BucketList";
 import { ConfirmDialog } from "../common/ConfirmDialog";
 import { toast } from "../common/Toast";

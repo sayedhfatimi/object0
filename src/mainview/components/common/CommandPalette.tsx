@@ -36,13 +36,15 @@ import {
 import {
   dispatchObjectToolbarEvent,
   OBJECT_TOOLBAR_EVENTS,
-} from "../../lib/object-toolbar-events";
-import { useBucketStore } from "../../stores/useBucketStore";
-import { useObjectStore } from "../../stores/useObjectStore";
-import { useProfileStore } from "../../stores/useProfileStore";
-import { useThemeStore } from "../../stores/useThemeStore";
-import { useUIStore } from "../../stores/useUIStore";
-import { useVaultStore } from "../../stores/useVaultStore";
+} from "@/lib/object-toolbar-events";
+import {
+  useBucketStore,
+  useObjectStore,
+  useProfileStore,
+  useThemeStore,
+  useUIStore,
+  useVaultStore,
+} from "@/stores";
 
 interface PaletteCommand {
   id: string;

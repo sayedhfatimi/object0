@@ -1,7 +1,7 @@
 import type { ProfileInfo } from "@shared/profile.types";
 import type { BucketInfo } from "@shared/s3.types";
 import { create } from "zustand";
-import { rpcCall } from "../lib/rpc-client";
+import { rpcCall } from "@/lib/rpc-client";
 
 interface ProfileState {
   activeProfileId: string | null;

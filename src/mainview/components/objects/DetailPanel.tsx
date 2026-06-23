@@ -9,21 +9,19 @@ import {
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  formatBytes,
+  formatDate,
+  getExtension,
+  getFileName,
+} from "@/lib/formatters";
+import {
   IconCircleInfo,
   IconClipboard,
   IconImage,
   IconXmark,
 } from "@/lib/icons";
-import {
-  formatBytes,
-  formatDate,
-  getExtension,
-  getFileName,
-} from "../../lib/formatters";
-import { rpcCall } from "../../lib/rpc-client";
-import { useBucketStore } from "../../stores/useBucketStore";
-import { useProfileStore } from "../../stores/useProfileStore";
-import { useUIStore } from "../../stores/useUIStore";
+import { rpcCall } from "@/lib/rpc-client";
+import { useBucketStore, useProfileStore, useUIStore } from "@/stores";
 import { FileIcon } from "../common/FileIcon";
 
 const PREVIEWABLE_IMAGES = new Set([

@@ -19,10 +19,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { PROVIDERS } from "@/lib/constants";
 import { IconSpinner } from "@/lib/icons";
-import { PROVIDERS } from "../../lib/constants";
-import { rpcCall } from "../../lib/rpc-client";
-import { useVaultStore } from "../../stores/useVaultStore";
+import { rpcCall } from "@/lib/rpc-client";
+import { useVaultStore } from "@/stores";
 import { toast } from "../common/Toast";
 
 interface ProfileFormProps {

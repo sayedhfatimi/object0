@@ -1,5 +1,5 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { useUIStore } from "../../stores/useUIStore";
+import { useUIStore } from "@/stores";
 import { WindowControls } from "./WindowControls";
 
 // A minimal, always-on title bar for screens that have no TopBar of their own

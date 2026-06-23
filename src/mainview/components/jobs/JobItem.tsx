@@ -3,6 +3,14 @@ import type { JobInfo } from "@shared/job.types";
 import { memo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
+  formatBytes,
+  formatDate,
+  formatDuration,
+  formatETA,
+  formatRelativeDate,
+  formatSpeed,
+} from "@/lib/formatters";
+import {
   IconArrowsRotate,
   IconBan,
   IconChevronRight,
@@ -23,15 +31,7 @@ import {
   IconXmark,
 } from "@/lib/icons";
 import { cn } from "@/lib/utils";
-import {
-  formatBytes,
-  formatDate,
-  formatDuration,
-  formatETA,
-  formatRelativeDate,
-  formatSpeed,
-} from "../../lib/formatters";
-import { useJobStore } from "../../stores/useJobStore";
+import { useJobStore } from "@/stores";
 
 interface JobItemProps {
   job: JobInfo;

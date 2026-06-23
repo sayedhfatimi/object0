@@ -12,7 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { IconLockOpen, IconSpinner } from "@/lib/icons";
-import { useVaultStore } from "../../stores/useVaultStore";
+import { useVaultStore } from "@/stores";
 
 interface ChangePassphraseDialogProps {
   onComplete: () => void;

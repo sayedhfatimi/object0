@@ -4,7 +4,7 @@ import type {
   ProgressEvent,
 } from "@shared/job.types";
 import { create } from "zustand";
-import { rpcCall } from "../lib/rpc-client";
+import { rpcCall } from "@/lib/rpc-client";
 
 interface JobState {
   jobs: JobInfo[];

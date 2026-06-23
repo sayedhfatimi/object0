@@ -2,7 +2,7 @@ import type { BucketInfo } from "@shared/s3.types";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { IconBucket, IconStar } from "@/lib/icons";
-import { useFavoritesStore } from "../../stores/useFavoritesStore";
+import { useFavoritesStore } from "@/stores";
 
 interface BucketListProps {
   buckets: BucketInfo[];

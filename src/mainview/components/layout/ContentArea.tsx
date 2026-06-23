@@ -1,10 +1,12 @@
 import { useEffect } from "react";
-import { IconBoxOpen, IconCloud } from "../../lib/icons";
-import { useBucketStore } from "../../stores/useBucketStore";
-import { useObjectStore } from "../../stores/useObjectStore";
-import { useProfileStore } from "../../stores/useProfileStore";
-import { useTabStore } from "../../stores/useTabStore";
-import { useVaultStore } from "../../stores/useVaultStore";
+import { IconBoxOpen, IconCloud } from "@/lib/icons";
+import {
+  useBucketStore,
+  useObjectStore,
+  useProfileStore,
+  useTabStore,
+  useVaultStore,
+} from "@/stores";
 import { EmptyState } from "../common/EmptyState";
 import { DropZone } from "../objects/DropZone";
 import { ObjectBrowser } from "../objects/ObjectBrowser";

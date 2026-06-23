@@ -1,5 +1,5 @@
 import { toast as sonnerToast, Toaster } from "sonner";
-import { useThemeStore } from "../../stores/useThemeStore";
+import { useThemeStore } from "@/stores";
 
 export { sonnerToast as toast };
 

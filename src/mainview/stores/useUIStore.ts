@@ -5,7 +5,7 @@ import type {
 } from "@shared/ui.types";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import type { ViewMode } from "../lib/constants";
+import type { ViewMode } from "@/lib/constants";
 
 // Dialog-local UI targets — scoped to this store, not shared with the backend.
 interface ShareTarget {

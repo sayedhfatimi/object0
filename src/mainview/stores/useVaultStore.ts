@@ -1,7 +1,7 @@
 import type { ProfileInfo } from "@shared/profile.types";
 import type { KeychainUnlockFailureReason } from "@shared/rpc-schema";
 import { create } from "zustand";
-import { rpcCall } from "../lib/rpc-client";
+import { rpcCall } from "@/lib/rpc-client";
 
 interface VaultState {
   exists: boolean;

@@ -1,6 +1,5 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { lazy, Suspense } from "react";
-import { cn } from "@/lib/utils";
 import {
   IconClockRotateLeft,
   IconFolderOpen,
@@ -8,14 +7,17 @@ import {
   IconListCheck,
   IconMoon,
   IconSun,
-} from "../../lib/icons";
-import { useBucketStore } from "../../stores/useBucketStore";
-import { useFolderSyncStore } from "../../stores/useFolderSyncStore";
-import { useJobStore } from "../../stores/useJobStore";
-import { useProfileStore } from "../../stores/useProfileStore";
-import { useShareHistoryStore } from "../../stores/useShareHistoryStore";
-import { useThemeStore } from "../../stores/useThemeStore";
-import { useUIStore } from "../../stores/useUIStore";
+} from "@/lib/icons";
+import { cn } from "@/lib/utils";
+import {
+  useBucketStore,
+  useFolderSyncStore,
+  useJobStore,
+  useProfileStore,
+  useShareHistoryStore,
+  useThemeStore,
+  useUIStore,
+} from "@/stores";
 import { ObjectBreadcrumb } from "../objects/ObjectBreadcrumb";
 import { ObjectToolbar } from "../objects/ObjectToolbar";
 import { Badge } from "../ui/badge";

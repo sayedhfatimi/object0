@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { useOnlineStatus } from "../../hooks/useOnlineStatus";
-import { formatBytes, formatSpeed } from "../../lib/formatters";
+import { useOnlineStatus } from "@/hooks";
+import { formatBytes, formatSpeed } from "@/lib/formatters";
 import {
   IconArrowUpRightFromSquare,
   IconBucket,
@@ -12,14 +12,16 @@ import {
   IconGrid2,
   IconTableList,
   IconWifi,
-} from "../../lib/icons";
-import { onEvent, rpcCall } from "../../lib/rpc-client";
-import { useBucketStore } from "../../stores/useBucketStore";
-import { useFolderSyncStore } from "../../stores/useFolderSyncStore";
-import { useJobStore } from "../../stores/useJobStore";
-import { useObjectStore } from "../../stores/useObjectStore";
-import { useProfileStore } from "../../stores/useProfileStore";
-import { useUIStore } from "../../stores/useUIStore";
+} from "@/lib/icons";
+import { onEvent, rpcCall } from "@/lib/rpc-client";
+import {
+  useBucketStore,
+  useFolderSyncStore,
+  useJobStore,
+  useObjectStore,
+  useProfileStore,
+  useUIStore,
+} from "@/stores";
 import { Progress } from "../ui/progress";
 
 export function StatusBar() {

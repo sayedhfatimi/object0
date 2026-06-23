@@ -1,6 +1,5 @@
 import { lazy, Suspense } from "react";
-import { useTabStore } from "../../stores/useTabStore";
-import { useUIStore } from "../../stores/useUIStore";
+import { useTabStore, useUIStore } from "@/stores";
 import { DetailPanel } from "../objects/DetailPanel";
 import { SidebarInset, SidebarProvider } from "../ui/sidebar";
 import { ContentArea } from "./ContentArea";

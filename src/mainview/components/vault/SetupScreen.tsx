@@ -12,7 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { IconSpinner, IconVault } from "@/lib/icons";
-import { useVaultStore } from "../../stores/useVaultStore";
+import { useVaultStore } from "@/stores";
 
 export function SetupScreen() {
   const [passphrase, setPassphrase] = useState("");

@@ -17,9 +17,8 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { IconFolderOpen, IconSpinner } from "@/lib/icons";
-import { rpcCall } from "../../lib/rpc-client";
-import { useFolderSyncStore } from "../../stores/useFolderSyncStore";
-import { useVaultStore } from "../../stores/useVaultStore";
+import { rpcCall } from "@/lib/rpc-client";
+import { useFolderSyncStore, useVaultStore } from "@/stores";
 import { toast } from "../common/Toast";
 
 const DEFAULT_POLL_INTERVAL_MS = 30000;

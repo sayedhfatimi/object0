@@ -1,8 +1,10 @@
 import { useCallback } from "react";
-import { useBucketStore } from "../stores/useBucketStore";
-import { useObjectStore } from "../stores/useObjectStore";
-import { useProfileStore } from "../stores/useProfileStore";
-import { useUIStore } from "../stores/useUIStore";
+import {
+  useBucketStore,
+  useObjectStore,
+  useProfileStore,
+  useUIStore,
+} from "@/stores";
 
 /**
  * Convenience hook to manage S3 object listing with currently-selected

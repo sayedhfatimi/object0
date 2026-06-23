@@ -10,10 +10,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { rpcCall } from "../../lib/rpc-client";
-import { useBucketStore } from "../../stores/useBucketStore";
-import { useObjectStore } from "../../stores/useObjectStore";
-import { useProfileStore } from "../../stores/useProfileStore";
+import { rpcCall } from "@/lib/rpc-client";
+import { useBucketStore, useObjectStore, useProfileStore } from "@/stores";
 import { toast } from "../common/Toast";
 
 interface CreateFolderDialogProps {

@@ -9,12 +9,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { formatBytes, getFileName } from "@/lib/formatters";
 import { IconArrowUpRightFromSquare } from "@/lib/icons";
-import { formatBytes, getFileName } from "../../lib/formatters";
-import { rpcCall } from "../../lib/rpc-client";
-import { useBucketStore } from "../../stores/useBucketStore";
-import { useObjectStore } from "../../stores/useObjectStore";
-import { useProfileStore } from "../../stores/useProfileStore";
+import { rpcCall } from "@/lib/rpc-client";
+import { useBucketStore, useObjectStore, useProfileStore } from "@/stores";
 import { FileIcon } from "../common/FileIcon";
 import { toast } from "../common/Toast";
 import { ObjectContextMenu } from "./ObjectContextMenu";

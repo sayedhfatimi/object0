@@ -1,11 +1,13 @@
 import type React from "react";
 import { useCallback, useRef, useState } from "react";
 import { IconCloudArrowUp } from "@/lib/icons";
-import { rpcCall } from "../../lib/rpc-client";
-import { useBucketStore } from "../../stores/useBucketStore";
-import { useObjectStore } from "../../stores/useObjectStore";
-import { useProfileStore } from "../../stores/useProfileStore";
-import { useUIStore } from "../../stores/useUIStore";
+import { rpcCall } from "@/lib/rpc-client";
+import {
+  useBucketStore,
+  useObjectStore,
+  useProfileStore,
+  useUIStore,
+} from "@/stores";
 import { toast } from "../common/Toast";
 
 interface DropZoneProps {

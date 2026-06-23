@@ -1,10 +1,12 @@
 import type { ProfileInfo } from "@shared/profile.types";
 import { useCallback } from "react";
-import { useBucketStore } from "../stores/useBucketStore";
-import { useObjectStore } from "../stores/useObjectStore";
-import { useProfileStore } from "../stores/useProfileStore";
-import { useTabStore } from "../stores/useTabStore";
-import { useVaultStore } from "../stores/useVaultStore";
+import {
+  useBucketStore,
+  useObjectStore,
+  useProfileStore,
+  useTabStore,
+  useVaultStore,
+} from "@/stores";
 
 /**
  * Manages bucket selection lifecycle.

@@ -18,7 +18,7 @@ import {
   IconTrashCan,
   IconTriangleExclamation,
 } from "@/lib/icons";
-import { useVaultStore } from "../../stores/useVaultStore";
+import { useVaultStore } from "@/stores";
 
 type RecoveryTab = "recovery-key" | "reset";
 

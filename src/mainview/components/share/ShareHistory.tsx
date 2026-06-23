@@ -7,6 +7,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { formatRelativeDate, getFileName } from "@/lib/formatters";
 import {
   IconBroom,
   IconClockRotateLeft,
@@ -16,9 +17,7 @@ import {
   IconTrash,
   IconXmark,
 } from "@/lib/icons";
-import { formatRelativeDate, getFileName } from "../../lib/formatters";
-import { useShareHistoryStore } from "../../stores/useShareHistoryStore";
-import { useUIStore } from "../../stores/useUIStore";
+import { useShareHistoryStore, useUIStore } from "@/stores";
 import { toast } from "../common/Toast";
 
 type FilterMode = "all" | "active" | "expired";

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { rpcCall } from "../lib/rpc-client";
+import { rpcCall } from "@/lib/rpc-client";
 
 export interface FavoriteEntry {
   profileId: string;

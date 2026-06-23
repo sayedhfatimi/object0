@@ -28,9 +28,8 @@ import {
   IconQrcode,
   IconSpinner,
 } from "@/lib/icons";
-import { rpcCall } from "../../lib/rpc-client";
-import { useShareHistoryStore } from "../../stores/useShareHistoryStore";
-import { useUIStore } from "../../stores/useUIStore";
+import { rpcCall } from "@/lib/rpc-client";
+import { useShareHistoryStore, useUIStore } from "@/stores";
 import { toast } from "../common/Toast";
 
 interface ExpirationPreset {

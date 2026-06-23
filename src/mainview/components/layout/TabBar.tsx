@@ -1,5 +1,5 @@
-import { IconBucket, IconXmark } from "../../lib/icons";
-import { useTabStore } from "../../stores/useTabStore";
+import { IconBucket, IconXmark } from "@/lib/icons";
+import { useTabStore } from "@/stores";
 import { Button } from "../ui/button";
 import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
 

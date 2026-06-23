@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { IconFolderOpen, IconRotate } from "@/lib/icons";
-import { useUIStore } from "../../stores/useUIStore";
+import { useUIStore } from "@/stores";
 
 function optionCopy(preference: SyncEntryPreference) {
   if (preference === "object-sync") {
