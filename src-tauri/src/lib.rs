@@ -1456,13 +1456,12 @@ fn is_excluded_path(relative_path: &str, patterns: &[String]) -> bool {
     })
 }
 
-fn file_mtime_millis(path: &Path) -> i64 {
+fn file_mtime_millis(path: &Path) -> Option<i64> {
     fs::metadata(path)
         .ok()
         .and_then(|meta| meta.modified().ok())
         .and_then(|mtime| mtime.duration_since(std::time::UNIX_EPOCH).ok())
         .map(|d| d.as_millis() as i64)
-        .unwrap_or(0)
 }
 
 fn scan_local_directory(local_path: &Path, exclude_patterns: &[String]) -> Vec<LocalFileInfo> {
@@ -1489,7 +1488,9 @@ fn scan_local_directory(local_path: &Path, exclude_patterns: &[String]) -> Vec<L
         }
 
         let size = entry.metadata().map(|m| m.len() as i64).unwrap_or(0).max(0);
-        let mtime_ms = file_mtime_millis(entry.path());
+        // The file was just walked, so a stat failure is rare; epoch is an
+        // acceptable "treat as changed" fallback for change detection here.
+        let mtime_ms = file_mtime_millis(entry.path()).unwrap_or(0);
 
         files.push(LocalFileInfo {
             relative_path,
@@ -1501,11 +1502,10 @@ fn scan_local_directory(local_path: &Path, exclude_patterns: &[String]) -> Vec<L
     files
 }
 
-fn parse_iso_millis(value: &str) -> i64 {
+fn parse_iso_millis(value: &str) -> Option<i64> {
     chrono::DateTime::parse_from_rfc3339(value)
         .ok()
         .map(|dt| dt.timestamp_millis())
-        .unwrap_or(0)
 }
 
 fn resolve_folder_sync_conflict(
@@ -1522,19 +1522,21 @@ fn resolve_folder_sync_conflict(
             "download".to_string(),
             "Conflict resolved: remote wins".to_string(),
         ),
-        "newer-wins" => {
-            if local.mtime_ms >= parse_iso_millis(&remote.last_modified) {
-                (
-                    "upload".to_string(),
-                    "Conflict resolved: local is newer".to_string(),
-                )
-            } else {
-                (
-                    "download".to_string(),
-                    "Conflict resolved: remote is newer".to_string(),
-                )
-            }
-        }
+        "newer-wins" => match parse_iso_millis(&remote.last_modified) {
+            Some(remote_ms) if local.mtime_ms >= remote_ms => (
+                "upload".to_string(),
+                "Conflict resolved: local is newer".to_string(),
+            ),
+            Some(_) => (
+                "download".to_string(),
+                "Conflict resolved: remote is newer".to_string(),
+            ),
+            // Remote timestamp unparseable: don't guess a winner, surface a conflict.
+            None => (
+                "conflict".to_string(),
+                "Both sides changed (remote timestamp unparseable)".to_string(),
+            ),
+        },
         _ => ("conflict".to_string(), "Both sides changed".to_string()),
     }
 }
@@ -3505,7 +3507,9 @@ async fn run_folder_sync_once(
                     .map_err(|err| err.to_string())?;
                 let record = FolderSyncFileRecord {
                     relative_path: entry.relative_path.clone(),
-                    local_mtime: file_mtime_millis(&local_path),
+                    // Just-transferred file; epoch on stat failure is a harmless
+                    // "treat as changed" fallback, not a silent error.
+                    local_mtime: file_mtime_millis(&local_path).unwrap_or(0),
                     local_size: fs::metadata(&local_path)
                         .map(|meta| meta.len() as i64)
                         .unwrap_or(0)
@@ -3596,7 +3600,9 @@ async fn run_folder_sync_once(
 
                 let record = FolderSyncFileRecord {
                     relative_path: entry.relative_path.clone(),
-                    local_mtime: file_mtime_millis(&local_path),
+                    // Just-transferred file; epoch on stat failure is a harmless
+                    // "treat as changed" fallback, not a silent error.
+                    local_mtime: file_mtime_millis(&local_path).unwrap_or(0),
                     local_size: fs::metadata(&local_path)
                         .map(|meta| meta.len() as i64)
                         .unwrap_or(0)
@@ -5746,6 +5752,13 @@ mod tests {
         assert_eq!(normalize_prefix(""), "");
         assert_eq!(normalize_prefix("photos"), "photos/");
         assert_eq!(normalize_prefix("photos/"), "photos/");
+    }
+
+    #[test]
+    fn parse_iso_millis_some_on_valid_none_on_garbage() {
+        assert!(parse_iso_millis("2024-01-01T00:00:00Z").is_some());
+        assert_eq!(parse_iso_millis("not-a-date"), None);
+        assert_eq!(parse_iso_millis(""), None);
     }
 
     #[test]
