@@ -1,14 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useOnlineStatus } from "../../hooks/useOnlineStatus";
 import { formatBytes, formatSpeed } from "../../lib/formatters";
-import { onEvent, rpcCall } from "../../lib/rpc-client";
-import { useBucketStore } from "../../stores/useBucketStore";
-import { useFolderSyncStore } from "../../stores/useFolderSyncStore";
-import { useJobStore } from "../../stores/useJobStore";
-import { useObjectStore } from "../../stores/useObjectStore";
-import { useProfileStore } from "../../stores/useProfileStore";
-import { useUIStore } from "../../stores/useUIStore";
-import { Progress } from "../ui/progress";
 import {
   IconArrowUpRightFromSquare,
   IconBucket,
@@ -21,6 +13,14 @@ import {
   IconTableList,
   IconWifi,
 } from "../../lib/icons";
+import { onEvent, rpcCall } from "../../lib/rpc-client";
+import { useBucketStore } from "../../stores/useBucketStore";
+import { useFolderSyncStore } from "../../stores/useFolderSyncStore";
+import { useJobStore } from "../../stores/useJobStore";
+import { useObjectStore } from "../../stores/useObjectStore";
+import { useProfileStore } from "../../stores/useProfileStore";
+import { useUIStore } from "../../stores/useUIStore";
+import { Progress } from "../ui/progress";
 
 export function StatusBar() {
   const profile = useProfileStore((s) => s.activeProfile);
@@ -89,7 +89,7 @@ export function StatusBar() {
     : 0;
 
   return (
-    <div className="flex h-7 shrink-0 items-center justify-between border-border border-t bg-card px-3 text-[11px] text-foreground/55">
+    <div className="flex h-8 shrink-0 items-center justify-between border-border border-t bg-card px-3 text-[11px] text-foreground/55">
       <div className="flex items-center gap-3">
         {!online && (
           <span className="flex items-center gap-1 text-warning" role="status">

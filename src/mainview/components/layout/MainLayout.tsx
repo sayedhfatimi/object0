@@ -103,12 +103,11 @@ export function MainLayout() {
           <div className="flex flex-1 overflow-hidden">
             <ContentArea />
           </div>
+          {/* Status bar lives inside the content column so it doesn't render
+              under the fixed sidebar and aligns with the sidebar footer. */}
+          <StatusBar />
         </SidebarInset>
       </div>
-
-      <footer>
-        <StatusBar />
-      </footer>
 
       {/* DetailPanel self-manages as a Sheet (open={!!detailKey}) */}
       <DetailPanel />

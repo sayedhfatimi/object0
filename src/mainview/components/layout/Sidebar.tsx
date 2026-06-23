@@ -288,7 +288,7 @@ export function Sidebar() {
       </SidebarContent>
 
       {/* ── Footer: profile count + lock ── */}
-      <SidebarFooter className="border-border border-t px-3 py-2">
+      <SidebarFooter className="h-8 justify-center border-border border-t px-3 py-0">
         <div className="flex items-center justify-between group-data-[collapsible=icon]:justify-center">
           <div className="text-[11px] text-foreground/35 group-data-[collapsible=icon]:hidden">
             {profiles.length} profile{profiles.length !== 1 ? "s" : ""}
