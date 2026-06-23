@@ -414,17 +414,6 @@ struct FolderSyncProgress {
 
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-struct FolderSyncStatusEventPayload {
-    rule_id: String,
-    status: FolderSyncStatus,
-    files_watching: i64,
-    last_change: Option<String>,
-    current_file: Option<String>,
-    progress: Option<FolderSyncProgress>,
-}
-
-#[derive(Clone, Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
 struct FolderSyncConflictEventPayload {
     rule_id: String,
     relative_path: String,
@@ -482,6 +471,16 @@ struct LocalFileInfo {
 
 #[derive(Clone, Debug)]
 struct RemoteFileInfo {
+    size: i64,
+    etag: String,
+    last_modified: String,
+}
+
+// A single object returned by s3_list_all_objects — replaces a positional
+// (key, size, etag, last_modified) tuple to make call sites self-documenting.
+#[derive(Clone, Debug)]
+struct RemoteObject {
+    key: String,
     size: i64,
     etag: String,
     last_modified: String,
@@ -1712,7 +1711,13 @@ async fn generate_folder_sync_diff_for_rule(
     }
 
     let mut remote_map: HashMap<String, RemoteFileInfo> = HashMap::new();
-    for (key, size, etag, last_modified) in remote_objects {
+    for RemoteObject {
+        key,
+        size,
+        etag,
+        last_modified,
+    } in remote_objects
+    {
         let relative = if bucket_prefix.is_empty() {
             key.clone()
         } else if key.starts_with(&bucket_prefix) {
@@ -1803,19 +1808,9 @@ async fn generate_folder_sync_diff_for_rule(
     Ok(diff)
 }
 
-fn folder_sync_status_payload(status: &FolderSyncStateRecord) -> FolderSyncStatusEventPayload {
-    FolderSyncStatusEventPayload {
-        rule_id: status.rule_id.clone(),
-        status: status.status,
-        files_watching: status.files_watching,
-        last_change: status.last_change.clone(),
-        current_file: status.current_file.clone(),
-        progress: status.progress.clone(),
-    }
-}
-
 fn emit_folder_sync_status_event(app: &AppHandle, status: &FolderSyncStateRecord) {
-    let _ = app.emit("folder-sync:status", folder_sync_status_payload(status));
+    // FolderSyncStateRecord is camelCase Serialize; emit it directly as the event payload.
+    let _ = app.emit("folder-sync:status", status);
 }
 
 fn emit_folder_sync_error_event(app: &AppHandle, rule_id: &str, error: &str) {
@@ -2268,9 +2263,9 @@ async fn s3_list_all_objects(
     client: &S3Client,
     bucket: &str,
     prefix: &str,
-) -> Result<Vec<(String, i64, String, String)>, String> {
+) -> Result<Vec<RemoteObject>, String> {
     let mut continuation_token: Option<String> = None;
-    let mut all_objects: Vec<(String, i64, String, String)> = Vec::new();
+    let mut all_objects: Vec<RemoteObject> = Vec::new();
 
     loop {
         let mut request = client
@@ -2286,17 +2281,19 @@ async fn s3_list_all_objects(
         let output = request.send().await.map_err(|err| err.to_string())?;
 
         for item in output.contents() {
-            all_objects.push((
-                item.key().unwrap_or_default().to_string(),
-                item.size().unwrap_or(0).max(0),
-                item.e_tag()
+            all_objects.push(RemoteObject {
+                key: item.key().unwrap_or_default().to_string(),
+                size: item.size().unwrap_or(0).max(0),
+                etag: item
+                    .e_tag()
                     .unwrap_or_default()
                     .trim_matches('"')
                     .to_string(),
-                item.last_modified()
+                last_modified: item
+                    .last_modified()
                     .map(s3_datetime_to_iso)
                     .unwrap_or_else(now_iso),
-            ));
+            });
         }
 
         if output.is_truncated().unwrap_or(false) {
@@ -3190,13 +3187,19 @@ fn cancel_job(app: &AppHandle, job_id: &str) {
 }
 
 fn build_sync_object_map(
-    objects: Vec<(String, i64, String, String)>,
+    objects: Vec<RemoteObject>,
     prefix: &str,
 ) -> HashMap<String, SyncObjectInfo> {
     let mut map = HashMap::new();
     let normalized_prefix = normalize_prefix(prefix);
 
-    for (key, size, etag, last_modified) in objects {
+    for RemoteObject {
+        key,
+        size,
+        etag,
+        last_modified,
+    } in objects
+    {
         let relative = if normalized_prefix.is_empty() {
             key.clone()
         } else if key.starts_with(&normalized_prefix) {
@@ -5028,7 +5031,7 @@ async fn rpc_request(
                 .to_string();
 
             let mut job_ids = Vec::new();
-            for (key, size, _, _) in objects {
+            for RemoteObject { key, size, .. } in objects {
                 let relative_path = if prefix.is_empty() {
                     key.clone()
                 } else if key.starts_with(&prefix) {
@@ -5131,7 +5134,7 @@ async fn rpc_request(
                     let children =
                         s3_list_all_objects(&source_client, &input.source_bucket, key).await?;
                     expanded_keys
-                        .extend(children.into_iter().map(|(child_key, _, _, _)| child_key));
+                        .extend(children.into_iter().map(|child| child.key));
                 } else {
                     expanded_keys.push(key.clone());
                 }
@@ -5212,7 +5215,7 @@ async fn rpc_request(
             let prefix = input.prefix.unwrap_or_default();
             if resolved_keys.is_empty() && !prefix.is_empty() {
                 let objects = s3_list_all_objects(&client, &input.bucket, &prefix).await?;
-                resolved_keys = objects.into_iter().map(|(key, _, _, _)| key).collect();
+                resolved_keys = objects.into_iter().map(|obj| obj.key).collect();
             }
             if resolved_keys.is_empty() {
                 return Err("No objects selected for archive".to_string());
@@ -5225,7 +5228,7 @@ async fn rpc_request(
                     expanded_keys.extend(
                         children
                             .into_iter()
-                            .map(|(child_key, child_size, _, _)| (child_key, child_size.max(0))),
+                            .map(|child| (child.key, child.size.max(0))),
                     );
                 } else {
                     let head = client
