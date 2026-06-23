@@ -1,4 +1,4 @@
-import type { ProfileInfo, ProfileInput } from "@shared/profile.types";
+import type { ProfileInfo } from "@shared/profile.types";
 import { PROVIDER_ENDPOINTS, PROVIDER_REGIONS } from "@shared/profile.types";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -24,14 +24,13 @@ import { IconSpinner } from "@/lib/icons";
 import { rpcCall } from "@/lib/rpc-client";
 import { useVaultStore } from "@/stores";
 import { toast } from "../common/Toast";
+import { PROVIDER_HINTS, type Provider } from "./providerHints";
 
 interface ProfileFormProps {
   open: boolean;
   onClose: () => void;
   editProfile?: ProfileInfo;
 }
-
-type Provider = ProfileInput["provider"];
 
 export function ProfileForm({ open, onClose, editProfile }: ProfileFormProps) {
   const refreshProfiles = useVaultStore((s) => s.refreshProfiles);
@@ -56,57 +55,6 @@ export function ProfileForm({ open, onClose, editProfile }: ProfileFormProps) {
     ok: boolean;
     msg: string;
   } | null>(null);
-
-  const PROVIDER_HINTS: Record<
-    Provider,
-    {
-      endpoint?: string;
-      region?: string;
-      accessKey?: string;
-      secretKey?: string;
-    }
-  > = {
-    aws: {
-      region: "e.g. us-east-1, eu-west-2",
-      accessKey: "Starts with AKIA...",
-      secretKey: "40-character secret from IAM console",
-    },
-    r2: {
-      endpoint: "Replace <account-id> with your Cloudflare account ID",
-      region: "Usually auto — leave as-is or use auto",
-      accessKey: "From R2 API Tokens in Cloudflare dashboard",
-      secretKey: "From R2 API Tokens in Cloudflare dashboard",
-    },
-    spaces: {
-      endpoint: "Replace <region> with your Space region, e.g. nyc3",
-      region: "e.g. nyc3, sfo3, ams3",
-      accessKey: "From DigitalOcean API → Spaces Keys",
-      secretKey: "From DigitalOcean API → Spaces Keys",
-    },
-    minio: {
-      endpoint: "Default: http://localhost:9000",
-      region: "Usually us-east-1 for MinIO",
-      accessKey: "MinIO root user or access key",
-      secretKey: "MinIO root password or secret key",
-    },
-    gcs: {
-      region: "e.g. us-central1, europe-west1",
-      accessKey: "HMAC key from GCS interoperability settings",
-      secretKey: "HMAC secret from GCS interoperability settings",
-    },
-    backblaze: {
-      endpoint: "Replace <region> with your bucket region, e.g. us-west-004",
-      region: "Must match your bucket region, e.g. us-west-004",
-      accessKey: "applicationKeyId from B2 App Keys",
-      secretKey: "applicationKey from B2 App Keys",
-    },
-    custom: {
-      endpoint: "Full URL of your S3-compatible endpoint",
-      region: "Region required by your provider",
-      accessKey: "Access key for your S3-compatible service",
-      secretKey: "Secret key for your S3-compatible service",
-    },
-  };
 
   const hints = PROVIDER_HINTS[provider];
 
