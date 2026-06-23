@@ -764,7 +764,7 @@ enum KeychainReadResult {
     Unavailable(String),
 }
 
-fn lock<'a, T>(mutex: &'a Mutex<T>) -> Result<std::sync::MutexGuard<'a, T>, String> {
+fn lock_state<'a, T>(mutex: &'a Mutex<T>) -> Result<std::sync::MutexGuard<'a, T>, String> {
     mutex.lock().map_err(|_| "State lock poisoned".to_string())
 }
 
@@ -1367,7 +1367,7 @@ fn s3_datetime_to_iso(dt: &aws_sdk_s3::primitives::DateTime) -> String {
 }
 
 fn profile_for_id(state: &AppState, profile_id: &str) -> Result<Profile, String> {
-    let vault = lock(&state.vault)?;
+    let vault = lock_state(&state.vault)?;
     ensure_unlocked(&vault)?;
     let data = vault
         .data
@@ -1788,7 +1788,7 @@ fn emit_folder_sync_conflict_event(
     let _ = app.emit("folder-sync:conflict", payload);
 }
 
-fn set_folder_sync_status(
+fn set_and_emit_folder_sync_status(
     app: &AppHandle,
     rule_id: &str,
     status: &str,
@@ -1808,7 +1808,7 @@ fn set_folder_sync_status(
 
     let status_changed = {
         let state = app.state::<AppState>();
-        let mut runtime = lock(&state.folder_sync)?;
+        let mut runtime = lock_state(&state.folder_sync)?;
         let prev = runtime.statuses.get(rule_id).map(|r| r.status.clone());
         runtime.statuses.insert(rule_id.to_string(), record.clone());
         prev.as_deref() != Some(status)
@@ -1829,7 +1829,7 @@ fn set_folder_sync_status(
 
 fn folder_sync_statuses_snapshot(app: &AppHandle) -> Vec<FolderSyncStateRecord> {
     let state = app.state::<AppState>();
-    let Ok(runtime) = lock(&state.folder_sync) else {
+    let Ok(runtime) = lock_state(&state.folder_sync) else {
         return Vec::new();
     };
 
@@ -1899,7 +1899,7 @@ fn update_job_progress(
 ) {
     let mut snapshot: Option<JobInfo> = None;
     let state = app.state::<AppState>();
-    if let Ok(mut jobs) = lock(&state.jobs) {
+    if let Ok(mut jobs) = lock_state(&state.jobs) {
         if let Some(job) = jobs.jobs.get_mut(job_id) {
             job.bytes_transferred = transferred.max(0);
             if total >= 0 {
@@ -1925,7 +1925,7 @@ fn finish_job(
 ) {
     let mut snapshot: Option<JobInfo> = None;
     let state = app.state::<AppState>();
-    if let Ok(mut jobs) = lock(&state.jobs) {
+    if let Ok(mut jobs) = lock_state(&state.jobs) {
         jobs.running.remove(job_id);
         jobs.cancel_flags.remove(job_id);
         if let Some(job) = jobs.jobs.get_mut(job_id) {
@@ -1958,7 +1958,7 @@ fn finish_job(
 fn persist_job_history_snapshot(app: &AppHandle) {
     let history = {
         let state = app.state::<AppState>();
-        let Ok(jobs) = lock(&state.jobs) else {
+        let Ok(jobs) = lock_state(&state.jobs) else {
             return;
         };
 
@@ -1988,7 +1988,7 @@ fn hydrate_job_history_runtime(app: &AppHandle) {
     }
 
     let state = app.state::<AppState>();
-    let Ok(mut jobs) = lock(&state.jobs) else {
+    let Ok(mut jobs) = lock_state(&state.jobs) else {
         return;
     };
 
@@ -2093,7 +2093,7 @@ fn configured_updater(app: &AppHandle) -> Result<tauri_plugin_updater::Updater, 
 
 fn updater_cached_state(app: &AppHandle) -> (Option<String>, bool) {
     let state = app.state::<AppState>();
-    let Ok(updater) = lock(&state.updater) else {
+    let Ok(updater) = lock_state(&state.updater) else {
         return (None, false);
     };
 
@@ -2104,7 +2104,7 @@ fn updater_cached_state(app: &AppHandle) -> (Option<String>, bool) {
 
 fn updater_store_downloaded(app: &AppHandle, version: String, bytes: Vec<u8>) {
     let state = app.state::<AppState>();
-    let Ok(mut updater) = lock(&state.updater) else {
+    let Ok(mut updater) = lock_state(&state.updater) else {
         return;
     };
 
@@ -2114,7 +2114,7 @@ fn updater_store_downloaded(app: &AppHandle, version: String, bytes: Vec<u8>) {
 
 fn updater_clear_downloaded(app: &AppHandle) {
     let state = app.state::<AppState>();
-    let Ok(mut updater) = lock(&state.updater) else {
+    let Ok(mut updater) = lock_state(&state.updater) else {
         return;
     };
 
@@ -2124,7 +2124,7 @@ fn updater_clear_downloaded(app: &AppHandle) {
 
 fn updater_take_downloaded_if_version(app: &AppHandle, version: &str) -> Option<Vec<u8>> {
     let state = app.state::<AppState>();
-    let Ok(mut updater) = lock(&state.updater) else {
+    let Ok(mut updater) = lock_state(&state.updater) else {
         return None;
     };
     if updater.downloaded_version.as_deref() != Some(version) {
@@ -2766,7 +2766,7 @@ fn try_start_queued_jobs(app: AppHandle) {
     let mut start_now: Vec<(JobTask, Arc<AtomicBool>)> = Vec::new();
     let mut running_snapshots: Vec<JobInfo> = Vec::new();
 
-    if let Ok(mut jobs) = lock(&state.jobs) {
+    if let Ok(mut jobs) = lock_state(&state.jobs) {
         while jobs.running.len() < jobs.concurrency as usize {
             let Some(task) = jobs.queue.pop_front() else {
                 break;
@@ -3084,7 +3084,7 @@ fn enqueue_job(
 
     let state = app.state::<AppState>();
     {
-        let mut jobs = lock(&state.jobs)?;
+        let mut jobs = lock_state(&state.jobs)?;
         jobs.jobs.insert(job_id.clone(), info.clone());
         jobs.order.retain(|id| id != &job_id);
         jobs.order.insert(0, job_id.clone());
@@ -3109,7 +3109,7 @@ fn cancel_job(app: &AppHandle, job_id: &str) {
     let mut queued_cancel_snapshot: Option<JobInfo> = None;
     {
         let state = app.state::<AppState>();
-        if let Ok(mut jobs) = lock(&state.jobs) {
+        if let Ok(mut jobs) = lock_state(&state.jobs) {
             if let Some(index) = jobs.queue.iter().position(|task| task.id == job_id) {
                 jobs.queue.remove(index);
                 if let Some(job) = jobs.jobs.get_mut(job_id) {
@@ -3132,7 +3132,7 @@ fn cancel_job(app: &AppHandle, job_id: &str) {
     }
 }
 
-fn to_sync_object_map(
+fn build_sync_object_map(
     objects: Vec<(String, i64, String, String)>,
     prefix: &str,
 ) -> HashMap<String, SyncObjectInfo> {
@@ -3181,8 +3181,8 @@ async fn generate_sync_diff(state: &AppState, input: &SyncInput) -> Result<SyncD
         s3_list_all_objects(&source_client, &input.source_bucket, &source_prefix).await?;
     let dest_objects = s3_list_all_objects(&dest_client, &input.dest_bucket, &dest_prefix).await?;
 
-    let source_map = to_sync_object_map(source_objects, &input.source_prefix);
-    let dest_map = to_sync_object_map(dest_objects, &input.dest_prefix);
+    let source_map = build_sync_object_map(source_objects, &input.source_prefix);
+    let dest_map = build_sync_object_map(dest_objects, &input.dest_prefix);
 
     let mut to_add = Vec::new();
     let mut to_update = Vec::new();
@@ -3358,7 +3358,7 @@ fn mark_folder_sync_last_change(app: &AppHandle, rule_id: &str, files_watching: 
     let mut snapshot: Option<FolderSyncStateRecord> = None;
     {
         let state = app.state::<AppState>();
-        if let Ok(mut runtime) = lock(&state.folder_sync) {
+        if let Ok(mut runtime) = lock_state(&state.folder_sync) {
             let record =
                 runtime
                     .statuses
@@ -3449,7 +3449,7 @@ async fn run_folder_sync_once(
                          completed: i64,
                          bytes_transferred: i64|
      -> Result<(), String> {
-        set_folder_sync_status(
+        set_and_emit_folder_sync_status(
             app,
             &rule.id,
             "syncing",
@@ -3724,7 +3724,7 @@ async fn run_folder_sync_once(
 fn stop_folder_sync_rule(app: &AppHandle, rule_id: &str) {
     let control = {
         let state = app.state::<AppState>();
-        let value = if let Ok(mut runtime) = lock(&state.folder_sync) {
+        let value = if let Ok(mut runtime) = lock_state(&state.folder_sync) {
             runtime.tasks.remove(rule_id)
         } else {
             None
@@ -3758,11 +3758,11 @@ fn start_folder_sync_rule(app: &AppHandle, rule_id: &str) -> Result<(), String> 
 
     {
         let state = app.state::<AppState>();
-        let mut runtime = lock(&state.folder_sync)?;
+        let mut runtime = lock_state(&state.folder_sync)?;
         runtime.tasks.insert(rule.id.clone(), control.clone());
     }
 
-    let _ = set_folder_sync_status(
+    let _ = set_and_emit_folder_sync_status(
         app,
         &rule.id,
         "idle",
@@ -3869,7 +3869,7 @@ fn start_folder_sync_rule(app: &AppHandle, rule_id: &str) -> Result<(), String> 
                 1
             };
             if control.pause_flag.load(Ordering::SeqCst) {
-                let _ = set_folder_sync_status(
+                let _ = set_and_emit_folder_sync_status(
                     &app_handle,
                     &rule_id,
                     "paused",
@@ -3889,7 +3889,7 @@ fn start_folder_sync_rule(app: &AppHandle, rule_id: &str) -> Result<(), String> 
                     } else {
                         "watching"
                     };
-                    let _ = set_folder_sync_status(
+                    let _ = set_and_emit_folder_sync_status(
                         &app_handle,
                         &rule_id,
                         status,
@@ -3903,7 +3903,7 @@ fn start_folder_sync_rule(app: &AppHandle, rule_id: &str) -> Result<(), String> 
                 Err(err) => {
                     let _ =
                         update_folder_sync_rule_result(&rule_id, Some("error"), Some(err.as_str()));
-                    let _ = set_folder_sync_status(
+                    let _ = set_and_emit_folder_sync_status(
                         &app_handle,
                         &rule_id,
                         "error",
@@ -3924,12 +3924,12 @@ fn start_folder_sync_rule(app: &AppHandle, rule_id: &str) -> Result<(), String> 
         }
 
         let state = app_handle.state::<AppState>();
-        if let Ok(mut runtime) = lock(&state.folder_sync) {
+        if let Ok(mut runtime) = lock_state(&state.folder_sync) {
             runtime.tasks.remove(&rule_id);
         }
 
         if get_folder_sync_rule(&rule_id).is_ok() {
-            let _ = set_folder_sync_status(
+            let _ = set_and_emit_folder_sync_status(
                 &app_handle,
                 &rule_id,
                 "idle",
@@ -3940,7 +3940,7 @@ fn start_folder_sync_rule(app: &AppHandle, rule_id: &str) -> Result<(), String> 
             );
         } else {
             let state = app_handle.state::<AppState>();
-            let _removed = if let Ok(mut runtime) = lock(&state.folder_sync) {
+            let _removed = if let Ok(mut runtime) = lock_state(&state.folder_sync) {
                 runtime.statuses.remove(&rule_id);
                 true
             } else {
@@ -3966,7 +3966,7 @@ fn start_all_folder_sync_rules(app: &AppHandle) -> Result<(), String> {
 fn stop_all_folder_sync_rules(app: &AppHandle) {
     let task_ids = {
         let state = app.state::<AppState>();
-        let value = if let Ok(runtime) = lock(&state.folder_sync) {
+        let value = if let Ok(runtime) = lock_state(&state.folder_sync) {
             runtime.tasks.keys().cloned().collect::<Vec<_>>()
         } else {
             Vec::new()
@@ -3976,14 +3976,14 @@ fn stop_all_folder_sync_rules(app: &AppHandle) {
 
     for rule_id in task_ids {
         stop_folder_sync_rule(app, &rule_id);
-        let _ = set_folder_sync_status(app, &rule_id, "idle", 0, Some(now_iso()), None, None);
+        let _ = set_and_emit_folder_sync_status(app, &rule_id, "idle", 0, Some(now_iso()), None, None);
     }
 }
 
 fn pause_all_folder_sync_rules(app: &AppHandle) {
     let controls = {
         let state = app.state::<AppState>();
-        let value = if let Ok(runtime) = lock(&state.folder_sync) {
+        let value = if let Ok(runtime) = lock_state(&state.folder_sync) {
             runtime.tasks.values().cloned().collect::<Vec<_>>()
         } else {
             Vec::new()
@@ -4000,7 +4000,7 @@ fn pause_all_folder_sync_rules(app: &AppHandle) {
 fn resume_all_folder_sync_rules(app: &AppHandle) {
     let controls = {
         let state = app.state::<AppState>();
-        let value = if let Ok(runtime) = lock(&state.folder_sync) {
+        let value = if let Ok(runtime) = lock_state(&state.folder_sync) {
             runtime.tasks.values().cloned().collect::<Vec<_>>()
         } else {
             Vec::new()
@@ -4017,7 +4017,7 @@ fn resume_all_folder_sync_rules(app: &AppHandle) {
 fn trigger_folder_sync_now(app: &AppHandle, rule_id: &str) -> Result<(), String> {
     let control = {
         let state = app.state::<AppState>();
-        let value = if let Ok(runtime) = lock(&state.folder_sync) {
+        let value = if let Ok(runtime) = lock_state(&state.folder_sync) {
             runtime.tasks.get(rule_id).cloned()
         } else {
             None
@@ -4035,7 +4035,7 @@ fn trigger_folder_sync_now(app: &AppHandle, rule_id: &str) -> Result<(), String>
 
 fn folder_sync_has_active_tasks(app: &AppHandle) -> bool {
     let state = app.state::<AppState>();
-    let value = if let Ok(runtime) = lock(&state.folder_sync) {
+    let value = if let Ok(runtime) = lock_state(&state.folder_sync) {
         !runtime.tasks.is_empty()
     } else {
         false
@@ -4155,7 +4155,7 @@ async fn rpc_request(
         RpcMethod::VaultStatus => {
             let path = vault_path()?;
             let exists = path.exists();
-            let unlocked = lock(&state.vault)?.unlocked;
+            let unlocked = lock_state(&state.vault)?.unlocked;
             let has_recovery_key = if exists {
                 has_recovery_key_on_disk(&path)?
             } else {
@@ -4185,7 +4185,7 @@ async fn rpc_request(
             let recovery_key_plain = generate_recovery_key();
             let recovery_key = derive_key(&recovery_key_plain, &recovery_salt);
 
-            let mut vault = lock(&state.vault)?;
+            let mut vault = lock_state(&state.vault)?;
             vault.unlocked = true;
             vault.data = Some(VaultData::default());
             vault.key = Some(key);
@@ -4228,7 +4228,7 @@ async fn rpc_request(
 
             match unlock_with_passphrase(&path, &input.passphrase) {
                 Ok(unlock) => {
-                    let mut vault = lock(&state.vault)?;
+                    let mut vault = lock_state(&state.vault)?;
                     vault.unlocked = true;
                     vault.data = Some(unlock.data);
                     vault.key = Some(unlock.key);
@@ -4277,7 +4277,7 @@ async fn rpc_request(
             let has_recovery_key = has_recovery_key_on_disk(&path).unwrap_or(false);
 
             {
-                let vault = lock(&state.vault)?;
+                let vault = lock_state(&state.vault)?;
                 if vault.unlocked {
                     return Ok(json!({
                         "success": true,
@@ -4310,7 +4310,7 @@ async fn rpc_request(
 
             match unlock_with_passphrase(&path, &passphrase) {
                 Ok(unlock) => {
-                    let mut vault = lock(&state.vault)?;
+                    let mut vault = lock_state(&state.vault)?;
                     vault.unlocked = true;
                     vault.data = Some(unlock.data);
                     vault.key = Some(unlock.key);
@@ -4340,7 +4340,7 @@ async fn rpc_request(
             }
         }
         RpcMethod::VaultLock => {
-            let mut vault = lock(&state.vault)?;
+            let mut vault = lock_state(&state.vault)?;
             lock_vault_runtime(&mut vault);
             stop_all_folder_sync_rules(&app);
             refresh_tray_menu(&app);
@@ -4371,7 +4371,7 @@ async fn rpc_request(
 
             match unlock_with_recovery_key(&path, input.recovery_key.trim()) {
                 Ok(unlock) => {
-                    let mut vault = lock(&state.vault)?;
+                    let mut vault = lock_state(&state.vault)?;
                     vault.unlocked = true;
                     vault.data = Some(unlock.data);
                     vault.key = None;
@@ -4395,7 +4395,7 @@ async fn rpc_request(
             }
 
             let path = vault_path()?;
-            let mut vault = lock(&state.vault)?;
+            let mut vault = lock_state(&state.vault)?;
             ensure_unlocked(&vault)?;
 
             let new_salt = random_bytes::<SALT_BYTES>();
@@ -4423,7 +4423,7 @@ async fn rpc_request(
         }
         RpcMethod::VaultAddRecoveryKey => {
             let path = vault_path()?;
-            let mut vault = lock(&state.vault)?;
+            let mut vault = lock_state(&state.vault)?;
             ensure_writable(&vault)?;
 
             let recovery_salt = random_bytes::<SALT_BYTES>();
@@ -4447,7 +4447,7 @@ async fn rpc_request(
             }
             let _ = clear_stored_passphrase();
 
-            let mut vault = lock(&state.vault)?;
+            let mut vault = lock_state(&state.vault)?;
             *vault = VaultRuntime::default();
             stop_all_folder_sync_rules(&app);
             refresh_tray_menu(&app);
@@ -4455,14 +4455,14 @@ async fn rpc_request(
         }
 
         RpcMethod::ProfileList => {
-            let vault = lock(&state.vault)?;
+            let vault = lock_state(&state.vault)?;
             ensure_unlocked(&vault)?;
             Ok(json!(profile_infos(&vault)))
         }
         RpcMethod::ProfileAdd => {
             let input: ProfileInput = parse_payload(payload)?;
             let path = vault_path()?;
-            let mut vault = lock(&state.vault)?;
+            let mut vault = lock_state(&state.vault)?;
             ensure_writable(&vault)?;
 
             let timestamp = now_iso();
@@ -4492,7 +4492,7 @@ async fn rpc_request(
         RpcMethod::ProfileUpdate => {
             let input: ProfileUpdateInput = parse_payload(payload)?;
             let path = vault_path()?;
-            let mut vault = lock(&state.vault)?;
+            let mut vault = lock_state(&state.vault)?;
             ensure_writable(&vault)?;
 
             let data = vault
@@ -4542,7 +4542,7 @@ async fn rpc_request(
         RpcMethod::ProfileRemove => {
             let input: IdInput = parse_payload(payload)?;
             let path = vault_path()?;
-            let mut vault = lock(&state.vault)?;
+            let mut vault = lock_state(&state.vault)?;
             ensure_writable(&vault)?;
 
             let data = vault
@@ -5288,7 +5288,7 @@ async fn rpc_request(
         }
 
         RpcMethod::JobsList => {
-            let jobs_runtime = lock(&state.jobs)?;
+            let jobs_runtime = lock_state(&state.jobs)?;
             let mut seen = HashSet::new();
             let mut list = Vec::new();
             for id in &jobs_runtime.order {
@@ -5310,7 +5310,7 @@ async fn rpc_request(
             Ok(Value::Null)
         }
         RpcMethod::JobsClear => {
-            let mut jobs_runtime = lock(&state.jobs)?;
+            let mut jobs_runtime = lock_state(&state.jobs)?;
             let removable: Vec<String> = jobs_runtime
                 .jobs
                 .iter()
@@ -5342,18 +5342,18 @@ async fn rpc_request(
             Ok(Value::Null)
         }
         RpcMethod::JobsGetConcurrency => {
-            let jobs_runtime = lock(&state.jobs)?;
+            let jobs_runtime = lock_state(&state.jobs)?;
             Ok(json!({ "concurrency": jobs_runtime.concurrency }))
         }
         RpcMethod::JobsSetConcurrency => {
             let input: JobConcurrencyInput = parse_payload(payload)?;
             {
-                let mut jobs_runtime = lock(&state.jobs)?;
+                let mut jobs_runtime = lock_state(&state.jobs)?;
                 jobs_runtime.concurrency =
                     input.concurrency.clamp(MIN_JOB_CONCURRENCY, MAX_JOB_CONCURRENCY);
             }
             try_start_queued_jobs(app.clone());
-            let jobs_runtime = lock(&state.jobs)?;
+            let jobs_runtime = lock_state(&state.jobs)?;
             Ok(json!({ "concurrency": jobs_runtime.concurrency }))
         }
 
@@ -5487,7 +5487,7 @@ async fn rpc_request(
             remove_folder_sync_file_records(&input.id);
 
             let state = app.state::<AppState>();
-            if let Ok(mut runtime) = lock(&state.folder_sync) {
+            if let Ok(mut runtime) = lock_state(&state.folder_sync) {
                 runtime.statuses.remove(&input.id);
             }
             refresh_tray_menu(&app);
@@ -5506,7 +5506,7 @@ async fn rpc_request(
                     let _ = start_folder_sync_rule(&app, &input.id);
                 } else {
                     stop_folder_sync_rule(&app, &input.id);
-                    let _ = set_folder_sync_status(
+                    let _ = set_and_emit_folder_sync_status(
                         &app,
                         &input.id,
                         "idle",
