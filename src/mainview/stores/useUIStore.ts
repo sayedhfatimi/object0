@@ -15,6 +15,7 @@ interface TransferTarget {
 
 export type SyncEntryPreference = "object-sync" | "live-folder-sync";
 export type FolderSyncListDensity = "comfortable" | "compact";
+export type Platform = "macos" | "windows" | "linux";
 
 interface UIState {
   sidebarCollapsed: boolean;
@@ -37,6 +38,10 @@ interface UIState {
   folderSyncPanelOpen: boolean;
   folderSyncListDensity: FolderSyncListDensity;
   objectSearchOpen: boolean;
+  // Host OS, resolved once at startup via the "system:platform" RPC. Drives the
+  // platform-aware window decorations (custom controls on Windows/Linux, native
+  // traffic lights on macOS). Not persisted — it is environment-derived.
+  platform: Platform | null;
 
   toggleSidebar: () => void;
   setViewMode: (mode: ViewMode) => void;
@@ -60,6 +65,7 @@ interface UIState {
   setFolderSyncPanelOpen: (open: boolean) => void;
   setFolderSyncListDensity: (density: FolderSyncListDensity) => void;
   setObjectSearchOpen: (open: boolean) => void;
+  setPlatform: (platform: Platform) => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -85,6 +91,7 @@ export const useUIStore = create<UIState>()(
       folderSyncPanelOpen: false,
       folderSyncListDensity: "comfortable",
       objectSearchOpen: false,
+      platform: null,
 
       toggleSidebar: () =>
         set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
@@ -124,6 +131,7 @@ export const useUIStore = create<UIState>()(
       setFolderSyncListDensity: (density) =>
         set({ folderSyncListDensity: density }),
       setObjectSearchOpen: (open) => set({ objectSearchOpen: open }),
+      setPlatform: (platform) => set({ platform }),
     }),
     {
       name: "object0-ui",

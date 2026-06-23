@@ -59,6 +59,7 @@ pub enum RpcMethod {
     UpdaterDownload,
     UpdaterApply,
     UpdaterLocalInfo,
+    SystemPlatform,
 }
 
 impl RpcMethod {
@@ -123,6 +124,7 @@ impl RpcMethod {
             "updater:download" => Some(Self::UpdaterDownload),
             "updater:apply" => Some(Self::UpdaterApply),
             "updater:local-info" => Some(Self::UpdaterLocalInfo),
+            "system:platform" => Some(Self::SystemPlatform),
             _ => None,
         }
     }

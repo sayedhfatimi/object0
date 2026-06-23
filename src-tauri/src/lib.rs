@@ -5628,6 +5628,7 @@ async fn rpc_request(
             "name": "object0",
             "identifier": "dev.object0.app"
         })),
+        RpcMethod::SystemPlatform => Ok(json!({ "os": std::env::consts::OS })),
     }
 }
 
@@ -5637,6 +5638,14 @@ pub fn run() {
         .manage(AppState::default())
         .setup(|app| {
             hydrate_job_history_runtime(app.app_handle());
+
+            // Custom window decorations: macOS keeps the native frame (traffic
+            // lights float over an overlay title bar via tauri.conf.json), while
+            // Windows/Linux drop the native frame and render our own controls.
+            #[cfg(not(target_os = "macos"))]
+            if let Some(win) = app.get_webview_window("main") {
+                let _ = win.set_decorations(false);
+            }
 
             let updater_handle = app.app_handle().clone();
             tauri::async_runtime::spawn(async move {

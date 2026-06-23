@@ -51,6 +51,8 @@ export {
   CodeXml as IconCodeCompare, // fa-code-compare   → diff / XML code
   Container as IconBucket, // fa-bucket         → S3 storage bucket
   Copy as IconCopy, // fa-copy
+  // ── Window controls (custom title bar) ─────────────────────────────────
+  Copy as IconWindowRestore, // overlapping squares → restore (un-maximize)
   // ── Data / Database ────────────────────────────────────────────────────
   Database as IconDatabase, // fa-database
   // ── Size modifier (fa-xs is a CSS size util, not a real icon; map to a small dot) ──
@@ -113,6 +115,7 @@ export {
   LockOpen as IconLockOpen, // fa-lock-open
   // ── Hardware ───────────────────────────────────────────────────────────
   Microchip as IconMicrochip, // fa-microchip      → chip / hardware
+  Minus as IconWindowMinimize, // minimize
   // ── Theme ──────────────────────────────────────────────────────────────
   Moon as IconMoon, // fa-moon
   // ── Objects / Files ────────────────────────────────────────────────────
@@ -144,6 +147,7 @@ export {
   // ── Share ──────────────────────────────────────────────────────────────
   Share2 as IconShareNodes, // fa-share-nodes
   Shield as IconVault, // fa-vault          → vault / secure store
+  Square as IconWindowMaximize, // maximize
   // ── Favourites ─────────────────────────────────────────────────────────
   Star as IconStar, // fa-star
   Sun as IconSun, // fa-sun

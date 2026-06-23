@@ -256,6 +256,12 @@ export interface RPCSchema {
       identifier: string;
     };
   };
+
+  // ── System ──
+  "system:platform": {
+    req: undefined;
+    res: { os: "macos" | "windows" | "linux" };
+  };
 }
 
 // ── Event types (Bun → Webview push) ──

@@ -1,4 +1,6 @@
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { lazy, Suspense } from "react";
+import { cn } from "@/lib/utils";
 import {
   IconClockRotateLeft,
   IconFolderOpen,
@@ -20,6 +22,7 @@ import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { KeyboardShortcutsDialog } from "./KeyboardShortcutsDialog";
+import { WindowControls } from "./WindowControls";
 
 const JobPanel = lazy(() =>
   import("../jobs/JobPanel").then((m) => ({ default: m.JobPanel })),
@@ -46,12 +49,37 @@ export function TopBar() {
   const activeCount = useFolderSyncStore((s) => s.getActiveCount);
   const settingsOpen = useUIStore((s) => s.settingsOpen);
   const setSettingsOpen = useUIStore((s) => s.setSettingsOpen);
+  const platform = useUIStore((s) => s.platform);
 
   return (
-    <div className="drag-region flex flex-col border-border border-b bg-card/50">
+    // Custom title bar. `data-tauri-drag-region` makes the empty surface
+    // draggable on all platforms (unlike the `-webkit-app-region` CSS, which
+    // does not work on Linux/WebKitGTK). Interactive children are separate
+    // pointer targets, so they don't drag.
+    // biome-ignore lint/a11y/noStaticElementInteractions: window title-bar drag/maximize chrome, not content
+    <div
+      data-tauri-drag-region
+      className="flex flex-col border-border border-b bg-card/50"
+      onDoubleClick={(e) => {
+        // macOS/Windows get native double-click-to-maximize from the drag
+        // region; Linux needs an explicit handler. Only fire on the drag
+        // surface itself, never on a child control.
+        if (platform !== "linux") return;
+        if (!(e.target as HTMLElement).hasAttribute("data-tauri-drag-region")) {
+          return;
+        }
+        getCurrentWindow().toggleMaximize();
+      }}
+    >
       {/* Top row: breadcrumb + global actions */}
-      <div className="flex items-center gap-2 px-3 py-2">
-        <div className="no-drag group/breadcrumb flex-1">
+      <div data-tauri-drag-region className="flex items-center gap-2 px-3 py-2">
+        <div
+          className={cn(
+            "group/breadcrumb flex min-w-0 items-center",
+            // Clear the native macOS traffic lights, which float over the bar.
+            platform === "macos" && "pl-[72px]",
+          )}
+        >
           {activeProfile && bucket ? (
             <ObjectBreadcrumb
               profileName={activeProfile.name}
@@ -63,6 +91,11 @@ export function TopBar() {
             </span>
           )}
         </div>
+
+        {/* Dedicated drag surface: a plain spacer with nothing layered on top,
+            so the whole middle of the title bar reliably drags the window
+            (the breadcrumb's own nav elements aren't drag targets). */}
+        <div data-tauri-drag-region className="h-7 flex-1 self-stretch" />
 
         <Button
           variant="ghost"
@@ -161,6 +194,10 @@ export function TopBar() {
         >
           <IconGear className="size-4" />
         </Button>
+
+        {/* Custom min/maximize/close controls — Windows & Linux only; macOS
+            uses its native traffic lights. */}
+        {platform && platform !== "macos" && <WindowControls />}
       </div>
 
       {/* Toolbar row (when viewing objects) */}

@@ -4,6 +4,8 @@ import { ErrorBoundary } from "../components/common/ErrorBoundary";
 import { ParticleBackground } from "../components/common/ParticleBackground";
 import { Toast } from "../components/common/Toast";
 import { MainLayout } from "../components/layout/MainLayout";
+import { ResizeBorders } from "../components/layout/ResizeBorders";
+import { WindowChrome } from "../components/layout/WindowChrome";
 import { ChangePassphraseDialog } from "../components/vault/ChangePassphraseDialog";
 import { RecoveryFlow } from "../components/vault/RecoveryFlow";
 import { RecoveryKeyDisplay } from "../components/vault/RecoveryKeyDisplay";
@@ -50,6 +52,12 @@ export default function App() {
     if (concurrency) {
       rpcCall("jobs:set-concurrency", { concurrency });
     }
+    // Resolve the host OS once, app-wide, so the window decorations (custom
+    // controls on Windows/Linux, native on macOS) work on every screen —
+    // including the lock/loading screens that have no TopBar.
+    rpcCall("system:platform", undefined).then(({ os }) =>
+      useUIStore.getState().setPlatform(os),
+    );
   }, [checkStatus]);
 
   useEffect(() => {
@@ -138,7 +146,16 @@ export default function App() {
             <ChangePassphraseDialog onComplete={() => {}} />
           )}
           {screenKey === "main" && <MainLayout />}
+
+          {/* Window decorations. The main screen's TopBar carries its own
+              controls; every other screen gets this lightweight title bar so
+              the window stays draggable/closable on Windows & Linux. */}
+          {screenKey !== "main" && <WindowChrome />}
         </div>
+
+        {/* Linux-only invisible resize grips — global so resizing works on the
+            lock/loading screens too, not just the main view. */}
+        <ResizeBorders />
 
         {pendingRecoveryKey && (
           <RecoveryKeyDisplay
