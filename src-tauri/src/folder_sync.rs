@@ -712,3 +712,316 @@ pub(crate) fn folder_sync_status_counts(app: &AppHandle) -> (usize, usize, usize
     let errors = statuses.iter().filter(|s| s.status == FolderSyncStatus::Error).count();
     (syncing, watching, paused, errors)
 }
+
+pub(crate) fn resolve_folder_sync_conflict(
+    local: &LocalFileInfo,
+    remote: &RemoteFileInfo,
+    conflict_resolution: ConflictResolution,
+) -> (String, String) {
+    match conflict_resolution {
+        ConflictResolution::LocalWins => (
+            "upload".to_string(),
+            "Conflict resolved: local wins".to_string(),
+        ),
+        ConflictResolution::RemoteWins => (
+            "download".to_string(),
+            "Conflict resolved: remote wins".to_string(),
+        ),
+        ConflictResolution::NewerWins => match parse_iso_millis(&remote.last_modified) {
+            Some(remote_ms) if local.mtime_ms >= remote_ms => (
+                "upload".to_string(),
+                "Conflict resolved: local is newer".to_string(),
+            ),
+            Some(_) => (
+                "download".to_string(),
+                "Conflict resolved: remote is newer".to_string(),
+            ),
+            // Remote timestamp unparseable: don't guess a winner, surface a conflict.
+            None => (
+                "conflict".to_string(),
+                "Both sides changed (remote timestamp unparseable)".to_string(),
+            ),
+        },
+        _ => ("conflict".to_string(), "Both sides changed".to_string()),
+    }
+}
+
+pub(crate) fn resolve_folder_sync_action(
+    local: Option<&LocalFileInfo>,
+    remote: Option<&RemoteFileInfo>,
+    known: Option<&FolderSyncFileRecord>,
+    direction: SyncDirection,
+    conflict_resolution: ConflictResolution,
+) -> Option<(String, String)> {
+    match (local, remote) {
+        (Some(local), Some(remote)) => {
+            if let Some(known) = known {
+                let local_changed =
+                    local.size != known.local_size || local.mtime_ms != known.local_mtime;
+                let remote_changed =
+                    remote.etag != known.remote_etag || remote.size != known.remote_size;
+
+                if !local_changed && !remote_changed {
+                    return None;
+                }
+
+                if local_changed && !remote_changed {
+                    if direction == SyncDirection::RemoteToLocal {
+                        return None;
+                    }
+                    return Some(("upload".to_string(), "Local file changed".to_string()));
+                }
+
+                if !local_changed && remote_changed {
+                    if direction == SyncDirection::LocalToRemote {
+                        return None;
+                    }
+                    return Some(("download".to_string(), "Remote file changed".to_string()));
+                }
+
+                Some(resolve_folder_sync_conflict(
+                    local,
+                    remote,
+                    conflict_resolution,
+                ))
+            } else if local.size == remote.size {
+                None
+            } else {
+                Some(resolve_folder_sync_conflict(
+                    local,
+                    remote,
+                    conflict_resolution,
+                ))
+            }
+        }
+        (Some(_local), None) => {
+            if known.is_some() {
+                if direction == SyncDirection::LocalToRemote {
+                    Some((
+                        "upload".to_string(),
+                        "Re-upload (remote deleted)".to_string(),
+                    ))
+                } else {
+                    Some(("delete-local".to_string(), "Remote deleted".to_string()))
+                }
+            } else if direction == SyncDirection::RemoteToLocal {
+                None
+            } else {
+                Some(("upload".to_string(), "New local file".to_string()))
+            }
+        }
+        (None, Some(_remote)) => {
+            if known.is_some() {
+                if direction == SyncDirection::RemoteToLocal {
+                    Some((
+                        "download".to_string(),
+                        "Re-download (local deleted)".to_string(),
+                    ))
+                } else {
+                    Some(("delete-remote".to_string(), "Local deleted".to_string()))
+                }
+            } else if direction == SyncDirection::LocalToRemote {
+                None
+            } else {
+                Some(("download".to_string(), "New remote file".to_string()))
+            }
+        }
+        (None, None) => None,
+    }
+}
+
+pub(crate) async fn generate_folder_sync_diff_for_rule(
+    rule: &FolderSyncRuleRecord,
+    client: &S3Client,
+    known_records: &[FolderSyncFileRecord],
+) -> Result<FolderSyncDiffRecord, String> {
+    let local_root = expand_user_path(&rule.local_path);
+    let local_files = scan_local_directory(&local_root, &rule.exclude_patterns);
+
+    let bucket_prefix = normalize_prefix(&rule.bucket_prefix);
+    let remote_objects = s3_list_all_objects(client, &rule.bucket, &bucket_prefix).await?;
+
+    let mut local_map: HashMap<String, LocalFileInfo> = HashMap::new();
+    for local in local_files {
+        local_map.insert(local.relative_path.clone(), local);
+    }
+
+    let mut remote_map: HashMap<String, RemoteFileInfo> = HashMap::new();
+    for RemoteObject {
+        key,
+        size,
+        etag,
+        last_modified,
+    } in remote_objects
+    {
+        let relative = if bucket_prefix.is_empty() {
+            key.clone()
+        } else if key.starts_with(&bucket_prefix) {
+            key[bucket_prefix.len()..].to_string()
+        } else {
+            continue;
+        };
+
+        if relative.is_empty() || relative.ends_with('/') {
+            continue;
+        }
+        if is_excluded_path(&relative, &rule.exclude_patterns) {
+            continue;
+        }
+
+        remote_map.insert(
+            relative,
+            RemoteFileInfo {
+                size: size.max(0),
+                etag,
+                last_modified,
+            },
+        );
+    }
+
+    let mut known_map: HashMap<String, FolderSyncFileRecord> = HashMap::new();
+    for known in known_records {
+        known_map.insert(known.relative_path.clone(), known.clone());
+    }
+
+    let mut all_paths: HashSet<String> = HashSet::new();
+    all_paths.extend(local_map.keys().cloned());
+    all_paths.extend(remote_map.keys().cloned());
+    all_paths.extend(known_map.keys().cloned());
+
+    let mut paths: Vec<String> = all_paths.into_iter().collect();
+    paths.sort();
+
+    let mut diff = FolderSyncDiffRecord {
+        uploads: Vec::new(),
+        downloads: Vec::new(),
+        delete_local: Vec::new(),
+        delete_remote: Vec::new(),
+        conflicts: Vec::new(),
+        unchanged: 0,
+    };
+
+    for path in paths {
+        if is_excluded_path(&path, &rule.exclude_patterns) {
+            continue;
+        }
+
+        let local = local_map.get(&path);
+        let remote = remote_map.get(&path);
+        let known = known_map.get(&path);
+
+        let Some((action, reason)) = resolve_folder_sync_action(
+            local,
+            remote,
+            known,
+            rule.direction,
+            rule.conflict_resolution,
+        ) else {
+            diff.unchanged += 1;
+            continue;
+        };
+
+        let entry = FolderSyncDiffEntryRecord {
+            relative_path: path.clone(),
+            action: action.clone(),
+            reason,
+            local_size: local.map(|v| v.size),
+            local_mtime: local.map(|v| v.mtime_ms),
+            remote_size: remote.map(|v| v.size),
+            remote_last_modified: remote.map(|v| v.last_modified.clone()),
+            remote_etag: remote.map(|v| v.etag.clone()),
+        };
+
+        match action.as_str() {
+            "upload" => diff.uploads.push(entry),
+            "download" => diff.downloads.push(entry),
+            "delete-local" => diff.delete_local.push(entry),
+            "delete-remote" => diff.delete_remote.push(entry),
+            _ => diff.conflicts.push(entry),
+        }
+    }
+
+    Ok(diff)
+}
+
+pub(crate) fn emit_folder_sync_status_event(app: &AppHandle, status: &FolderSyncStateRecord) {
+    // FolderSyncStateRecord is camelCase Serialize; emit it directly as the event payload.
+    let _ = app.emit("folder-sync:status", status);
+}
+
+pub(crate) fn emit_folder_sync_error_event(app: &AppHandle, rule_id: &str, error: &str) {
+    let payload = FolderSyncErrorEventPayload {
+        rule_id: rule_id.to_string(),
+        error: error.to_string(),
+    };
+    let _ = app.emit("folder-sync:error", payload);
+}
+
+pub(crate) fn emit_folder_sync_conflict_event(
+    app: &AppHandle,
+    rule_id: &str,
+    conflict: &FolderSyncDiffEntryRecord,
+) {
+    let payload = FolderSyncConflictEventPayload {
+        rule_id: rule_id.to_string(),
+        relative_path: conflict.relative_path.clone(),
+        local_size: conflict.local_size.unwrap_or(0),
+        local_mtime: conflict.local_mtime.unwrap_or(0),
+        remote_size: conflict.remote_size.unwrap_or(0),
+        remote_last_modified: conflict
+            .remote_last_modified
+            .clone()
+            .unwrap_or_else(now_iso),
+    };
+    let _ = app.emit("folder-sync:conflict", payload);
+}
+
+pub(crate) fn set_and_emit_folder_sync_status(
+    app: &AppHandle,
+    rule_id: &str,
+    status: FolderSyncStatus,
+    files_watching: i64,
+    last_change: Option<String>,
+    current_file: Option<String>,
+    progress: Option<FolderSyncProgress>,
+) -> Result<(), String> {
+    let record = FolderSyncStateRecord {
+        rule_id: rule_id.to_string(),
+        status,
+        files_watching: files_watching.max(0),
+        last_change,
+        current_file,
+        progress,
+    };
+
+    let status_changed = {
+        let state = app.state::<AppState>();
+        let mut runtime = lock_state(&state.folder_sync)?;
+        let prev = runtime.statuses.get(rule_id).map(|r| r.status);
+        runtime.statuses.insert(rule_id.to_string(), record.clone());
+        prev != Some(status)
+    };
+
+    emit_folder_sync_status_event(app, &record);
+
+    // Worker threads can transition a rule (e.g. → "paused") without going through an
+    // RPC handler, which is where the tray menu is normally rebuilt. Refresh the tray
+    // on a status transition so its context menu doesn't go stale. Guarded on a real
+    // status change to avoid rebuilding the menu on every progress tick.
+    if status_changed {
+        refresh_tray_menu(app);
+    }
+
+    Ok(())
+}
+
+pub(crate) fn folder_sync_statuses_snapshot(app: &AppHandle) -> Vec<FolderSyncStateRecord> {
+    let state = app.state::<AppState>();
+    let Ok(runtime) = lock_state(&state.folder_sync) else {
+        return Vec::new();
+    };
+
+    let mut statuses: Vec<FolderSyncStateRecord> = runtime.statuses.values().cloned().collect();
+    statuses.sort_by(|a, b| a.rule_id.cmp(&b.rule_id));
+    statuses
+}

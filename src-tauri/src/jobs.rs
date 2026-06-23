@@ -374,3 +374,174 @@ pub(crate) fn cancel_job(app: &AppHandle, job_id: &str) {
         persist_job_history_snapshot(app);
     }
 }
+
+pub(crate) fn calculate_percentage(transferred: i64, total: i64) -> i64 {
+    if total <= 0 {
+        0
+    } else {
+        (((transferred as f64) / (total as f64)) * 100.0).round() as i64
+    }
+}
+
+pub(crate) fn job_to_progress_event(job: &JobInfo) -> JobProgressEvent {
+    JobProgressEvent {
+        job_id: job.id.clone(),
+        job_type: job.job_type,
+        status: job.status,
+        file_name: job.file_name.clone(),
+        bytes_transferred: job.bytes_transferred,
+        bytes_total: job.bytes_total,
+        percentage: job.percentage,
+        speed: job.speed,
+        eta: job.eta,
+        error: job.error.clone(),
+    }
+}
+
+pub(crate) fn emit_job_progress_event(app: &AppHandle, job: &JobInfo) {
+    let _ = app.emit("job:progress", job_to_progress_event(job));
+}
+
+pub(crate) fn emit_job_complete_event(app: &AppHandle, job: &JobInfo) {
+    let complete = JobCompleteEvent {
+        job_id: job.id.clone(),
+        file_name: Some(job.file_name.clone()),
+        success: job.status == JobStatus::Completed,
+        error: job.error.clone(),
+    };
+    let _ = app.emit("job:complete", complete);
+}
+
+pub(crate) fn emit_update_available_event(
+    app: &AppHandle,
+    version: &str,
+    update_available: bool,
+    update_ready: bool,
+) {
+    let payload = UpdateAvailableEventPayload {
+        version: version.to_string(),
+        update_available,
+        update_ready,
+    };
+    let _ = app.emit("update:available", payload);
+}
+
+pub(crate) fn update_job_progress(
+    app: &AppHandle,
+    job_id: &str,
+    transferred: i64,
+    total: i64,
+    speed: i64,
+    eta: i64,
+) {
+    let mut snapshot: Option<JobInfo> = None;
+    let state = app.state::<AppState>();
+    if let Ok(mut jobs) = lock_state(&state.jobs) {
+        if let Some(job) = jobs.jobs.get_mut(job_id) {
+            job.bytes_transferred = transferred.max(0);
+            if total >= 0 {
+                job.bytes_total = total;
+            }
+            job.percentage = calculate_percentage(job.bytes_transferred, job.bytes_total);
+            job.speed = speed.max(0);
+            job.eta = eta.max(0);
+            snapshot = Some(job.clone());
+        }
+    }
+    if let Some(job) = snapshot {
+        emit_job_progress_event(app, &job);
+    }
+}
+
+pub(crate) fn finish_job(
+    app: &AppHandle,
+    job_id: &str,
+    status: JobStatus,
+    error: Option<String>,
+    bytes_transferred: Option<i64>,
+) {
+    let mut snapshot: Option<JobInfo> = None;
+    let state = app.state::<AppState>();
+    if let Ok(mut jobs) = lock_state(&state.jobs) {
+        jobs.running.remove(job_id);
+        jobs.cancel_flags.remove(job_id);
+        if let Some(job) = jobs.jobs.get_mut(job_id) {
+            job.status = status;
+            if let Some(transferred) = bytes_transferred {
+                job.bytes_transferred = transferred.max(0);
+                if job.bytes_total <= 0 {
+                    job.bytes_total = transferred.max(0);
+                }
+                job.percentage = calculate_percentage(job.bytes_transferred, job.bytes_total);
+            }
+            if matches!(status, JobStatus::Completed) {
+                if job.bytes_total > 0 {
+                    job.bytes_transferred = job.bytes_total;
+                    job.percentage = 100;
+                }
+            }
+            job.error = error;
+            job.completed_at = Some(now_iso());
+            snapshot = Some(job.clone());
+        }
+    }
+    if let Some(job) = snapshot {
+        emit_job_progress_event(app, &job);
+        emit_job_complete_event(app, &job);
+    }
+    persist_job_history_snapshot(app);
+}
+
+pub(crate) fn persist_job_history_snapshot(app: &AppHandle) {
+    let history = {
+        let state = app.state::<AppState>();
+        let Ok(jobs) = lock_state(&state.jobs) else {
+            return;
+        };
+
+        let mut collected = Vec::new();
+        for id in &jobs.order {
+            let Some(job) = jobs.jobs.get(id) else {
+                continue;
+            };
+            if !is_terminal_job_status(job.status) || jobs.running.contains(id) {
+                continue;
+            }
+            collected.push(job.clone());
+            if collected.len() >= JOB_HISTORY_MAX {
+                break;
+            }
+        }
+        collected
+    };
+
+    let _ = save_job_history_to_disk(&history);
+}
+
+pub(crate) fn hydrate_job_history_runtime(app: &AppHandle) {
+    let history = load_job_history_from_disk();
+    if history.is_empty() {
+        return;
+    }
+
+    let state = app.state::<AppState>();
+    let Ok(mut jobs) = lock_state(&state.jobs) else {
+        return;
+    };
+
+    for job in history {
+        if !is_terminal_job_status(job.status) {
+            continue;
+        }
+        let id = job.id.clone();
+        if jobs.jobs.contains_key(&id) {
+            continue;
+        }
+        jobs.order.push(id.clone());
+        jobs.jobs.insert(id, job);
+    }
+
+    if jobs.order.len() > JOB_HISTORY_MAX {
+        jobs.order.truncate(JOB_HISTORY_MAX);
+    }
+}
