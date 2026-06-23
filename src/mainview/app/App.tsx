@@ -109,7 +109,7 @@ export default function App() {
       <ErrorBoundary>
         <div className="relative z-10 h-screen">
           {screenKey === "loading" && (
-            <div className="flex h-screen items-center justify-center bg-background">
+            <div className="flex h-screen items-center justify-center">
               <Loader2 className="size-8 animate-spin text-primary" />
             </div>
           )}
