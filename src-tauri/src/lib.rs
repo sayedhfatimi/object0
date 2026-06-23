@@ -5669,3 +5669,69 @@ pub fn run() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn vault_crypto_roundtrips() {
+        let salt = [7u8; SALT_BYTES];
+        let key = derive_key("correct horse battery staple", &salt);
+        let (iv, ct) = encrypt_payload(&key, b"top secret profile blob").unwrap();
+        let pt = decrypt_payload(&key, &iv, &ct).unwrap();
+        assert_eq!(pt, b"top secret profile blob");
+    }
+
+    #[test]
+    fn vault_decrypt_fails_with_wrong_key() {
+        let key = derive_key("right", &[1u8; SALT_BYTES]);
+        let wrong = derive_key("wrong", &[1u8; SALT_BYTES]);
+        let (iv, ct) = encrypt_payload(&key, b"data").unwrap();
+        assert!(decrypt_payload(&wrong, &iv, &ct).is_err());
+    }
+
+    #[test]
+    fn derive_key_is_deterministic_and_salt_sensitive() {
+        let a = derive_key("pw", &[0u8; SALT_BYTES]);
+        let b = derive_key("pw", &[0u8; SALT_BYTES]);
+        let c = derive_key("pw", &[1u8; SALT_BYTES]);
+        assert_eq!(a, b);
+        assert_ne!(a, c);
+    }
+
+    #[test]
+    fn sanitize_relative_path_blocks_escapes() {
+        assert!(sanitize_relative_path("../secret").is_none());
+        assert!(sanitize_relative_path("/abs/path").is_none());
+        assert!(sanitize_relative_path("a/../../b").is_none());
+        assert_eq!(
+            sanitize_relative_path("ok/file.txt"),
+            Some(PathBuf::from("ok/file.txt"))
+        );
+    }
+
+    #[test]
+    fn wildcard_matches_basics() {
+        assert!(wildcard_matches("*.log", "server.log"));
+        assert!(wildcard_matches("node_modules/*", "node_modules/x"));
+        assert!(wildcard_matches("a?c", "abc"));
+        assert!(!wildcard_matches("*.log", "server.txt"));
+        assert!(wildcard_matches("*", "anything"));
+    }
+
+    #[test]
+    fn is_excluded_path_matches_basename_and_full() {
+        let pats = vec![".DS_Store".to_string(), "*.tmp".to_string()];
+        assert!(is_excluded_path("dir/.DS_Store", &pats));
+        assert!(is_excluded_path("a/b/c.tmp", &pats));
+        assert!(!is_excluded_path("a/b/c.txt", &pats));
+    }
+
+    #[test]
+    fn normalize_prefix_adds_trailing_slash() {
+        assert_eq!(normalize_prefix(""), "");
+        assert_eq!(normalize_prefix("photos"), "photos/");
+        assert_eq!(normalize_prefix("photos/"), "photos/");
+    }
+}
