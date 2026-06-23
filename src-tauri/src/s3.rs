@@ -557,3 +557,73 @@ pub(crate) async fn s3_delete_keys(client: &S3Client, bucket: &str, keys: &[Stri
 
     Ok(())
 }
+
+pub(crate) fn to_s3_client(profile: &Profile) -> Result<S3Client, String> {
+    if profile.access_key_id.trim().is_empty() || profile.secret_access_key.trim().is_empty() {
+        return Err("Profile credentials are missing".to_string());
+    }
+
+    let region = profile
+        .region
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .unwrap_or("us-east-1");
+
+    let credentials = Credentials::new(
+        profile.access_key_id.clone(),
+        profile.secret_access_key.clone(),
+        profile.session_token.clone(),
+        None,
+        "object0",
+    );
+
+    let mut config_builder = aws_sdk_s3::config::Builder::new()
+        .behavior_version_latest()
+        .region(Region::new(region.to_string()))
+        .credentials_provider(credentials);
+
+    if let Some(endpoint) = profile
+        .endpoint
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        config_builder = config_builder.endpoint_url(endpoint.to_string());
+    }
+
+    if matches!(profile.provider, S3Provider::Minio | S3Provider::Custom) {
+        config_builder = config_builder.force_path_style(true);
+    }
+
+    Ok(S3Client::from_conf(config_builder.build()))
+}
+
+pub(crate) fn s3_datetime_to_iso(dt: &aws_sdk_s3::primitives::DateTime) -> String {
+    dt.to_millis()
+        .ok()
+        .and_then(chrono::DateTime::<Utc>::from_timestamp_millis)
+        .map(|value| value.to_rfc3339())
+        .unwrap_or_else(now_iso)
+}
+
+pub(crate) fn profile_for_id(state: &AppState, profile_id: &str) -> Result<Profile, String> {
+    let vault = lock_state(&state.vault)?;
+    ensure_unlocked(&vault)?;
+    let data = vault
+        .data
+        .as_ref()
+        .ok_or_else(|| "Vault is locked".to_string())?;
+    data.profiles
+        .iter()
+        .find(|profile| profile.id == profile_id)
+        .cloned()
+        .ok_or_else(|| format!("Profile not found: {profile_id}"))
+}
+
+// Convenience for the common "look up the profile, then build its S3 client" pair.
+// Use the two-step form directly when the profile itself is needed afterwards.
+pub(crate) fn s3_client_for_profile(state: &AppState, profile_id: &str) -> Result<S3Client, String> {
+    let profile = profile_for_id(state, profile_id)?;
+    to_s3_client(&profile)
+}
