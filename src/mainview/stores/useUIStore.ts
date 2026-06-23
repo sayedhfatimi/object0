@@ -34,7 +34,6 @@ interface UIState {
   desktopNotifications: boolean;
   persistShareHistory: boolean;
   jobConcurrency: number;
-  sidebarWidth: number;
   folderSyncPanelOpen: boolean;
   folderSyncListDensity: FolderSyncListDensity;
   objectSearchOpen: boolean;
@@ -58,7 +57,6 @@ interface UIState {
   setDesktopNotifications: (on: boolean) => void;
   setPersistShareHistory: (on: boolean) => void;
   setJobConcurrency: (n: number) => void;
-  setSidebarWidth: (width: number) => void;
   setFolderSyncPanelOpen: (open: boolean) => void;
   setFolderSyncListDensity: (density: FolderSyncListDensity) => void;
   setObjectSearchOpen: (open: boolean) => void;
@@ -84,7 +82,6 @@ export const useUIStore = create<UIState>()(
       desktopNotifications: true,
       persistShareHistory: false,
       jobConcurrency: 3,
-      sidebarWidth: 256,
       folderSyncPanelOpen: false,
       folderSyncListDensity: "comfortable",
       objectSearchOpen: false,
@@ -123,7 +120,6 @@ export const useUIStore = create<UIState>()(
       setDesktopNotifications: (on) => set({ desktopNotifications: on }),
       setPersistShareHistory: (on) => set({ persistShareHistory: on }),
       setJobConcurrency: (n) => set({ jobConcurrency: n }),
-      setSidebarWidth: (width) => set({ sidebarWidth: width }),
       setFolderSyncPanelOpen: (open) => set({ folderSyncPanelOpen: open }),
       setFolderSyncListDensity: (density) =>
         set({ folderSyncListDensity: density }),
@@ -139,7 +135,6 @@ export const useUIStore = create<UIState>()(
         desktopNotifications: state.desktopNotifications,
         persistShareHistory: state.persistShareHistory,
         jobConcurrency: state.jobConcurrency,
-        sidebarWidth: state.sidebarWidth,
         syncEntryPreference: state.syncEntryPreference,
         folderSyncListDensity: state.folderSyncListDensity,
       }),

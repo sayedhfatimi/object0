@@ -1,7 +1,6 @@
 import { lazy, Suspense } from "react";
 import { useTabStore } from "../../stores/useTabStore";
 import { useUIStore } from "../../stores/useUIStore";
-import { ResizeHandle } from "../common/ResizeHandle";
 import { DetailPanel } from "../objects/DetailPanel";
 import { SidebarInset, SidebarProvider } from "../ui/sidebar";
 import { ContentArea } from "./ContentArea";
@@ -63,19 +62,16 @@ export function MainLayout() {
   const settingsOpen = useUIStore((s) => s.settingsOpen);
   const folderSyncPanelOpen = useUIStore((s) => s.folderSyncPanelOpen);
   const hasTabs = useTabStore((s) => s.tabs.length > 0);
-  const sidebarWidth = useUIStore((s) => s.sidebarWidth);
-  const setSidebarWidth = useUIStore((s) => s.setSidebarWidth);
 
   return (
     // SidebarProvider is the outermost wrapper; controlled open state wired
     // to useUIStore so Ctrl+B (toggleSidebar) and the trigger both work.
-    // --sidebar-width is passed via style to preserve the resizable width.
     <SidebarProvider
       open={!sidebarCollapsed}
       onOpenChange={() => toggleSidebar()}
       style={
         {
-          "--sidebar-width": `${sidebarWidth}px`,
+          "--sidebar-width": "16rem",
           "--sidebar-width-icon": "3rem",
         } as React.CSSProperties
       }
@@ -84,17 +80,6 @@ export function MainLayout() {
       <div className="flex flex-1 overflow-hidden">
         {/* Shadcn Sidebar primitive — collapse wired to useUIStore */}
         <Sidebar />
-
-        {/* ResizeHandle for drag-to-resize sidebar (when expanded) */}
-        {!sidebarCollapsed && (
-          <ResizeHandle
-            side="right"
-            width={sidebarWidth}
-            minWidth={180}
-            maxWidth={400}
-            onResize={setSidebarWidth}
-          />
-        )}
 
         {/* Main content area */}
         <SidebarInset className="flex flex-col overflow-hidden">
