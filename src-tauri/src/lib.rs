@@ -4953,9 +4953,11 @@ async fn rpc_request(
                 if relative_path.is_empty() {
                     continue;
                 }
-                let local_path = destination
-                    .join(&folder_name)
-                    .join(Path::new(&relative_path));
+                let Some(safe_relative) = sanitize_relative_path(&relative_path) else {
+                    // Skip remote keys that would escape the destination directory.
+                    continue;
+                };
+                let local_path = destination.join(&folder_name).join(&safe_relative);
                 let job_id = enqueue_job(
                     &app,
                     JobType::Download,
