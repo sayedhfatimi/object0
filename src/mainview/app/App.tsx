@@ -65,6 +65,20 @@ export default function App() {
     }
   }, [unlocked, exists]);
 
+  // Suppress the webview's native context menu (reload / back / forward /
+  // inspect element) so right-clicking feels like a native app. Editable
+  // fields keep their menu so cut/copy/paste still works, and the app's own
+  // right-click menus (file rows, profiles) open via their own handlers.
+  useEffect(() => {
+    const handleContextMenu = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('input, textarea, [contenteditable="true"]')) return;
+      e.preventDefault();
+    };
+    document.addEventListener("contextmenu", handleContextMenu);
+    return () => document.removeEventListener("contextmenu", handleContextMenu);
+  }, []);
+
   const toggleTheme = useThemeStore((s) => s.toggle);
   const setJobPanelOpen = useUIStore((s) => s.setJobPanelOpen);
   const jobPanelOpen = useUIStore((s) => s.jobPanelOpen);
